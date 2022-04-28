@@ -1,5 +1,10 @@
 //二级
     function erji() {
+Version();
+    addListener("onClose", $.toString(() => {
+        clearMyVar('isverifyA');
+    }));
+
 var d = [];
 var html = getResCode();
 
