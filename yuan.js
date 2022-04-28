@@ -1,6 +1,5 @@
 var 二级 = {
     A: function() {
-js:
 var d = [];
 var html = getResCode();
 
