@@ -37,6 +37,20 @@ setHomeResult(res);
   }
 }
 
+var 章节 = {
+    A: function() {
+        if (MY_URL.indexOf('hiker://empty##') > -1) {
+            var html = request(MY_URL.split('##')[1])
+        } else {
+            var html = getResCode()
+        }
+        var conts = parseDomForArray(html, 集数总列表)[0]
+        var list = parseDomForArray(conts, 集数列表)
+        var title = parseDomForHtml(list[list.length - 1], 'a&&Text')
+        setResult("更新至: " + title);
+    }
+}
+
 二级1 = {
      A:function() {   
 var d = [];
