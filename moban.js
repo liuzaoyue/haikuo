@@ -659,3 +659,231 @@ function setLists(lists, index) {
 setTabs(tabs, MY_URL);
 setLists(lists, getMyVar(MY_URL, '0'));
 setResult(d);}}
+
+
+var 二级3 = {
+    A: function() {
+        var d = [];
+        var html0 = null
+        MY_URL = MY_URL.split("##")[MY_URL.split("##").length - 1]
+        getResCode = () => {
+            if (html0) {
+                return html0;
+            }
+            let a = getMyVar("二级：" + MY_URL, "")
+            if (a) {
+                html0 = a
+                return a
+            } else {
+                html0 = request(MY_URL);
+                putMyVar("二级：" + MY_URL, html0);
+                return html0
+            }
+        }
+        var html = getResCode();
+        var arts = parseDomForArray(html, 路线列表);
+        var tabs = [];
+for (var i in arts) {
+    tabs.push(parseDomForHtml(arts[i], 路线名)
+.replace('-官方', '').replace('备用资源', '').replace('APP专享线路（网站不提供播放）', 'APP专享').replace('）', ')').replace('（', '(').replace('视频', '').replace('TV', '').replace('线路', '').replace('推荐', '').replace('-', '').replace(' ', '').replace(' ', '').replace('蓝光秒播', '789pan').replace('蓝光极速', '人人迷').replace('蓝光①线', '腾讯').replace('蓝光④线', '芒果').replace('蓝光②线', '奇艺').replace('蓝光③线', '优酷').replace('蓝光⑤线', '搜狐').replace('蓝光⑦线', 'PPTV').replace('臻品影视①', 'leduo').replace('臻品影视②', 'bjm3u8').replace('臻品影视③', 'dbm3u8').replace('臻品影视④', 'tkm3u8').replace('臻品影视⑤', '605m3u8').replace('光纤云一', '爱奇艺').replace('光纤云二', '腾讯').replace('光纤云三', '优酷').replace('光纤云四', '芒果').replace('极速云一', '乐多').replace('极速云二', '哔哩哔哩').replace('飞碟云一', 'fuckapp').replace('流星云一', 'wjm3u8').replace('流星云二', 'bdxm3u8').replace('飞碟云二', 'fuckapp1').replace(' (支持手机)', ''))
+        }
+        var conts = pdfa(html, 集数总列表);
+        var lists = [];
+        for (var i in conts) {
+            lists.push(pdfa(conts[i], 集数列表))
+        }
+
+        d.push({
+            title: "分类：" + pdfh(html, 信息).replace(/\//g, ' ').replace('分类：', '').replace('地区：', '').replace('年代：', '').replace('类型：', '').replace('年份：', '').substring(0, 17) + '\n' + pdfh(html, 信息1).replace(/\//g, ' ').substring(0, 21),
+            desc: pdfh(html, 信息2).replace(/\//g, ' ').substring(0, 23) + '\n' + pdfh(html, 信息3).replace(/\//g, ' ').substring(0, 19),
+            pic_url: pd(html, 封面) + '@Referer=',
+            url: "hiker://empty@lazyRule=.js:putVar('style', getVar('style','1')=='1'?'0':'1');refreshPage(false);'hiker://empty'",
+            col_type: 'movie_1_vertical_pic_blur',
+            extra: {
+                gradient: true
+            }
+        });
+        var Color = "#f13b66a";
+        var Color1 = "#098AC1";
+        const Color2 = 自定义颜色 = '#17B76C';
+
+        requireCache("https://gitee.com/xiao-zero/xiao/raw/master/js/lazy.js")
+
+        function getHead(title) {
+            return '‘‘’’<font color="' + Color2 + '">' + title + '</font>';
+        }
+        var desc = '简介 : ' + pdfh(html, 简介).replace('　　', '').replace('详情：', '').replace('剧情：', '').replace('　', '').replace('[收起部分]', '').replace('  展开全部', '').replace('收起全部', '').replace(' ', '').replace('展开 收起', '').replace('简介：', '').replace('...详情', '').replace(' 展开全部', '').substring(0, 60) + "…详情";
+        d.push({
+            title: '““””<small><font color=#871f78>' + desc + '</font></small>',
+            url: 'hiker://empty#' + '\n\t\t\t\t\t\t\t' + pdfh(html, 简介) + `@rule=js:var res = {}; var d = [];d.push({title:'影片简介：'+MY_URL.split('hiker://empty#')[1],col_type: 'long_text'});res.data = d; setHomeResult(res);`,
+            col_type: 'text_1'
+        });
+        d.push({
+            col_type: 'line_blank'
+        });
+        d.push({
+            col_type: 'big_blank_block'
+        });
+        d.push({
+            col_type: 'big_blank_block'
+        });
+        d.push({
+            col_type: 'big_blank_block'
+        });
+        d.push({
+            title: getHead('☯'),
+            url: 图片链接,
+            col_type: 'scroll_button'
+        });
+
+        function setTabs(tabs, taburl) {
+            for (var i in tabs) {
+                var tabname = tabs[i];
+                d.push({
+                    title: tabname,
+                    col_type: 'scroll_button',
+                    url: $("#noLoading#").lazyRule((tabname, taburl, i) => {
+                        putMyVar('当前线路名', tabname);
+                        putMyVar(taburl, i)
+                        refreshPage(false);
+                        return 'hiker://empty'
+                    }, tabname, taburl, i)
+                })
+            }
+        }
+
+        function setLists(lists, index) {
+            var list = lists[index];
+            try {
+                if (pdfh(list[0], "a&&Text").match(/(\d+)/)[0] > pdfh(list.slice(-1)[0], "a&&Text").match(/(\d+)/)[0]) list.reverse()
+            } catch (e) {}
+            if (tabs.length > 1 || list.length > 20) {
+                if (getMyVar('选集排序') == 1) {
+                    var sx = '<font color = "' + Color2 + '"><b>↿</b></font>' + '<font color = "grey"><b>⇂</b></font>';
+                } else {
+                    var sx = '<font color = "grey"><b>↿</b></font>' + '<font color = "' + Color2 + '"><b>⇂</b></font>';
+                }
+                //技术支持:追剧君,图标支持:蓝莓
+                //图标
+                var obj = {
+                    "腾讯": "https://lanmeiguojiang.com/tubiao/movie/131.svg",
+                    "优酷": "https://lanmeiguojiang.com/tubiao/movie/128.svg",
+                    "奇艺": "https://lanmeiguojiang.com/tubiao/movie/130.svg",
+                    "爱奇艺": "https://lanmeiguojiang.com/tubiao/movie/130.svg",
+                    "芒果": "https://lanmeiguojiang.com/tubiao/movie/32.svg",
+                    "咪咕": "https://lanmeiguojiang.com/tubiao/movie/134.svg",
+                    "西瓜": "https://lanmeiguojiang.com/tubiao/movie/135.svg",
+                    "搜狐": "https://lanmeiguojiang.com/tubiao/movie/129.svg",
+                    "乐视": "https://lanmeiguojiang.com/tubiao/movie/58.svg",
+                    "风行": "https://lanmeiguojiang.com/tubiao/movie/136.svg",
+                    "PPTV": "https://lanmeiguojiang.com/tubiao/movie/133.svg",
+                    "1905": "https://lanmeiguojiang.com/tubiao/movie/132.svg",
+                    "bilibili": "https://lanmeiguojiang.com/tubiao/movie/20.svg",
+                    "专线": "https://lanmeiguojiang.com/tubiao/movie/141.svg",
+                    "专线2": "https://lanmeiguojiang.com/tubiao/movie/142.svg",
+                };
+                d.push({
+                    title: getMyVar('当前线路名', tabs[0]) + "<small><font color='grey'>" + '\t\t--> ' + list.length + ' 集' + "</font></small>" + '\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t' + sx + "正反序★",
+                    url: `@lazyRule=.js:if(getMyVar('选集排序')==1){putMyVar('选集排序', 0);}else{putMyVar('选集排序', 1)};refreshPage(false);'hiker://empty'`,
+                    img: obj[getMyVar('当前线路名', tabs[0])] || "https://lanmeiguojiang.com/tubiao/movie/105.svg",
+                    col_type: 'avatar'
+                })
+            }
+            for (let i = 0; i < 5; i++) {
+                d.push({
+                    col_type: "blank_block"
+                })
+            }
+
+            function playLists() {
+                var jm = pdfh(list[j], 'a&&Text').replace(/第|集|话|期|-/g, '').replace(/预告/g, '');
+                if (list.length < 5) {
+                    var col = 'text_2'
+                } else {
+                    var col = jm.length > 5 ? 'text_3' : 'text_4'
+                }
+                let url = pd(list[j], 'a&&href');
+                d.push({
+                    title: jm,
+                    url: url + lazy,
+                    col_type: col,
+                    extra: {
+                        id: url
+                    }
+                });
+            }
+            addListener('onClose', $.toString((MY_URL) => {
+                clearMyVar('当前线路名');
+                clearMyVar('分集起');
+                clearMyVar('分集终');
+                clearMyVar("二级：" + MY_URL);
+            }, MY_URL))
+            //选集＞则启用选集分区
+            if (list.length > 104) {
+                //设置内页选集数目
+                var page_number = 100;
+                var star = getMyVar('分集起', '1');
+                var end = getMyVar('分集终', JSON.stringify(page_number));
+                var total = Math.ceil(list.length / page_number);
+                var catalogue = []
+                for (let i = 0; i < total; i++) {
+                    catalogue += i * page_number + ',';
+                    catalogue = catalogue.split(',');
+                }
+                for (let i = 0; i < 8; i++) {
+                    d.push({
+                        col_type: "blank_block"
+                    })
+                }
+                for (var i = 0; i < catalogue.length - 1; i++) {
+                    var total1 = parseInt(catalogue[i]) + 1;
+                    var total2 = parseInt(catalogue[i + 1]);
+                    if (i == (catalogue.length - 2)) var total2 = list.length;
+                    d.push({
+                        title: star == total1 ? '‘‘' + total1 + '-' + total2 + '’’' : total1 + '-' + total2,
+                        url: $("#noLoading#").lazyRule((total1, total2) => {
+                            putMyVar('分集起', total1);
+                            putMyVar('分集终', total2);
+                            refreshPage();
+                            return 'hiker://empty'
+                        }, total1, total2),
+                        col_type: 'scroll_button'
+                    });
+                }
+                if (getMyVar('选集排序') == 1) {
+                    for (var j = end - 1; j >= star - 1; j--) {
+                        playLists()
+                    }
+                } else {
+                    for (var j = star - 1; j < end; j++) {
+                        playLists()
+                    }
+                }
+            } else {
+                if (getMyVar('选集排序') == 1) {
+                    for (var j = list.length - 1; j >= 0; j--) {
+                        playLists()
+                    }
+                } else {
+                    for (var j = 0; j < list.length; j++) {
+                        playLists()
+                    }
+                }
+            }
+            d.push({
+                col_type: 'rich_text'
+            });
+            d.push({
+                col_type: 'rich_text'
+            });
+        }
+        setTabs(tabs, MY_URL);
+        setLists(lists, getMyVar(MY_URL, '0'));
+        /*d.push({
+            title: '““””<small><small><font color=#871f78>数据资源收集于网络，海阔不提供任何资源</font></small>',
+            desc: '““””<small><small><font color=#f20c00>本规则仅限学习与交流，请导入后24小时内删除，请勿传播！</font></small>',
+            url: MY_URL,
+            col_type: 'text_center_1'
+        });*/
+        setResult(d);
+    }}
