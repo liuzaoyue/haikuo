@@ -449,7 +449,7 @@ var lazy = $("").lazyRule(() => {
 });
  
 //视频标题
-var title = parseDomForHtml(html, 标题);
+var title = parseDomForHtml(html, 片名);
 //剧情简介
 var des_desc = parseDomForHtml(html, 简介).replace('详情', '[收起部分]','');
 //视频封面
