@@ -732,7 +732,7 @@ for (var i in arts) {
         });
         d.push({
             title: getHead('☯'),
-            url: 图片链接,
+            url: getUrl(),
             col_type: 'scroll_button'
         });
 
