@@ -191,7 +191,7 @@ var _x5 = $.toString(() => {
      if (urls[i].indexOf("url=") == -1){
         if (urls[i].match(/\.mp3|\.mp4|\.m3u8/)) {
             fy_bridge_app.log(urls[i]);
-            return urls[i]
+            return urls[i]+'#isVideo=true#'
         }
        }
     }
