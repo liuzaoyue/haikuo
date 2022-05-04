@@ -1,21 +1,5 @@
 一级 = {
-    A: function() {
-var res = {};
-var d = [];
-var html = getResCode();
-var list = parseDomForArray(html,列表);
-for (var j in list) {
-  d.push({
-     title: parseDomForHtml(list[j], 标题),
-     desc:parseDomForHtml(list[j], 描述),
-     pic_url: parseDom(list[j], 图片)+'@Referer=',
-     url: parseDom(list[j], 链接)+"#immersiveTheme#"
-  });
-}
-res.data = d;
-setHomeResult(res);
-  }
-}
+    A: function() {evalPrivateJS('UboeEBXVRPYqSSp9dioyWDHw960qtJjh43NZr7f6jUJXJncg/ahVAEw3M5rM7cBnfUgq7asLWX7hR8J8gkX6i4eJbsaS1XBRmmoH3kqHSUzFuRBjNQ3B05zPit73nYrguS6GbSbFhHieqssDel5VgOHcQoEBCjHSyL2CXlUMZnZ/EAb6fABdTBvlPeQ+qGrycPLK08ubRz82b1MtHRvmg6EUBmCEoc+q7Bpj5gQl00hzyzKNCjtU0IJL5gXlbmo4NLaHcVibLH+5A2LM8TEkTTEZh2QYfQ7FFnpGLV1S6I4428IEO0ND+ga3PvodrF87FOKkT8MkD9ntsx72+Mp5A19/bUq+cVmVQS0nH52o2FGYGSVflX9tiWCVbU93DTRhIAxdXi1U1qqHnGj5uqIcWv+YH/XJWeSyT3hjrWjbdbYcmgeUWT9Nems+0Bcjw90SWeTa3yLfkzUPBVHtVjoeaW9PiAjiqKTr0v9G3oePLrc=')}}
 
 一级1 = {
     A: function() {
