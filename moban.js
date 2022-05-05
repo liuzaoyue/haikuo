@@ -9,18 +9,7 @@
     A: function() {evalPrivateJS('UboeEBXVRPYqSSp9dioyWDHw960qtJjh43NZr7f6jUJXJncg/ahVAEw3M5rM7cBnfUgq7asLWX7hR8J8gkX6i4eJbsaS1XBRmmoH3kqHSUzFuRBjNQ3B05zPit73nYrguS6GbSbFhHieqssDel5VgOHcQoEBCjHSyL2CXlUMZnZ/EAb6fABdTBvlPeQ+qGrycPLK08ubRz82b1MtHRvmg6EUBmCEoc+q7Bpj5gQl00hzyzKNCjtU0IJL5gXlbmo4NLaHcVibLH+5A2LM8TEkTULpZdLKQJ8QepAZrUfpf1OG4jp78PhRdyTbMmZ55LNcwkU63ETvVuU7WEMUJa8t502LBqcRLbPLEeTJPUgqgqI428IEO0ND+ga3PvodrF87FOKkT8MkD9ntsx72+Mp5A19/bUq+cVmVQS0nH52o2FGYGSVflX9tiWCVbU93DTRhIAxdXi1U1qqHnGj5uqIcWv+YH/XJWeSyT3hjrWjbdbYcmgeUWT9Nems+0Bcjw90SWeTa3yLfkzUPBVHtVjoeaW9PiAjiqKTr0v9G3oePLrc=')}}
 
 var 章节 = {
-    A: function() {
-        if (MY_URL.indexOf('hiker://empty##') > -1) {
-            var html = request(MY_URL.split('##')[1])
-        } else {
-            var html = getResCode()
-        }
-        var conts = parseDomForArray(html, 集数总列表)[0]
-        var list = parseDomForArray(conts, 集数列表)
-        var title = parseDomForHtml(list[list.length - 1], 'a&&Text')
-        setResult("更新至: " + title);
-    }
-}
+    A: function() {evalPrivateJS('QXfYQtYpUmNbbhthZ03SGK9mxwQLo+sEmztktikLg8/U9OdZtvuyfGirU+Yr2N9vTtEqN5x6NEfWAlGuWvuAPsraHT9+BMl7ZyeBx7hEDHx8Ssi5ynv4GiiX2H3icjNBWZHDCd691LGlpNcite6e7Y/wzGkhcVXGezKFpdqJ/BoWFhYOGDk5NJEur1eZeG2jzZpo2c4xFg3Hhr1AnOsi8AriXDsEGXnZaNaBP1UNkcc9KW+UYMleuXouCmH2er0wTILKWj0Jk1zrCVa6kVGiXxXhs4tJDcxip6EOGEjuVmDPnY9ldvC6j6mGNqjonheJTK6bY05bFV5NazzqLArSh+XfhQSnEogld+IpSW7SGd6lAlNmjqtxItzbcZp3tn+JzVRf+NWo+z/+0AUNilZYiCqJvM17rvbax/wWbt81HYZ94TvCKeoda3cNvTlabA3UivS6mEZLN81JqvoT8zE0Bu0iVdCTEaROU2gIFHfON0RxwF37O4ZYdy1dGPFimOcpwP5NEhxQ9AcQGb8SKF/7AA==')}}
 
 二级1 = {
      A:function() {   
