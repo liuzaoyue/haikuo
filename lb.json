@@ -1,5 +1,4 @@
-function banner(blist, title, time, Url, id) {
-    var d = []   
+function banner(d, blist, title, time, Url, id) {       
     if (id == undefined || typeof(id) != 'string') {
         id = '0';
     }
