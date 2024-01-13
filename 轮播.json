@@ -7,32 +7,38 @@ function banner(d, blist, time, id) {
         id = '0';
     }
     if (time == undefined || time < 100) {
-        time = 5000;
+        time = 5000
     }   
-    var i = Math.floor(Math.random() * blist.length)
+   var j = getMyVar('j', '0')
+        clearMyVar('j')
+        if (j > blist.length - 1) {
+            j = 0
+        }
     d.push({
-        img: blist[i].img,
+        img: blist[j].img,
         desc: '0',
-        url: 'hiker://empty#noHistory##noRecordHistory#' + `@rule=js:eval(fetch('hiker://assets/home.js',{}));HikerHome.load('setuppage')`,
+        url: blist[j].img,
         col_type: 'card_pic_1',
         extra: {
             id: id,
             longClick: [{
-                title: '停止轮播',
+                title: getItem("ms", "0") == "1" ? "▶️继续轮播" : "⏸停止轮播",
                 js: $.toString((id) => {
-                    setItem('停止', '0')
-                    refreshPage()
-                    toast('轮播已停止')
+setItem('ms', getItem('ms', '0') == '0' ? '1' : '0');  
+                     if (getItem("ms","0") == "1") {
+                        setItem('停止', '0')
+                        refreshPage()
+                        toast('轮播已停止')
+                        }else 
+                     if (getItem("ms","1") == "0") {
+                        clearItem('停止')
+                        refreshPage()
+                        toast('轮播已打开')                    
+                        }
+                                      
                 }, id)
             }, {
-                title: '继续轮播',
-                js: $.toString((id) => {
-                    clearItem('停止')
-                    refreshPage()
-                    toast('轮播已打开')
-                })
-            }, {
-                title: '加网址',
+                title: '🍁添加网址',
                 js: $.toString(() => {
                     return $('https://t.mwm.moe/moe/', "请输入随机图片网址，API").input(() => {
                         if (/http|storage|hiker/.test(input)) {
@@ -49,9 +55,9 @@ function banner(d, blist, time, id) {
 
                 })
             }, {
-                title: '选网站',
+                title: '🔥选择网站',
                 js: $.toString((id) => {
-                    var list = ["🌴本地图片", "🌲彼岸壁纸", "🍎3G壁纸", "🍊壁纸之家", "🍌回车桌面", "🍇壁纸360", "🍉摄图网"];
+                    var list = ["🌿本地图片", "🌲彼岸壁纸", "🍎3G壁纸", "🍊壁纸之家", "🍌回车桌面", "🍇壁纸360", "🍉摄图网", "🍀高清壁纸", "🌿千叶网", "🌺典雅壁纸"];
                     list[getItem('list')] = '‘‘’’<span style="color:red">' + list[getItem('list')] + '</span>';
                     return 'select://' + JSON.stringify({
                         "title": "选择图片网站",
@@ -59,7 +65,7 @@ function banner(d, blist, time, id) {
                         col: 2,
                         js: $.toString((id) => {
                             switch (input) {
-                                case '🌴本地图片':
+                                case '🌿本地图片':
                                     setItem('list', '0');
                                     clearItem('pic');
                                     setItem('pic', '0');
@@ -108,6 +114,27 @@ function banner(d, blist, time, id) {
                                     refreshPage();
                                     toast('图片已更换');
                                     break
+                                case '🍀高清壁纸':
+                                    setItem('list', '7');
+                                    clearItem('pic');
+                                    setItem('pic', '8');
+                                    refreshPage();
+                                    toast('图片已更换');
+                                    break 
+                                case '🌿千叶网':
+                                    setItem('list', '8');
+                                    clearItem('pic');
+                                    setItem('pic', '9');
+                                    refreshPage();
+                                    toast('图片已更换');
+                                    break
+                                case '🌺典雅壁纸':
+                                    setItem('list', '9');
+                                    clearItem('pic');
+                                    setItem('pic', '10');
+                                    refreshPage();
+                                    toast('图片已更换');
+                                    break           
                             }
                         }, id)
                     });
@@ -115,8 +142,10 @@ function banner(d, blist, time, id) {
             }]
         }
     })
+    j++
+    putMyVar('j', j);
     registerTask(id, time, $.toString((blist, id, arrs) => {
-        let i = getMyVar('i', '0')
+        var i = getMyVar('i', '0')
         clearMyVar('i')
         if (i > blist.length - 1) {
             i = 0
@@ -149,7 +178,6 @@ switch (getItem('pic')) {
             javaImport.importPackage(
                 Packages.com.example.hikerview.utils,
                 Packages.java.io,
-
             );
             with(javaImport) {
                 var file = new File('/storage/emulated/0/Pictures/');
@@ -160,9 +188,12 @@ switch (getItem('pic')) {
                     img: fileList[i],
                 });
             }
-        } catch (e) {
-toast('目录不存在,切换到网络图片');
-}
+        } catch (e) {}
+        if (arr == '') {
+            toast('目录不存在或空,切换到默认API');
+            clearItem('pic');
+            clearItem('list');
+        }
         break
     case '1':
         var x = Math.floor(Math.random() * 1049) + 2
@@ -172,6 +203,11 @@ toast('目录不存在,切换到网络图片');
             arr.push({
                 img: 'https://pic.netbian.com' + pdfh(list[i], 'img&&src'),
             })
+        }
+        if (arr == '') {
+            toast('网站获取失败,切换到默认API');
+            clearItem('pic');
+            clearItem('list');
         }
         break
     case '2':
@@ -183,18 +219,26 @@ toast('目录不存在,切换到网络图片');
                 img: pdfh(data, 'img&&lay-src')
             })
         })
+        if (arr == '') {
+            toast('网站获取失败,切换到默认API');
+            clearItem('pic');
+            clearItem('list');
+        }
         break
     case '3':
         var x = Math.floor(Math.random() * 1117)
         var html = request('https://www.bizhi3.com/diannaobizhi/list_' + x + '.html');
         var list = pdfa(html, '.po_ul&&img');
-        try {
-            list.forEach(data => {
-                arr.push({
-                    img: 'https:' + pdfh(data, 'img&&src')
-                })
+        list.forEach(data => {
+            arr.push({
+                img: 'https:' + pdfh(data, 'img&&src')
             })
-        } catch (e) {}
+        })
+        if (arr == '') {
+            toast('网站获取失败,切换到默认API');
+            clearItem('pic');
+            clearItem('list');
+        }
         break
     case '4':
         var x = Math.floor(Math.random() * 709)
@@ -209,20 +253,28 @@ toast('目录不存在,切换到网络图片');
                 img: pdfh(list[i], 'img&&src'),
             })
         }
+        if (arr == '') {
+            toast('网站获取失败,切换到默认API');
+            clearItem('pic');
+            clearItem('list');
+        }
         break
     case '5':
         var x = Math.floor(Math.random() * 16)
         var html = request('https://m.699pic.com/sousuo-diannaobizhi-0-complex-horizontal-0-all-all-' + x + '-0-0-0-0-0-0-all-all-739-0.html');
         var list = pdfa(html, '.res-list&&img');
-        try {
-            list.forEach(data => {
-                arr.push({
-                    img: 'https:' + pdfh(data, 'img&&src')
-                })
+        list.forEach(data => {
+            arr.push({
+                img: 'https:' + pdfh(data, 'img&&src')
             })
-        } catch (e) {}
+        })
+        if (arr == '') {
+            toast('网站获取失败,切换到默认API');
+            clearItem('pic');
+            clearItem('list');
+        }
         break
-    case '6':
+   case '6':
        // var pic = 'https://www.dmoe.cc/random.php';
         for (var i = 0; i < 10; i++) {
             arr.push({
@@ -239,7 +291,59 @@ toast('目录不存在,切换到网络图片');
                 img: pdfh(data, 'img&&src')
             })
         })
+        if (arr == '') {
+            toast('网站获取失败,切换到默认API');
+            clearItem('pic');
+            clearItem('list');
+        }
         break
+    case '8':
+        var x = Math.floor(Math.random() * 350) * 20
+        try {
+            var html = request('https://vt.sm.cn/api/pic/list?query=%E7%94%B5%E8%84%91%E5%A3%81%E7%BA%B8&tag=&limit=20&start=' + x, {});
+            var list = JSON.parse(html).data.hit.imgInfo.item
+            list.forEach(data => {
+                arr.push({
+                    img: data.bigPicUrl,
+                })
+            })
+        } catch (e) {}
+        if (arr == '') {
+            toast('网站获取失败,切换到默认API');
+            clearItem('pic');
+            clearItem('list');
+        }
+        break
+    case '9':
+        var x = Math.floor(Math.random() * 411);
+        var html = request('http://qianye88.com/3840x2160/'+x+'.html');
+        var list = pdfa(html, '.flex-images&&img');
+        list.forEach(data => {
+            arr.push({
+                img: pdfh(data, 'img&&data-original').replace(/(.*?)\?.*/, '$1')
+            })
+        })
+        if (arr == '') {
+            toast('网站获取失败,切换到默认API');
+            clearItem('pic');
+            clearItem('list');
+        }
+        break
+    case '10':
+        var x = Math.floor(Math.random() * 394) + 1;
+        var html = request('https://www.dianyabizhi.com/diannaobizhi/list_' + x + '.html');
+        var list = pdfa(html, '.po_ul&&img');
+        list.forEach(data => {
+            arr.push({
+                img: pdfh(data, 'img&&src').includes('http') ? pdfh(data, 'img&&src') : 'https://www.dianyabizhi.com' + pdfh(data, 'img&&src')
+            })
+        })
+        if (arr == '') {
+            toast('网站获取失败,切换到默认API');
+            clearItem('pic');
+            clearItem('list');
+        }
+        break        
 }
 if (arr == '') {
     for (let i = 0; i < 10; i++) {
@@ -248,3 +352,4 @@ if (arr == '') {
         })
     }
 }
+gengxin = '新增,典雅壁纸，1.13'
