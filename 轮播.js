@@ -4,7 +4,7 @@ function banner(d, blist, time, id) {
             id = MY_RULE.title + 'a';
         }
         if (time == undefined || time < 100) {
-            time = 3000
+            time = 3000;
         }
         var  arrs  =   []
         for  (let  ii  in  blist)  {        
