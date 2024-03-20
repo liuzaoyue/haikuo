@@ -6,7 +6,7 @@ function banner(d, blist, time, id) {
         var id = MY_RULE.title + id;
         }
         if (time == undefined || time < 100) {
-            time = 3000
+            time = 3000;
         }
         var  arrs  =   []
         for  (let  ii  in  blist)  {        
@@ -56,7 +56,7 @@ function banner(d, blist, time, id) {
                                 k++
                                 putMyVar(id + 'k', k)
                             }, blist, id, arrs))
-                            toast('轮播已打开');
+                            toast('轮播已打开')
                         }
                     }, id, time, blist, arrs)
                 }, {
@@ -66,10 +66,10 @@ function banner(d, blist, time, id) {
                             if (input.startsWith("http") || input.startsWith("hiker") || input.startsWith("/storage") || input.startsWith("fiie")) { ;
                                 setItem('img', input);
                                 setItem('j', '网址');
-                                refreshPage();
+                                refreshPage()
                                 toast('图片已更换');
                             } else {
-                                toast('不是正确网址')
+                                toast('不是正确网址');
                             }
                         });
                     })
