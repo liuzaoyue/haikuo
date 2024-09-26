@@ -2,38 +2,36 @@ function banner(d, blist, time, id) {
     if (MY_PAGE == 1) {
         if (id == undefined || typeof(id) != 'string') {
             id = MY_RULE.title + 'a';
+        }else{
+        var id = MY_RULE.title + id;
         }
         if (time == undefined || time < 100) {
-            time = 3000;
+            time = 3000
         }
         var  arrs  =   []
         for  (let  ii  in  blist)  {        
             arrs.push(blist[ii].img);   
         }
-        let j = getMyVar('j', '0')
-        clearMyVar('j')
-        if (j > blist.length - 1) {
-            j = 0;
-        }
+        function number(j, x) { if (x == null || x == undefined || x == '') { x = 0 }; x = x - 1; let sum = getVar('i', String(x + 1)); if (sum == null || sum == undefined || sum >= j) {sum = x}; sum++; putVar('i', sum); return sum; }
+        let j = number(blist.length - 1)
         d.push({
             img: blist[j].img,
             desc: '0',
-            url: $('#noLoading#').lazyRule((j, blist) => {
-                return blist[j].img
-            }, j, blist),
-            col_type: getItem("col_type", "card_pic_1"),
+            url: $('#noLoading#').lazyRule((j, arrs) => {
+                        return 'pics://' + arrs.slice(j, Number(j)+1).join('&&')
+                    }, j, arrs),
+            col_type: getItem(id + "col_type", "card_pic_1"),
             extra: {
                 id: id,
                 longClick: [{
-                    title: getItem("ms", "0") == "1" ? "▶️开关轮播" : "⏸开关轮播",
+                    title: getItem('停止', '')  == "0" ? "▶️打开轮播" : "⏸暂停轮播",
                     js: $.toString((id, time, blist, arrs) => {
-                        setItem('ms', getItem('ms', '0') == '0' ? '1' : '0');
-                        if (getItem("ms", "0") == "1") {
+                        if (getItem('停止') != 0) {
                             setItem('停止', '0')
                             unRegisterTask(id);
                             toast('轮播已停止')
                         } else
-                        if (getItem("ms", "1") == "0") {
+                        if (getItem('停止') == 0) {
                             clearItem('停止');
                             registerTask(id, time, $.toString((blist, id, arrs) => {
                                 let k = getMyVar(id + 'k', '0')
@@ -61,8 +59,8 @@ function banner(d, blist, time, id) {
                 }, {
                     title: '🍁添网址',
                     js: $.toString(() => {
-                        return $('https://t.mwm.moe/moe/', "请输入随机图片网址，API").input(() => {
-                            if (/http/.test(input)) {
+                        return $('https://picsum.photos/400/200', "请输入随机图片网址，API").input(() => {
+                            if (input.startsWith("http") || input.startsWith("hiker") || input.startsWith("/storage") || input.startsWith("fiie")) { ;
                                 setItem('img', input);
                                 setItem('j', '网址');
                                 refreshPage();
@@ -129,11 +127,18 @@ function banner(d, blist, time, id) {
                         }, {
                             title: "视觉中国.动",
                             icon: "https://www.vcg.com/favicon.ico",
-                        }];
+                        }, {
+                            title: "Hippopx",
+                            icon: "https://www.hippopx.com/public/css/favicon.ico",
+                        }, {
+                            title: "天堂图片",
+                            icon: "https://m.ivsky.com/favicon.ico",
+                    }];
                         let sel = getItem('j', '-1') == '网址' ? '-1' : getItem('j', '-1');
                         return $(list, 2, '切换网站', sel).select((list) => {
                             var j = list.findIndex(item => item.title === input) + '';
                             setItem('j', j);
+                            clearItem('停止');
                             refreshPage();
                             return "toast://已切换" + input;
                         }, list);
@@ -142,25 +147,19 @@ function banner(d, blist, time, id) {
                     title: "🥑切换样式",
                     js: $.toString((id) => {
                         var list = ["card_pic_1", "card_pic_2", "card_pic_3", "movie_1", "movie_2", "movie_3", "pic_1", "pic_2", "pic_3", "pic_1_center", "pic_1_full", "pic_1_card", "pic_3_square", "card_pic_3_center", "card_pic_2_2", "card_pic_2_2_left"];
-                        return $(list, 2, '🥑切换样式', getItem('i', '-1')).select((list) => {
+                        return $(list, 2, '🥑切换样式', getItem(id + 'i', '-1')).select((list, id) => {
                             let i = list.indexOf(input) + '';
-                            setItem("col_type", input);
-                            setItem('i', i);
+                            setItem(id + "col_type", input);
+                            setItem(id + 'i', i);
                             refreshPage();
                             return "toast://已切换" + input
-                        }, list)
-                    })
+                        }, list, id)
+                    }, id)
                 }]
             }
         })
-        j++
-        putMyVar('j', j);
-        registerTask(id, time, $.toString((blist, id, arrs) => {
-            let k = getMyVar(id + 'k', '0')
-            clearMyVar(id + 'k')
-            if (k > blist.length - 1) {
-                k = 0
-            }
+        registerTask(id, time, $.toString((blist, id, arrs, number) => {
+            let k = number(blist.length - 1)
             //log(k);
             try {
                 updateItem(id, {
@@ -173,10 +172,8 @@ function banner(d, blist, time, id) {
             } catch (e) {
                 //log(e.message)
                 unRegisterTask('banner')
-            }
-            k++
-            putMyVar(id + 'k', k)
-        }, blist, id, arrs))
+            }           
+        }, blist, id, arrs, number))
         if (getItem('停止') == 0) {
             unRegisterTask(id);
         }
@@ -184,19 +181,29 @@ function banner(d, blist, time, id) {
     }
 }
 var arr = []
-
+function x(a, b) {
+        return Math.floor(Math.random() * (b - a + 1)) + a;        
+    }
 function cw() {
     if (arr == '' || arr[0].img == '') {
         toast('网站获取失败,切换到默认API');
-        clearItem('j');
+        clearItem('j');       
     }
 }
 switch (getItem('j')) {
     case '网址':
+        if (/\.(jpg|jpeg|png|gif|webp)/.test(getItem('img'))) {
+        setItem('停止', '0')
+            arr.push({
+                img: getItem('img'),
+            })
+        } else {
+        clearItem('停止');
         for (let i = 0; i < 10; i++) {
             arr.push({
                 img: getItem('img') + '#' + Math.random(),
             })
+        }
         }
         break
     case '0':
@@ -221,9 +228,8 @@ switch (getItem('j')) {
             clearItem('j');
         }
         break
-    case '1':
-        var x = Math.floor(Math.random() * 1069) + 2
-        var html = request('http://www.netbian.com/index_' + x + '.htm', {})
+    case '1':       
+        var html = request('http://www.netbian.com/index_' + x(2, 951) + '.htm', {})
         var list = pdfa(html, '.list&&img')
         for (let i = 0; i < list.length; i++) {
             arr.push({
@@ -233,9 +239,8 @@ switch (getItem('j')) {
         cw()
         break
     case '2':
-        var x = Math.floor(Math.random() * 136);
         var dd = []
-        var html = request('https://m.desk.3gbizhi.com/index_' + x + '.html');
+        var html = request('https://m.desk.3gbizhi.com/index_' + x(1, 169) + '.html');
         var list = pdfa(html, '.contlistw&&li');
         list.forEach(data => {
             dd.push({
@@ -251,8 +256,7 @@ switch (getItem('j')) {
         cw()
         break
     case '3':
-        var x = Math.floor(Math.random() * 1117)
-        var html = request('https://www.bizhi3.com/diannaobizhi/list_' + x + '.html');
+        var html = request('https://www.bizhi3.com/diannaobizhi/list_' + x(1, 1242) + '.html');
         var list = pdfa(html, '.po_ul&&img');
         list.forEach(data => {
             arr.push({
@@ -262,8 +266,7 @@ switch (getItem('j')) {
         cw()
         break
     case '4':
-        var x = Math.floor(Math.random() * 709)
-        var html = request('https://m.hczm1.com/zhuomianbizhi/' + x + '.html', {
+        var html = request('https://m.enterdesk.com/zhuomianbizhi/' + x(1, 708) + '.html', {
             headers: {
                 'X-requested-With': 'cn.nr19.mbrowser'
             }
@@ -277,8 +280,7 @@ switch (getItem('j')) {
         cw()
         break
     case '5':
-        var x = Math.floor(Math.random() * 473) + 2;
-        var html = request('http://www.bizhi360.com/desk/list_' + x + '.html');
+        var html = request('http://www.bizhi360.com/desk/list_' + x(2, 474) + '.html');
         var list = pdfa(html, '.pic-list&&li');
         list.forEach(data => {
             var id = pdfh(data, 'img&&src').match(/.*(\d{2})\./)[1];
@@ -290,8 +292,7 @@ switch (getItem('j')) {
         cw()
         break
     case '6':
-        var x = Math.floor(Math.random() * 16)
-        var html = request('https://m.699pic.com/sousuo-diannaobizhi-0-complex-horizontal-0-all-all-' + x + '-0-0-0-0-0-0-all-all-739-0.html');
+        var html = request('https://m.699pic.com/sousuo-diannaobizhi-0-complex-horizontal-0-all-all-' + x(0, 16) + '-0-0-0-0-0-0-all-all-739-0.html');
         var list = pdfa(html, '.res-list&&img');
         list.forEach(data => {
             arr.push({
@@ -301,7 +302,7 @@ switch (getItem('j')) {
         cw()
         break
     case '7':
-        var x = Math.floor(Math.random() * 350) * 20
+        var x = Math.floor(Math.random() * 475) * 20
         try {
             var html = request('https://vt.sm.cn/api/pic/list?query=%E7%94%B5%E8%84%91%E5%A3%81%E7%BA%B8&tag=&limit=20&start=' + x, {});
             var list = JSON.parse(html).data.hit.imgInfo.item
@@ -314,8 +315,7 @@ switch (getItem('j')) {
         cw()
         break
     case '8':
-        var x = Math.floor(Math.random() * 411);
-        var html = request('http://qianye88.com/3840x2160/' + x + '.html');
+        var html = request('http://qianye88.com/3840x2160/' + x(1, 410) + '.html');
         var list = pdfa(html, '.flex-images&&img');
         list.forEach(data => {
             arr.push({
@@ -325,8 +325,7 @@ switch (getItem('j')) {
         cw()
         break
     case '9':
-        var x = Math.floor(Math.random() * 394) + 1;
-        var html = request('https://www.dianyabizhi.com/diannaobizhi/list_' + x + '.html');
+        var html = request('https://www.dianyabizhi.com/diannaobizhi/list_' + x(1, 440) + '.html');
         var list = pdfa(html, '.po_ul&&img');
         list.forEach(data => {
             arr.push({
@@ -336,26 +335,25 @@ switch (getItem('j')) {
         cw()
         break
     case '10':
-        var x = Math.floor(Math.random() * 50) + 1;
         try {
-            var html = request('https://m.51miz.com/api/SearchList/?keyword=%E5%A3%81%E7%BA%B8&plate_path=sucai&orderby=&page=' + x, {});
+            var html = request('https://m.51miz.com/api/SearchList/?keyword=%E5%A3%81%E7%BA%B8&plate_path=sucai&orderby=&page=' + x(1, 50), {});
             var list = JSON.parse(html).data;
             list.forEach(data => {
                 arr.push({
-                    img: 'https:' + data.thumb_url //.replace(/!.*/, '')
+                    img: 'https:' + data.thumb_url + "@Referer=https://m.51miz.com"//.replace(/!.*/, '')
                 })
             })
         } catch (e) {}
         cw()
         break
     case '11':
-        var x = Math.floor(Math.random() * 20) + 2;
-        var x1 = Math.floor(Math.random() * 11) + 2;
-        var htmls = request('https://www.yeitu.com/bizhi/mingxingbz/' + x1 + '.html');
-        var html = request('https://www.yeitu.com/bizhi/meinvbz/' + x + '.html');
-        var lists = pdfa(htmls, '.wall-list&&img');
-        var list = pdfa(html, '.wall-list&&img');
-        var list = lists.concat(list);
+     if (x(0, 1) == '0') {
+        var html = request('https://m.yeitu.com/bizhi/mingxingbz/' + x(1, 15));
+        } else {
+        var html = request('https://m.yeitu.com/bizhi/meinvbz/' + x(1, 24) );
+        }
+        var list = pdfa(html, '.uk-gallery&&img');
+        //var list = lists.concat(list);
         list.forEach(data => {
             arr.push({
                 img: pdfh(data, 'img&&data-src')
@@ -364,9 +362,8 @@ switch (getItem('j')) {
         cw()
         break
     case '12':
-        var x = Math.floor(Math.random() * 244) + 1
         var host = 'https://www.toopic.cn'
-        var html = request(host + '/dnbz/?page=' + x);
+        var html = request(host + '/dnbz/?page=' + x(1, 295));
         var list = pdfa(html, '.pic-list&&img');
         list.forEach(data => {
             arr.push({
@@ -376,8 +373,7 @@ switch (getItem('j')) {
         cw()
         break
     case '13':
-        var x = Math.floor(Math.random() * 1107) + 2
-        var html = request('https://www.4kdesk.com/pc/index_' + x + '.html');
+        var html = request('https://www.4kdesk.com/pc/index_' + x(2, 1108) + '.html');
         var list = pdfa(html, '.pic-list&&img');
         list.forEach(data => {
             arr.push({
@@ -387,8 +383,7 @@ switch (getItem('j')) {
         cw()
         break
     case '14':
-        var x = Math.floor(Math.random() * 2140) + 2
-        var html = request('https://www.moyublog.com/hdwallpapers/index_' + x + '.html');
+        var html = request('https://www.moyublog.com/hdwallpapers/index_' + x(2, 3357) + '.html');
         var list = pdfa(html, '.slist&&img');
         list.forEach(data => {
             arr.push({
@@ -398,9 +393,8 @@ switch (getItem('j')) {
         cw()
         break
     case '15':
-        var x = Math.floor(Math.random() * 113)
-        var html = request('https://mbizhi.cheetahfun.com/tag_93/index_' + x + '.shtml');
-        var list = pdfa(html, '.justify-between&&img');
+        var html = request('https://mbizhi.cheetahfun.com/dn/c3j/p' + x(1, 45));
+        var list = pdfa(html, 'section&&li');
         list.forEach(data => {
             arr.push({
                 img: pdfh(data, 'img&&src').replace(/(.*?)\?.*/, '$1')
@@ -409,8 +403,7 @@ switch (getItem('j')) {
         cw()
         break
     case '16':
-        var x = Math.floor(Math.random() * 19)
-        var html = request('https://zhutix.com/animated/page/' + x + '/');
+        var html = request('https://zhutix.com/animated/page/' + x(1, 18) + '/');
         var list = pdfa(html, '.b2_gap&&img');
         list.forEach(data => {
             arr.push({
@@ -420,34 +413,49 @@ switch (getItem('j')) {
         cw()
         break
     case '17':
-        if (arr == '' && getMyVar('ts', '1') != 0) {
-            confirm({
-                title: '提示',
-                content: '动图费流量，注意流量😅',
-                confirm: $.toString(() => {
-                    return putMyVar('ts', '0')
-                }),
-            })
-        }
-        var x = Math.floor(Math.random() * 2) + 1
-        var i = Math.floor(Math.random() * 7)
+        var i = x(0, 6)
         var aaa = ["bizhi", "diannaobizhi", "bizhifengjing", "bizhidongman", "keai", "katong", "jianyue"]
-        var html = request('https://www.vcg.com/creative-image/' + aaa[i] + '/?orientType%5B0%5D=1&assetFormat%5B0%5D=5&page=' + x);
+        var url = 'https://www.vcg.com/creative-image/' + aaa[i] + '/?orientType%5B0%5D=1&assetFormat%5B0%5D=5&page=';
+        var html = request(url)
+        var ym = pdfh(html, '.paginationTotal&&Text').match(/\d+/)[0]
+        var html = request(url + x(1, Number(ym)))
         var list = pdfa(html, '.gallery_inner&&img');
-        list.forEach(data => {
-            arr.push({
-                img: 'https:' + pdfh(data, 'img&&src')
+        var z = x(0, list.length - 1)          
+                arr.push({
+                    img: 'https:' + pdfh(list[z], 'img&&data-min')               
             })
-        })
+            setItem('停止', '0')
         cw()
-        break
-}
+        break 
+    case '18':
+            var html = request('https://www.hippopx.com/zh/search?q=%E5%A3%81%E7%BA%B8&page=' + x(1, 47));
+            var list = pdfa(html, '.main_list&&img');
+            list.forEach(data => {
+                arr.push({
+                    img: pdfh(data, 'img&&src')
+                })
+            })
+            cw()
+            break 
+    case '19':
+           var html = request('https://m.ivsky.com/bizhi/mei_nv_t10/index_' + x(2, 300) + '.html',{headers: {
+               'x-requested-with': 'com.uop.app'
+            }});
+           var list = pdfa(html, '.ul_third&&img');
+           list.forEach(data => {
+               arr.push({
+                   img: ('https:'+pdfh(data, 'img&&src')).replace(/https:\/\/img\.ivsky\.com\/img\/bizhi\/t/ ,'https://img-pre.ivsky.com/img/bizhi/pre')
+               })
+           })
+           cw()
+           break    
+   }
 if (arr == '' || arr[0].img == '') {
     var arr = [];
     for (let i = 0; i < 10; i++) {
         arr.push({
-            img: 'https://www.dmoe.cc/random.php' + '#' + Math.random()
+            img: 'https://picsum.photos/400/200' + '#' + Math.random()
         })
     }
 }
-var gengxin = '新增, 弹窗增加图标显示(2024.02.06)'
+var gengxin = '优化_by缘分(2024.09.21)'
