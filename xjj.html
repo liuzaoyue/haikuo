@@ -702,7 +702,7 @@ function FullScreen() {
 		    if (xjjtime !== time || null === xjjtime) {
 		        localStorage.setItem('xjjtime', time);
 		        var 本地 = 'hiker://files/yuan/xjj.html';
-		        var 远程 = 'https://gitlab.com/liuzaoyue/l/-/raw/main/xjj.html';
+		        var 远程 = 'https://raw.githubusercontent.com/liuzaoyue/haikuo/refs/heads/master/xjj.html';
 		        var newtime = formatLocalDate(new Date());
 		        var gx = '优化，欢迎使用。__缘分';		        
 		        if (request(远程) != request(本地)) {
