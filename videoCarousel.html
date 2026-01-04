@@ -313,7 +313,7 @@ player.ontimeupdate = function() {
   if (jgt >= 2 || jgt < 0) {
       localStorage.setItem('time', time);
       var 本地 = 'hiker://files/yuan/videoCarousel.html';
-      var 远程 = 'https://gitlab.com/liuzaoyue/l/-/raw/main/videoCarousel.html';
+      var 远程 = 'https://raw.githubusercontent.com/liuzaoyue/haikuo/refs/heads/master/videoCarousel.html';
       var newtime = formatLocalDate(new Date());
       var version = '_by缘 分';
       var nowVersion = request(远程).match(/version = '(.*)'/)[1]; 
