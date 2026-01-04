@@ -42,7 +42,7 @@
             //border-radius: 1px; 
         }
     </style> 
-        <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.1/jquery.min.js"></script> 
+        <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script> 
     </head> 
     <body> 
         <div class="input-container"> 
@@ -50,7 +50,7 @@
             <input type="file" id="videoInput" accept="video/*"> 
             <button style="font-size:20px;background-color:#FFFFFF;border:0;border-radius:5px;" id="mute-button" onclick="muteVideo()">静音</button> 
         </div> 
-        <video id="myVideo" loop="loop" preload="auto" autoplay="autoplay" poster="https://hikerfans.com/weisyr/img/Loading1.gif" src=""> 
+        <video id="myVideo" loop="loop" preload="auto" autoplay="autoplay" poster="http://123.56.105.145/weisyr/img/Loading1.gif" src=""> 
         </video> 
         <script> 
   eval(fy_bridge_app.getInternalJs());
@@ -300,23 +300,32 @@ player.ontimeupdate = function() {
   }, {
       passive: false
   });
-    
-  let time = new Date().getDate().toString();
-  if (localStorage.getItem('time', '') != time) {
+  function formatLocalDate(date) {
+    return (
+        date.getFullYear() + '-' +
+        (date.getMonth() + 1).toString().padStart(2, '0') + '-' +
+        date.getDate().toString().padStart(2, '0')
+    );
+};  
+  let time = new Date().getDate();
+  let times = parseInt(localStorage.getItem('time')) || time;
+  let jgt = time - times;
+  if (jgt >= 2 || jgt < 0) {
       localStorage.setItem('time', time);
       var 本地 = 'hiker://files/yuan/videoCarousel.html';
-      var 远程 = 'https://gitcode.net/liuzaoyue/hai/-/raw/master/videoCarousel.html';
-      var version = '2024.09.18_by缘分';
+      var 远程 = 'https://gitlab.com/liuzaoyue/l/-/raw/main/videoCarousel.html';
+      var newtime = formatLocalDate(new Date());
+      var version = '_by缘 分';
       var nowVersion = request(远程).match(/version = '(.*)'/)[1]; 
             
       if (nowVersion != version) {
           fba.writeFile(本地, request(远程));
-          $$$().x5LazyRule((nowVersion) => {
+          $$$().x5LazyRule((nowVersion, newtime) => {
               confirm({
                   title: '更新完成',
-                  content: nowVersion + "，欢迎使用",
+                  content: newtime + nowVersion + "，欢迎使用",
               })
-          }, nowVersion)
+          }, nowVersion, newtime)
       }
   }
     </script>  
