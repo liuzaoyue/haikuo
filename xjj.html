@@ -48,7 +48,7 @@
                 background-repeat: no-repeat;
                 background-position-x: center;
                 background-position-y: center;
-                background-size: 100px 100px            
+                background-size: 50px 50px            
             } 
             .play-icons {
 			
@@ -65,7 +65,7 @@
                 background-repeat: no-repeat;
                 background-position-x: center;
                 background-position-y: center;
-                background-size: 125px 125px            
+                background-size: 62px 62px            
             }       
 			.progress {
 			            position: fixed;
@@ -150,8 +150,8 @@
               align-items: center;
              }							
 		</style>
-		<!-- <script src="https://cdn.bootcdn.net/ajax/libs/slick-carousel/1.8.1/slick.js"></script> -->
-		<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.js"></script>
+	   <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script> 
+		<!--script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script>-->
 	</head>
 	<body>
 		<div class="app">
@@ -159,7 +159,7 @@
 		    </div>
 		    <div class="play-icons" id="playIcons" onclick="">
 		    </div>
-			<video id="myVideo" preload="auto" autoplay="autoplay" poster="https://hikerfans.com/weisyr/img/Loading1.gif" src="">
+			<video id="myVideo" preload="auto" autoplay="autoplay" poster="http://123.56.105.145/weisyr/img/Loading1.gif" src="">
 			</video>		
         </div>
 		<div class="progress">
@@ -218,7 +218,7 @@
 		        document.getElementById("myModal").style.display = "flex";
 		        setTimeout(function() {
 		            closeTip();
-		        }, 500);
+		        }, 3000);
 		        function closeTip() {
 		            document.getElementById("myModal").style.display = "none";
 		        }
@@ -309,26 +309,41 @@
 		        } else {
 		            // 弹窗已经关闭，我们需要打开它
 		            var options = [{
-		                    name: "源07",
-		                    url: "https://api.linhun.vip/api/Littlesistervideo?type=json&apiKey=4ce6a5c5bdf1374020dc6ef38bacc31a",
+		                    name: '源1',
+		                    url: 'https://api.qqsuu.cn/api/dm-xjj2?_t=0' + Math.random()
+		                }, {
+		                    name: '源2',
+		                    url: 'https://api.cenguigui.cn/api/mp4/MP4_xiaojiejie.php?_t=0' + Math.random()
+		                }, {
+		                    name: '源3',
+		                    url: 'https://api.kuleu.com/api/xjj?type=video&_t=0' + Math.random()
+		                }, {
+		                    name: '源4',
+		                    url: 'https://api.xn--ei1aa.cn/API/ks_new.php?type=text'
+		                }, {
+		                    name: '源5',
+		                    url: 'https://www.hhlqilongzhu.cn/api/MP4_xiaojiejie.php?_t=0' + Math.random()
+		                }, {
+		                    name: '源6',
+		                    url: 'https://jkapi.com/api/xjj_video?apiKey=69b159635b2789ee4e3a807985090777'
+		                }, {
+		                    name: '源7',
+		                    url: 'https://api.zhcnli.cn/api/duanshiping/index.php?_t=0' + Math.random()
 		                }, {
 		                    name: "源08",
 		                    url: "https://v.nrzj.vip/video.php?_t=0" + Math.random(),
 		                }, {
-		                    name: "源09",
-		                    url: "https://www.nihaowua.com/v/video.php?_t=0" + Math.random(),
+		                    name: '源9',
+		                    url: 'https://api.heylie.cn/api/video/?v=xq&_t=0' + Math.random()
 		                }, {
 		                    name: '源10',
-		                    url: 'https://cn-sy1.rains3.com/tc1/1%20(ssss).mp4'
+		                    url: 'https://www.wudada.online/Api/NewSp'
 		                }, {
 		                    name: '源11',
-		                    url: 'https://api.zxz.ee/api/video/?type=2'
+		                    url: 'https://api.pearktrue.cn/api/random/xjj/?type=json'
 		                }, {
 		                    name: '源12',
 		                    url: 'https://jx.iqfk.top/api/sjsp.php'
-		                }, {
-		                    name: '源13',
-		                    url: 'http://api.treason.cn/API/xjj.php'
 		                }, {
 		                    name: '源14',
 		                    url: 'https://777.cam/api/M/?type=302'
@@ -346,7 +361,19 @@
 		                    url: 'https://api.qqsuu.cn/api/dm-xjj?type=json&apiKey=67b63b35fef398c2985f7acc857659e1'
 		                }, {
 		                    name: '源19',
-		                    url: 'http://tucdn.wpon.cn/api-girl/index.php?wpon=url'
+		                    url: 'https://api.kuleu.com/api/xjj?type=video&_t=0' + Math.random()
+		                }, {
+		                    name: '源20',
+		                    url: 'https://api.suyanw.cn/api/xjj/api.php?_t=0' + Math.random()
+		                }, {
+		                    name: '源21',
+		                    url: 'https://api.kuleu.com/api/MP4_xiaojiejie?_t=0' + Math.random()
+		                }, {
+		                    name: '源22',
+		                    url: 'https://api.7645.cn/video/?_t=0' + Math.random()
+		                }, {
+		                    name: '源23',
+		                    url: 'https://api.suyanw.cn/api/kysp.php?lx=女神&_t=0' + Math.random()
 		                }, {
 		                    name: "姐姐",
 		                    url: "https://jiejie.uk/xjj/get/video.php?_t=0" + Math.random(),
@@ -357,47 +384,11 @@
 		                    name: "抖抖",
 		                    url: "http://dou.plus/get/get1.php",
 		                }, {
-		                    name: "kuai",
-		                    url: "http://119.91.196.247:7778/xjj/ksget.php?_t=0" + Math.random(),
-		                }, {
-		                    name: "极客",
-		                    url: "https://t.xxgeek.com/tools/mmvod/m.php",
-		                }, {
-		                    name: "网红",
-		                    url: "https://api.linhun.vip/api/jingxuanshipin?type=网红&apiKey=b3c4da047a34a03956b93a76d070ebb5",
-		                }, {
-		                    name: "明星",
-		                    url: "https://api.linhun.vip/api/jingxuanshipin?type=明星&apiKey=b3c4da047a34a03956b93a76d070ebb5",
-		                }, {
-		                    name: "热舞",
-		                    url: "https://api.linhun.vip/api/jingxuanshipin?type=热舞&apiKey=b3c4da047a34a03956b93a76d070ebb5",
-		                }, {
-		                    name: "风景",
-		                    url: "https://api.linhun.vip/api/jingxuanshipin?type=风景&apiKey=b3c4da047a34a03956b93a76d070ebb5",
-		                }, {
-		                    name: "游戏",
-		                    url: "https://api.linhun.vip/api/jingxuanshipin?type=游戏&apiKey=b3c4da047a34a03956b93a76d070ebb5",
-		                }, {
-		                    name: "微视",
-		                    url: "https://api.linhun.vip/api/weishi?apiKey=ee70d9266073c421ecaa3d603978ce61",
-		                }, /*{
-		                    name: "抖音热点",
-		                    url: "https://api.linhun.vip/api/rddouyin?apiKey=d61f3ff73245436bbf3d3d7d096b3dae",
-		                }, {
-		                    name: "抖音推荐",
-		                    url: "https://api.linhun.vip/api/tjdouyin?apiKey=fc806de3fd5031bdcc63c3a686eff9ec",
-		                }, {
-		                    name: "抖音娱乐",
-		                    url: "https://api.linhun.vip/api/yldouyin?apiKey=31585470acf2f6594fafbc3a140799bb",
-		                },*/ {
 		                    name: "kan",
 		                    url: "http://www.kankanbb.top/video.php?_t=0" + Math.random()
 		                }, {
 		                    name: "dou",
 		                    url: "https://www.tblist.cn/douyin/video.php?_t=0" + Math.random()
-		                }, {
-		                    name: "游艇",
-		                    url: "https://play.cnnnnet.com/youtinggirl.php?_t=0" + Math.random(),
 		                }, {
 		                    name: "国内",
 		                    url: "https://diskgirl.com/get/get1.php"
@@ -405,13 +396,7 @@
 		                    name: "极致",
 		                    url: "https://p.txqq.pro/api/girls?limit=1",
 		                }
-		            ];
-		            for (var j = 6; j > 0; j--) {
-		                options.unshift({
-		                    name: '源0' + j,
-		                    url: 'http://119.91.196.247:7778/xjj/get' + j + '.php'
-		                });
-		            }
+		            ];	           
 		            for (var j = 1; j < 9; j++) {
 		                options.push({
 		                    name: 'pf0' + j,
@@ -423,16 +408,6 @@
 		                    url: 'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php'
 		                });
 		                options.push(
-		                /*{
-		                    name: '抖音',
-		                    url: 'http://m.sharenice.net/mobile/get_more_videos?cate=200&page='
-		                }, {
-		                    name: '快手',
-		                    url: 'http://m.sharenice.net/mobile/get_more_videos?cate=201&page='
-		                }, {
-		                    name: '火山',
-		                    url: 'http://m.sharenice.net/mobile/get_more_videos?cate=203&page='
-		                }, */
 		                {
 		                    name: '美女',
 		                    url: 'https://v1.21lhz.cn/API/Video/api.php?_t=0' + Math.random()
@@ -443,7 +418,7 @@
                         
 		            var name = localStorage.getItem('xjjname');
 		           if(null === name) {
-		                name = '源01';
+		                name = '源08';
 		           }
 		            const index = options.findIndex(function(val) {
 		                return val.name === name
@@ -494,7 +469,7 @@
 function players() {
     var url = localStorage.getItem('jjurl');
 if(null === url) {
-    url = 'http://119.91.196.247:7778/xjj/get1.php';
+    url = 'https://v.nrzj.vip/video.php?_t=0' + Math.random();
 }; 
   if (/kuaiyuhudong/.test(url)) {
      fetch(url, {
@@ -525,71 +500,38 @@ if(null === url) {
           $("#myVideo").attr("src", url);
           })    
     } else 
- /* if (/sharenice/.test(url)) {
-  x = Math.floor(Math.random() * 697) + 1;
-  i = Math.floor(Math.random() * 208) + 1;
-  j = Math.floor(Math.random() * 251) + 1;
-  z = Math.floor(Math.random() * 89) + 1;
-  if (/200/.test(url)) {
-  url = url + x
-  }else if (/201/.test(url)) {
-  url = url + i
-  }else if (/576O5aWz/.test(url)) {
-  url = url + j + '&type=t'
-  }else if (/203/.test(url)) {
-  url = url + z
-  }
-  //fba.log(url)
-     fetch(url, {
-              headers: { 
-    "X-Requested-With": "XMLHttpRequest"
-        },
-              method: 'GET',              
-          })
-          .then(response => {
-              if (!response.ok) {
-                  throw new Error("网络请求失败，正在重新尝试...");
-              }
-              return response.text();
-          })
-          .then(data => {              
-          var list = JSON.parse(data).data.match(/a href=".*?"/g)         
-          i = Math.floor(Math.random() * list.length);
-          var url = list[i].split('"')[1]          
-          return fetch(url, {
-                  method: 'GET'
-              });
+  if (/t=0|\.mp4|iqfk|cam|yujn|NewSp|jkapi/.test(url)) {
+        $("#myVideo").attr("src", url);
+    } else 
+  if (/meinv|qqsuu/.test(url)) {
+               fetch(url, {
+              method: 'GET'
           })  
-          .then(response => {
+           .then(response => {
               if (!response.ok) {
                   throw new Error("网络请求失败，正在重新尝试...");
               }
               return response.text();
           })
           .then(data => {
-              url = data.match(/video.*?src="(.*?)"/)[1]; 
-          $("#myVideo").attr("src", url);
-          })    
-    } else */
-  if (/t=0|\.mp4|mnapi|iqfk|cam|yujn|zxz|shenke/.test(url)) {
-    url = url.replace('ssss', Math.floor(Math.random()*678+1))
-        $("#myVideo").attr("src", url);
-    } else 
-  if (/treason/.test(url)) {
-        getJSON(url)
-    } else {
+          //fba.log(data)
+                    data = data.match(/.*(http.*?mp4)/)[1];
+          $("#myVideo").attr("src", data);
+          })               
+                } else {
         $.get(url, function(data, status) {
             if (status == status) {
             
-                if (/xxgeek|meinv|67b63|txqq/.test(url)) {
+                if (/txqq/.test(url)) {          
                     data = data.match(/.*(http.*?\.mp4)/)[1];                 
                 }
-                if (/linhun|wudada/.test(url)) {
+                if (/ScSp|pearktrue/.test(url)) {
                     data = data.video || data.视频 || data.data;
                 }
                 if (!data.startsWith("http")) {
                     data = 'https:' + data;
                 }
+                //fba.log(data)
                 console.log("成功获取数据！");
                 player.src = data;
                 //player.play()
@@ -749,21 +691,28 @@ function FullScreen() {
 		    window.request = window.request00 || window.request;
 		    let time = new Date().getDate().toString();
 		    //log(time)
-		    
+		function formatLocalDate(date) {
+    return (
+        date.getFullYear() + '-' +
+        (date.getMonth() + 1).toString().padStart(2, '0') + '-' +
+        date.getDate().toString().padStart(2, '0')
+    );
+};
 		    let xjjtime = localStorage.getItem('xjjtime');
 		    if (xjjtime !== time || null === xjjtime) {
 		        localStorage.setItem('xjjtime', time);
-		        var 本地 = 'hiker://files/yuan/xjj1.html';
-		        var 远程 = 'https://gitcode.net/liuzaoyue/hai/-/raw/master/xjj1.html';
-		        var gx = '优化。欢迎使用。__缘分(2024.9.16)';
+		        var 本地 = 'hiker://files/yuan/xjj.html';
+		        var 远程 = 'https://gitlab.com/liuzaoyue/l/-/raw/main/xjj.html';
+		        var newtime = formatLocalDate(new Date());
+		        var gx = '优化，欢迎使用。__缘分';		        
 		        if (request(远程) != request(本地)) {
 		            fba.writeFile(本地, request(远程));
-		            $$$().x5LazyRule((yc) => {
+		            $$$().x5LazyRule((yc, newtime) => {
 		                confirm({
 		                    title: '更新完成',
-		                    content: yc.match(/gx = '(.*)'/)[1]
+		                    content: yc.match(/gx = '(.*)'/)[1] + '_' +newtime
 		                })
-		            }, request(远程))
+		            }, request(远程), newtime)
 		        }
 		    }
 	</script>
