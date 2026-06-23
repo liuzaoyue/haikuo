@@ -8,9 +8,9 @@ function banner(d, blist, time, id) {
         if (time == undefined || time < 100) {
             time = 3000
         }
-        var  arrs  =   []
-        for  (let  ii  in  blist)  {        
-            arrs.push(blist[ii].img);   
+        var  arrs  =   []
+        for  (let  ii  in  blist)  {        
+            arrs.push(blist[ii].img);   
         }
         function number(j, x) { if (x == null || x == undefined || x == '') { x = 0 }; x = x - 1; let sum = getVar('i', String(x + 1)); if (sum == null || sum == undefined || sum >= j) {sum = x}; sum++; putVar('i', sum); return sum; }
         let j = number(blist.length - 1)
@@ -100,9 +100,6 @@ function banner(d, blist, time, id) {
                         }, {
                             title: "千叶网",
                             icon: "http://qianye88.com/favicon.ico",
-                        }, {
-                            title: "典雅壁纸",
-                            icon: "http://bj-feiyuantu.oss-cn-beijing.aliyuncs.com/web/searchByImagevcg_image_upload_d54e3600-c257-11ee-b01d-67661eb43361.jpeg",
                         }, {
                             title: "觅知网",
                             icon: "https://m.51miz.com/favicon.ico",
@@ -241,6 +238,7 @@ switch (getItem('j')) {
     case '2':
         var dd = []
         var html = request('https://m.desk.3gbizhi.com/index_' + x(1, 169) + '.html');
+try {
         var list = pdfa(html, '.contlistw&&li');
         list.forEach(data => {
             dd.push({
@@ -253,6 +251,7 @@ switch (getItem('j')) {
                 img: pdfh(item, '#mobile_c_img&&img&&src')
             })
         })
+}catch (e) {}
         cw()
         break
     case '3':
@@ -274,7 +273,7 @@ switch (getItem('j')) {
         var list = pdfa(html, '.mbig_pic_list&&img');
         for (let i = 0; i < list.length; i++) {
             arr.push({
-                img: pdfh(list[i], 'img&&src') + "@Referer="
+                img: pd(list[i], 'img&&src') + "@Referer="
             })
         }
         cw()
@@ -284,7 +283,7 @@ switch (getItem('j')) {
         var list = pdfa(html, '.pic-list&&li');
         list.forEach(data => {
             var id = pdfh(data, 'img&&src').match(/.*(\d{2})\./)[1];
-            var img = pdfh(data, 'img&&src') //.replace('litimg', 'bbpic/' + id);
+            var img = pd(data, 'img&&src') //.replace('litimg', 'bbpic/' + id);
             arr.push({
                 img: img
             })
@@ -292,11 +291,13 @@ switch (getItem('j')) {
         cw()
         break
     case '6':
-        var html = request('https://m.699pic.com/sousuo-diannaobizhi-0-complex-horizontal-0-all-all-' + x(0, 16) + '-0-0-0-0-0-0-all-all-739-0.html');
+        var html = request('https://m.699pic.com/sousuo-diannaobizhi-0-complex-horizontal-0-all-all-' + x(0, 30) + '-0-0-0-0-0-0-all-all-739-0.html');
+log(html)
         var list = pdfa(html, '.res-list&&img');
+log(list)
         list.forEach(data => {
             arr.push({
-                img: 'https:' + pdfh(data, 'img&&src')
+                img: pd(data, 'img&&src')
             })
         })
         cw()
@@ -319,21 +320,12 @@ switch (getItem('j')) {
         var list = pdfa(html, '.flex-images&&img');
         list.forEach(data => {
             arr.push({
-                img: pdfh(data, 'img&&data-original') //.replace(/(.*?)\?.*/, '$1')
+                img: pd(data, 'img&&data-original') //.replace(/(.*?)\?.*/, '$1')
             })
         })
         cw()
         break
-    case '9':
-        var html = request('https://www.dianyabizhi.com/diannaobizhi/list_' + x(1, 440) + '.html');
-        var list = pdfa(html, '.po_ul&&img');
-        list.forEach(data => {
-            arr.push({
-                img: pdfh(data, 'img&&src').includes('http') ? pdfh(data, 'img&&src') : 'https://www.dianyabizhi.com' + pdfh(data, 'img&&src')
-            })
-        })
-        cw()
-        break
+    
     case '10':
         try {
             var html = request('https://m.51miz.com/api/SearchList/?keyword=%E5%A3%81%E7%BA%B8&plate_path=sucai&orderby=&page=' + x(1, 50), {});
@@ -356,18 +348,18 @@ switch (getItem('j')) {
         //var list = lists.concat(list);
         list.forEach(data => {
             arr.push({
-                img: pdfh(data, 'img&&data-src')
+                img: pd(data, 'img&&data-src')
             })
         })
         cw()
         break
     case '12':
         var host = 'https://www.toopic.cn'
-        var html = request(host + '/dnbz/?page=' + x(1, 295));
+        var html = request(host+'/dnbz/?page=' + x(1, 898));
         var list = pdfa(html, '.pic-list&&img');
         list.forEach(data => {
             arr.push({
-                img: host + pdfh(data, 'img&&data-original')
+                img: pd(data, 'img&&data-original')
             })
         })
         cw()
@@ -377,7 +369,7 @@ switch (getItem('j')) {
         var list = pdfa(html, '.pic-list&&img');
         list.forEach(data => {
             arr.push({
-                img: pdfh(data, 'img&&data-original') + '@Referer=https://www.4kdesk.com/pc/'
+                img: pd(data, 'img&&data-original') + '@Referer=https://www.4kdesk.com/pc/'
             })
         })
         cw()
@@ -387,7 +379,7 @@ switch (getItem('j')) {
         var list = pdfa(html, '.slist&&img');
         list.forEach(data => {
             arr.push({
-                img: pdfh(data, 'img&&data-original')
+                img: pd(data, 'img&&data-original')
             })
         })
         cw()
@@ -397,7 +389,7 @@ switch (getItem('j')) {
         var list = pdfa(html, 'section&&li');
         list.forEach(data => {
             arr.push({
-                img: pdfh(data, 'img&&src').replace(/(.*?)\?.*/, '$1')
+                img: pd(data, 'img&&src').replace(/(.*?)\?.*/, '$1')
             })
         })
         cw()
@@ -407,7 +399,7 @@ switch (getItem('j')) {
         var list = pdfa(html, '.b2_gap&&img');
         list.forEach(data => {
             arr.push({
-                img: pdfh(data, 'img&&src')
+                img: pd(data, 'img&&src')
             })
         })
         cw()
@@ -415,6 +407,7 @@ switch (getItem('j')) {
     case '17':
         var i = x(0, 6)
         var aaa = ["bizhi", "diannaobizhi", "bizhifengjing", "bizhidongman", "keai", "katong", "jianyue"]
+try {
         var url = 'https://www.vcg.com/creative-image/' + aaa[i] + '/?orientType%5B0%5D=1&assetFormat%5B0%5D=5&page=';
         var html = request(url)
         var ym = pdfh(html, '.paginationTotal&&Text').match(/\d+/)[0]
@@ -425,6 +418,7 @@ switch (getItem('j')) {
                     img: 'https:' + pdfh(list[z], 'img&&data-min')               
             })
             setItem('停止', '0')
+}catch (e) {}
         cw()
         break 
     case '18':
@@ -432,7 +426,7 @@ switch (getItem('j')) {
             var list = pdfa(html, '.main_list&&img');
             list.forEach(data => {
                 arr.push({
-                    img: pdfh(data, 'img&&src')
+                    img: pd(data, 'img&&src')
                 })
             })
             cw()
