@@ -438,7 +438,7 @@ try {
            var list = pdfa(html, '.ul_third&&img');
            list.forEach(data => {
                arr.push({
-                   img: ('https:'+pdfh(data, 'img&&src')).replace(/https:\/\/img\.ivsky\.com\/img\/bizhi\/t/ ,'https://img-pre.ivsky.com/img/bizhi/pre')
+                   img: pd(data, 'img&&src')                 
                })
            })
            cw()
