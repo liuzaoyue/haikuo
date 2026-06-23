@@ -436,6 +436,7 @@ try {
                'x-requested-with': 'com.uop.app'
             }});
            var list = pdfa(html, '.ul_third&&img');
+           log(list)
            list.forEach(data => {
                arr.push({
                    img: pd(data, 'img&&src')                 
