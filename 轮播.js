@@ -435,6 +435,7 @@ try {
            var html = request('https://m.ivsky.com/bizhi/mei_nv_t10/index_' + x(2, 300) + '.html',{headers: {
                'x-requested-with': 'com.uop.app'
             }});
+            log(html)
            var list = pdfa(html, '.ul_third&&img');
            log(list)
            list.forEach(data => {
