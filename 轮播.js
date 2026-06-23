@@ -292,9 +292,8 @@ try {
         break
     case '6':
         var html = request('https://m.699pic.com/sousuo-diannaobizhi-0-complex-horizontal-0-all-all-' + x(0, 30) + '-0-0-0-0-0-0-all-all-739-0.html');
-log(html)
+
         var list = pdfa(html, '.res-list&&img');
-log(list)
         list.forEach(data => {
             arr.push({
                 img: pd(data, 'img&&src')
@@ -326,7 +325,7 @@ log(list)
         cw()
         break
     
-    case '10':
+    case '9':
         try {
             var html = request('https://m.51miz.com/api/SearchList/?keyword=%E5%A3%81%E7%BA%B8&plate_path=sucai&orderby=&page=' + x(1, 50), {});
             var list = JSON.parse(html).data;
@@ -338,7 +337,7 @@ log(list)
         } catch (e) {}
         cw()
         break
-    case '11':
+    case '10':
      if (x(0, 1) == '0') {
         var html = request('https://m.yeitu.com/bizhi/mingxingbz/' + x(1, 15));
         } else {
@@ -353,7 +352,7 @@ log(list)
         })
         cw()
         break
-    case '12':
+    case '11':
         var host = 'https://www.toopic.cn'
         var html = request(host+'/dnbz/?page=' + x(1, 898));
         var list = pdfa(html, '.pic-list&&img');
@@ -364,7 +363,7 @@ log(list)
         })
         cw()
         break
-    case '13':
+    case '12':
         var html = request('https://www.4kdesk.com/pc/index_' + x(2, 1108) + '.html');
         var list = pdfa(html, '.pic-list&&img');
         list.forEach(data => {
@@ -374,7 +373,7 @@ log(list)
         })
         cw()
         break
-    case '14':
+    case '13':
         var html = request('https://www.moyublog.com/hdwallpapers/index_' + x(2, 3357) + '.html');
         var list = pdfa(html, '.slist&&img');
         list.forEach(data => {
@@ -384,7 +383,7 @@ log(list)
         })
         cw()
         break
-    case '15':
+    case '14':
         var html = request('https://mbizhi.cheetahfun.com/dn/c3j/p' + x(1, 45));
         var list = pdfa(html, 'section&&li');
         list.forEach(data => {
@@ -394,7 +393,7 @@ log(list)
         })
         cw()
         break
-    case '16':
+    case '15':
         var html = request('https://zhutix.com/animated/page/' + x(1, 18) + '/');
         var list = pdfa(html, '.b2_gap&&img');
         list.forEach(data => {
@@ -404,15 +403,19 @@ log(list)
         })
         cw()
         break
-    case '17':
+    case '16':
         var i = x(0, 6)
         var aaa = ["bizhi", "diannaobizhi", "bizhifengjing", "bizhidongman", "keai", "katong", "jianyue"]
+        
 try {
         var url = 'https://www.vcg.com/creative-image/' + aaa[i] + '/?orientType%5B0%5D=1&assetFormat%5B0%5D=5&page=';
+        //log(url)
         var html = request(url)
-        var ym = pdfh(html, '.paginationTotal&&Text').match(/\d+/)[0]
+        var ym = pdfh(html, '.center-page-content&&.page-link,-1&&Text').match(/\d+/)[0]
+        log(ym)
         var html = request(url + x(1, Number(ym)))
         var list = pdfa(html, '.gallery_inner&&img');
+        //log(list)
         var z = x(0, list.length - 1)          
                 arr.push({
                     img: 'https:' + pdfh(list[z], 'img&&data-min')               
@@ -421,26 +424,25 @@ try {
 }catch (e) {}
         cw()
         break 
-    case '18':
+    case '17':
             var html = request('https://www.hippopx.com/zh/search?q=%E5%A3%81%E7%BA%B8&page=' + x(1, 47));
             var list = pdfa(html, '.main_list&&img');
             list.forEach(data => {
                 arr.push({
-                    img: pd(data, 'img&&src')
+                    img: pdfh(data, 'img&&src')
                 })
             })
             cw()
             break 
-    case '19':
+    case '18':
            var html = request('https://m.ivsky.com/bizhi/mei_nv_t10/index_' + x(2, 300) + '.html',{headers: {
                'x-requested-with': 'com.uop.app'
             }});
-            log(html)
            var list = pdfa(html, '.ul_third&&img');
-           log(list)
+          
            list.forEach(data => {
                arr.push({
-                   img: pd(data, 'img&&src')                 
+                   img: 'https:'+ pdfh(data, 'img&&src')                 
                })
            })
            cw()
