@@ -675,59 +675,7 @@ function FullScreen() {
 		eval(fy_bridge_app.getInternalJs());
 		    window.request = window.request00 || window.request;
 		    let time = new Date().getDate().toString();
-		    //log(time)
-		function formatLocalDate(date) {
-    return (
-        date.getFullYear() + '-' +
-        (date.getMonth() + 1).toString().padStart(2, '0') + '-' +
-        date.getDate().toString().padStart(2, '0')
-    );
-};
-		    let xjjtime = localStorage.getItem('xjjtime');
-		    if (xjjtime !== time || null === xjjtime) {
-		        localStorage.setItem('xjjtime', time);
-		        var 本地 = 'hiker://files/yuan/xjj.html';
-		        var 远程 = 'https://raw.githubusercontent.com/liuzaoyue/haikuo/refs/heads/master/xjj.html';
-		        var newtime = formatLocalDate(new Date());
-		        var gx = '优化，欢迎使用。__缘分';		        
-		        if (request(远程) != request(本地)) {
-		            fba.writeFile(本地, request(远程));
-		            $$$().x5LazyRule((yc, newtime) => {
-		                confirm({
-		                    title: '更新完成',
-		                    content: yc.match(/gx = '(.*)'/)[1] + '_' +newtime
-		                })
-		            }, request(远程), newtime)
-		        }
-		    }
-	</script>
-	</body>
-</html>/ 重置进度条
-        progressBar.style.width = '0%';
-
-        // 设置当前时间为总时长
-        timeDiv.textContent = `${formatTime(player.duration)}`;
-    } else {
-        const currentTime = player.currentTime;
-        const duration = player.duration;
-        const progressWidth = (currentTime / duration) * 100;
-        progressBar.style.width = `${progressWidth}%`;
-        timeDiv.textContent = formattedDuration;
-    }
-}, 100);
-		
-		    function formatTime(time) {
-		        const minutes = Math.floor(time / 60);
-		        const seconds = Math.floor(time % 60);
-		        return `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-		    }
-		    
-	</script>
-	<script>
-		eval(fy_bridge_app.getInternalJs());
-		    window.request = window.request00 || window.request;
-		    let time = new Date().getDate().toString();
-		    //log(time)
+		    log(time)
 		function formatLocalDate(date) {
     return (
         date.getFullYear() + '-' +
