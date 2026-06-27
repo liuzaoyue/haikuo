@@ -471,11 +471,11 @@ if(null === url) {
   if (!response.ok) {
     throw new Error('Network response was not ok');
   }
-  return response.text();
+  return response.json();
 }).then(data => {
-var list = data.match(/video":.*?link":"(.*?)"/g)
+var list = data.data
 i = Math.floor(Math.random() * list.length);
-var url =list[i].match(/(http.*?)"/)[1].replace(/\\/g ,'')
+var url =list[i].attachment.video[0].link
   $("#myVideo").attr("src", url);
 })  
   } else 
