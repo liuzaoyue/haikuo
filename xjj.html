@@ -377,6 +377,9 @@
 		                }, {
 		                    name: '新8',
 		                    url: 'https://www.xiaolufx.net/suiji/video.php?_t=0' + Math.random()
+		                }, {
+		                    name: '屋里社',
+		                    url: 'http://wulishe.site/wp-json/b2/v1/getTopicList'
 		                }
 		            ];	           
 		            
@@ -456,6 +459,26 @@ function players() {
 if(null === url) {
     url = 'https://v.nrzj.vip/video.php?_t=0' + Math.random();
 }; 
+  if (/wulishe/.test(url)) {
+  var j = Math.floor(Math.random()*925)+1
+  fetch(url, {
+  method: 'POST',
+  headers: {
+    'Content-Type':'application/x-www-form-urlencoded',
+  },
+  body: 'paged='+j+'&circle_id=2&type=all&order_by=date&role=all&file=all&status=&author=0'
+}).then(response => {
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  return response.text();
+}).then(data => {
+var list = data.match(/video":.*?link":"(.*?)"/g)
+i = Math.floor(Math.random() * list.length);
+var url =list[i].match(/(http.*?)"/)[1].replace(/\\/g ,'')
+  $("#myVideo").attr("src", url);
+})  
+  } else 
   if (/kuaiyuhudong/.test(url)) {
      fetch(url, {
               method: 'GET'
