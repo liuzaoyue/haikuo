@@ -378,6 +378,24 @@
 		                    name: '新8',
 		                    url: 'https://www.xiaolufx.net/suiji/video.php?_t=0' + Math.random()
 		                }, {
+		                    name: '新9',
+		                    url: 'http://api.mmp.cc/api/ksvideo?type=mp4&id=NvGao&_t=0' + Math.random()
+		                }, {
+		                    name: '新10',
+		                    url: 'https://api.mmp.cc/api/ksvideo?type=mp4&id=NvDa&_t=0' + Math.random()
+		                }, {
+		                    name: '新11',
+		                    url: 'https://api.mmp.cc/api/ksvideo?type=mp4&id=YuMeng&_t=0' + Math.random()
+		                }, {
+		                    name: '新12',
+		                    url: 'http://api.mmp.cc/api/ksvideo?type=mp4&id=jk&_t=0' + Math.random()
+		                }, {
+		                    name: '抖一抖',
+		                    url: 'https://www.douyidou.com/get/get1.php'
+		                }, {
+		                    name: '精品',
+		                    url: 'https://api.wwgz.cn:520/dsp/get/get1.php'
+		                }, {
 		                    name: '屋里社',
 		                    url: 'http://wulishe.site/wp-json/b2/v1/getTopicList'
 		                }
@@ -460,7 +478,7 @@ if(null === url) {
     url = 'https://v.nrzj.vip/video.php?_t=0' + Math.random();
 }; 
   if (/wulishe/.test(url)) {
-  var j = Math.floor(Math.random()*924)+1
+  var j = Math.floor(Math.random()*925)+1
   fetch(url, {
   method: 'POST',
   headers: {
@@ -508,6 +526,23 @@ var url =list[i].attachment.video[0].link
           $("#myVideo").attr("src", url);
           })    
     } else 
+    
+    if (/douyidou|wwgz/.test(url)) {
+     fetch(url, {
+              method: 'GET'
+          })
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error("网络请求失败，正在重新尝试...");
+              }
+              return response.text();
+          })
+          .then(data => {
+              url = data
+          $("#myVideo").attr("src", url);
+          })    
+    } else 
+    
   if (/t=0|\.mp4|cam|yujn|NewSp|jkapi/.test(url)) {
         $("#myVideo").attr("src", url);
     } else 
