@@ -471,32 +471,33 @@
 		    });		    
 })	
 
-	
 function players() {
     var url = localStorage.getItem('jjurl');
 if(null === url) {
     url = 'https://v.nrzj.vip/video.php?_t=0' + Math.random();
 }; 
   if (/wulishe/.test(url)) {
-  var j = Math.floor(Math.random()*925)+1
-  fetch(url, {
-  method: 'POST',
-  headers: {
-    'Content-Type':'application/x-www-form-urlencoded',
-  },
-  body: 'paged='+j+'&circle_id=2&type=all&order_by=date&role=all&file=all&status=&author=0'
-}).then(response => {
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
-  }
-  return response.json();
-}).then(data => {
-var list = data.data
-i = Math.floor(Math.random() * list.length);
-var url =list[i].attachment.video[0].link
-  $("#myVideo").attr("src", url);
-})  
-  } else 
+                //var j = Math.floor(Math.random()*925)+1
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0'
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                }).then(data => {
+                    var list = data.data
+                    i = Math.floor(Math.random() * list.length);
+                    var url = list[i].attachment.video[0].link
+                    var url = url.replace(/http\:\/\/wulishe\.site\/wp-content\/uploads/, 'https://file.wifou.com/d/139/list/wulishe')                
+                    fba.log(url)
+                    $("#myVideo").attr("src", url);
+                })
+            } else 
   if (/kuaiyuhudong/.test(url)) {
      fetch(url, {
               method: 'GET'
@@ -506,7 +507,7 @@ var url =list[i].attachment.video[0].link
                   throw new Error("网络请求失败，正在重新尝试...");
               }
               return response.text();
-          })
+          }) 
           .then(data => {
           var list = data.match(/data-url="(.*?)"\>/g)
           i = Math.floor(Math.random() * list.length);
@@ -514,7 +515,7 @@ var url =list[i].attachment.video[0].link
           return fetch(url, {
                   method: 'GET'
               });
-          })  
+          })           
           .then(response => {
               if (!response.ok) {
                   throw new Error("网络请求失败，正在重新尝试...");
@@ -526,51 +527,22 @@ var url =list[i].attachment.video[0].link
           $("#myVideo").attr("src", url);
           })    
     } else 
-    
-    if (/douyidou|wwgz/.test(url)) {
-     fetch(url, {
-              method: 'GET'
-          })
-          .then(response => {
-              if (!response.ok) {
-                  throw new Error("网络请求失败，正在重新尝试...");
-              }
-              return response.text();
-          })
-          .then(data => {
-              url = data
-          $("#myVideo").attr("src", url);
-          })    
-    } else 
-    
-  if (/t=0|\.mp4|cam|yujn|NewSp|jkapi/.test(url)) {
+     if (/t=0|\.mp4|cam|yujn|NewSp|jkapi/.test(url)) {
         $("#myVideo").attr("src", url);
-    } else 
-  if (/meinv/.test(url)) {
-               fetch(url, {
-              method: 'GET'
-          })  
-           .then(response => {
-              if (!response.ok) {
-                  throw new Error("网络请求失败，正在重新尝试...");
-              }
-              return response.text();
-          })
-          .then(data => {
-          //fba.log(data)
-                    data = data.match(/.*(http.*?mp4)/)[1];
-          $("#myVideo").attr("src", data);
-          })               
-                } else {
+    } else {
         $.get(url, function(data, status) {
             if (status == status) {
             
-                if (/txqq/.test(url)) {          
-                    data = data.match(/.*(http.*?\.mp4)/)[1];                 
+                if (/txqq/.test(url)) {   
+                       
+                    data = JSON.parse(data).list[0].video_url;                                    
                 }
                 if (/ScSp/.test(url)) {
                     data = data.video || data.视频 || data.data;
                 }
+                /*if (/douyidou|wwgz/.test(url)) {
+                    data = data
+                }*/
                 if (!data.startsWith("http")) {
                     data = 'https:' + data;
                 }
@@ -586,7 +558,7 @@ var url =list[i].attachment.video[0].link
     }
     playicon.style.opacity = 0; 
 }   
-	
+/*	
 function getJSON(url) {
     fetch(url).then(function(response) {
       return response.text();//json()
@@ -596,7 +568,7 @@ function getJSON(url) {
       console.log("Oops, error");
     });
   }
-				
+	*/			
 function FullScreen() {
 	 if (player.requestFullscreen) {
 		   player.requestFullscreen();
