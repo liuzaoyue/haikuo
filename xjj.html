@@ -401,6 +401,9 @@
 		                }, {
 		                    name: '趣动',
 		                    url: 'https://www.tuwei.space/api/girl'
+		                }, {
+		                    name: '抖妹',
+		                    url: 'https://www.doumei.cc/api/v1/recommend'
 		                }
 		            ];	           
 		            
@@ -564,6 +567,12 @@ var url = 'https://www.tuwei.space/upload/'+data.data.video.Path
                 }
                 if (/ScSp/.test(url)) {
                     data = data.video || data.视频 || data.data;
+                }
+                if (/doumei/.test(url)) {
+                    var list = data.data
+                     i = Math.floor(Math.random() * list.length);
+                     //fba.log(i)
+                    data = list[i].content;
                 }
                 /*if (/douyidou|wwgz/.test(url)) {
                     data = data
