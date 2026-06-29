@@ -398,6 +398,9 @@
 		                }, {
 		                    name: '屋里社',
 		                    url: 'http://wulishe.site/wp-json/b2/v1/getTopicList'
+		                }, {
+		                    name: '趣动',
+		                    url: 'https://www.tuwei.space/api/girl'
 		                }
 		            ];	           
 		            
@@ -493,12 +496,34 @@ if(null === url) {
                     var list = data.data
                     i = Math.floor(Math.random() * list.length);
                     var url = list[i].attachment.video[0].link
-                    var url = url.replace(/http\:\/\/wulishe\.site\/wp-content\/uploads/, 'https://file.wifou.com/d/139/list/wulishe')                
+                   var url = url.replace(/http\:\/\/wulishe\.site\/wp-content\/uploads/, 'https://file.wifou.com/d/139/list/wulishe')                
                     fba.log(url)
                     $("#myVideo").attr("src", url);
                 })
-            } else 
-  if (/kuaiyuhudong/.test(url)) {
+            } else  
+            if (/tuwei/.test(url)) {
+       fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+           id: 1,
+           status: 0,
+           type: 1           
+           })
+  }).then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                }).then(data => {
+var url = 'https://www.tuwei.space/upload/'+data.data.video.Path
+  $("#myVideo").attr("src", url);
+ })
+        
+    } else 
+  if (/kuaiyuhudong/.test(url)) {     
      fetch(url, {
               method: 'GET'
           })
