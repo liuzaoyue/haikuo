@@ -309,9 +309,6 @@
 		        } else {
 		            // 弹窗已经关闭，我们需要打开它
 		            var options = [{
-		                    name: '源2',
-		                    url: 'https://api.cenguigui.cn/api/mp4/MP4_xiaojiejie.php?_t=0' + Math.random()
-		                }, {
 		                    name: '源5',
 		                    url: 'https://www.hhlqilongzhu.cn/api/MP4_xiaojiejie.php?_t=0' + Math.random()
 		                }, {
@@ -411,9 +408,6 @@
 		                    name: '屋里社',
 		                    url: 'http://wulishe.site/wp-json/b2/v1/getTopicList'
 		                }, {
-		                    name: '趣动',
-		                    url: 'https://www.tuwei.space/api/girl'
-		                }, {
 		                    name: '抖妹',
 		                    url: 'https://www.doumei.cc/api/v1/recommend'
 		                }
@@ -491,119 +485,98 @@
 
 function players() {
     var url = localStorage.getItem('jjurl');
-if(null === url) {
-    url = 'https://v.nrzj.vip/video.php?_t=0' + Math.random();
-}; 
-  if (/wulishe/.test(url)) {
-                //var j = Math.floor(Math.random()*925)+1
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0'
-                }).then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                }).then(data => {
-                    var list = data.data
-                    i = Math.floor(Math.random() * list.length);
-                    var url = list[i].attachment.video[0].link
-                   var url = url.replace(/http\:\/\/wulishe\.site\/wp-content\/uploads/, 'https://file.wifou.com/d/139/list/wulishe')                
-                    fba.log(url)
-                    $("#myVideo").attr("src", url);
-                })
-            } else  
-            if (/tuwei/.test(url)) {
-       fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-           id: 1,
-           status: 0,
-           type: 1           
-           })
-  }).then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                }).then(data => {
-var url = 'https://www.tuwei.space/upload/'+data.data.video.Path
-  $("#myVideo").attr("src", url);
- })
-        
-    } else 
-  if (/kuaiyuhudong/.test(url)) {     
-     fetch(url, {
-              method: 'GET'
-          })
-          .then(response => {
-              if (!response.ok) {
-                  throw new Error("网络请求失败，正在重新尝试...");
-              }
-              return response.text();
-          }) 
-          .then(data => {
-          var list = data.match(/data-url="(.*?)"\>/g)
-          i = Math.floor(Math.random() * list.length);
-          var url = 'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php' + list[0].split('"')[1]
-          return fetch(url, {
-                  method: 'GET'
-              });
-          })           
-          .then(response => {
-              if (!response.ok) {
-                  throw new Error("网络请求失败，正在重新尝试...");
-              }
-              return response.text();
-          })
-          .then(data => {
-              url = data.match(/audiodiv" src="(.*?)"/)[1]; 
-          $("#myVideo").attr("src", url);
-          })    
-    } else 
-     if (/t=0|\.mp4|cam|yujn|NewSp|jkapi/.test(url)) {
-        $("#myVideo").attr("src", url);
-    } else {
+    if (null === url) {
+        url = 'https://v.nrzj.vip/video.php?_t=0' + Math.random();
+    };
+
+    function fetchAndSetSrc() {
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0'
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error("网络请求失败，正在重新尝试...");
+            }
+            return response.json();
+        }).then(data => {
+            const list = data.data;
+            const i = Math.floor(Math.random() * list.length);
+            var url = list[i].attachment.video[0].link;
+            url = url.replace(/http\:\/\/wulishe\.site\/wp-content\/uploads/, 'https://file.wifou.com/d/139/list/wulishe')
+            $("#myVideo").attr("src", url);
+        }).catch(error => {
+            console.error("发生错误:", error);
+        });
+    }
+
+    function fetchUrl() {
+        return fetch(url, {
+            method: 'GET'
+        }).then(response => {
+            if (!response.ok) {
+                throw new Error("网络请求失败，正在重新尝试...");
+            }
+            return response.text();
+        }).then(data => {
+            var list = data.match(/data-url="(.*?)"\>/g);
+            var i = Math.floor(Math.random() * list.length);
+            var url = 'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php' + list[i].split('"')[1];
+            return url;
+        }).then(url => {
+            return $.get(url, function(data, status) {
+                if (status === "success") {
+                    var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];
+                    fba.log(audioSrc);
+                    $("#myVideo").attr("src", audioSrc);
+                }
+            });
+        }).catch(error => {
+            console.error(error.message);
+        });
+    }
+
+    function fetchAnd(callback) {
         $.get(url, function(data, status) {
-            if (status == status) {
-            
-                if (/txqq/.test(url)) {   
-                       
-                    data = JSON.parse(data).list[0].video_url;                                    
+            if (status === status) {
+                if (/txqq/.test(url)) {
+                    data = JSON.parse(data).list[0].video_url;
                 }
                 if (/ScSp/.test(url)) {
                     data = data.video || data.视频 || data.data;
                 }
                 if (/doumei/.test(url)) {
-                    var list = data.data
-                     i = Math.floor(Math.random() * list.length);
-                     //fba.log(i)
+                    const list = data.data;
+                    const i = Math.floor(Math.random() * list.length);
                     data = list[i].content;
                 }
-                /*if (/douyidou|wwgz/.test(url)) {
-                    data = data
-                }*/
                 if (!data.startsWith("http")) {
                     data = 'https:' + data;
                 }
-                //fba.log(data)
-                console.log("成功获取数据！");
-                player.src = data;
-                //player.play()
+                callback(data);
             } else {
                 console.log("失败，重新发起请求！");
                 players()
             }
         });
     }
-    playicon.style.opacity = 0; 
-}   
+
+    if (/wulishe/.test(url)) {
+        fetchAndSetSrc();
+    } else if (/kuaiyuhudong/.test(url)) {
+        fetchUrl();
+    } else if (/t=0|\.mp4|cam|yujn|NewSp|jkapi/.test(url)) {
+        $("#myVideo").attr("src", url);
+    } else {
+        fetchAnd(data => {
+            $("#myVideo").attr("src", data);
+        });
+    }
+
+    playicon.style.opacity = 0;
+}
 /*	
 function getJSON(url) {
     fetch(url).then(function(response) {
