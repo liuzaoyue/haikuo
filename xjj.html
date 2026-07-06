@@ -214,7 +214,7 @@
 		    $("#bth").on("click", function() {
 		        auto = !auto;
 		        this.innerText = (auto ? '连播' : '循环');
-		        document.getElementById("tipMessage").textContent = auto ? '您选择了：连续播放' : '您选择了：循环播放';
+		        document.getElementById("tipMessage").textContent = auto ? '已开启连续播放' : '已开启单曲循环';
 		        document.getElementById("myModal").style.display = "flex";
 		        setTimeout(function() {
 		            closeTip();
@@ -679,7 +679,7 @@ function FullScreen() {
 		        }, false);
 		        //手指离开屏幕
 		        function huaping() {
-    document.getElementById("tipMessage").textContent = '下一个';
+    document.getElementById("tipMessage").textContent = '切换下一个';
     document.getElementById("myModal").style.display = "flex";
     setTimeout(function() {
         document.getElementById("myModal").style.display = "none";
