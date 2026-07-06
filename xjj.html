@@ -318,7 +318,7 @@
 		                    name: "源08",
 		                    url: "https://v.nrzj.vip/video.php?_t=0" + Math.random(),
 		                }, {
-		                    name: '源9',
+		                    name: '快9',
 		                    url: 'https://openapi.dwo.cc/api/ksvideo?_t=0' + Math.random()
 		                }, {
 		                    name: '源10',
@@ -399,6 +399,24 @@
 		                    name: '新12',
 		                    url: 'http://api.mmp.cc/api/ksvideo?type=mp4&id=jk&_t=0' + Math.random()
 		                }, {
+		                    name: '新13',
+		                    url: 'https://api.suyanw.cn/api/xjj/api.php?_t=0' + Math.random()
+		                }, {
+		                    name: '新14',
+		                    url: 'https://openapi.dwo.cc/api/4qb_sp?msg=%E7%83%AD%E8%88%9E'
+		                },{
+		                    name: '新15',
+		                    url: 'https://openapi.dwo.cc/api/viodes?_t=0' + Math.random()
+		                },{
+		                    name: '新16',
+		                    url: 'https://openapi.dwo.cc/api/xjj?_t=0' + Math.random()
+		                },{
+		                    name: '新17',
+		                    url: 'https://api.xudu.org/vos/vc?_t=' + Math.random()
+		                },{
+		                    name: '18',
+		                    url:'https://api.yujn.cn/api/zzxjj.php?_t=' + Math.random()
+		                },{
 		                    name: '抖一抖',
 		                    url: 'https://www.douyidou.com/get/get1.php'
 		                }, {
@@ -410,6 +428,24 @@
 		                }, {
 		                    name: '抖妹',
 		                    url: 'https://www.doumei.cc/api/v1/recommend'
+		                }, {
+		                    name: '抖美女',
+		                    url: 'https://wp.qinggongju.com/wp-content/themes/onenavsub/tool/douyin_proxy.php'
+		                }, {
+		                    name: '甜美',
+		                    url: 'https://cn.apihz.cn/api/fun/girl.php?id=10008308&key=7e3e249519990e557cd9c79458f2b084'
+		                }, {
+		                    name: '快美女',
+		                    url: 'https://qinggongju.com/xiaojie/video.php?_t=0' + Math.random()
+		                }, {
+		                    name: '横屏',
+		                    url: 'https://www.cunshao.com/666666/api/pc.php?_t=0' + Math.random()
+		                }, {
+		                    name: '抖艺术',
+		                    url: 'https://random-api.czl.net/video/dy-art?_t=0'+ Math.random()
+		                }, {
+		                    name: '热舞',
+		                    url: 'http://api.4qb.cn/api/suiji-sp?msg=%E7%83%AD%E8%88%9E&type=json' 
 		                }
 		            ];	           
 		            
@@ -528,8 +564,8 @@ function players() {
         }).then(url => {
             return $.get(url, function(data, status) {
                 if (status === "success") {
-                    var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];
-                    fba.log(audioSrc);
+                    var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];                   
+                   // fba.log(audioSrc);
                     $("#myVideo").attr("src", audioSrc);
                 }
             });
@@ -544,8 +580,11 @@ function players() {
                 if (/txqq/.test(url)) {
                     data = JSON.parse(data).list[0].video_url;
                 }
-                if (/ScSp/.test(url)) {
+                if (/ScSp|wp\.qinggongju|apihz/.test(url)) {
                     data = data.video || data.视频 || data.data;
+                }
+                if (/4qb/.test(url)) {
+                    data = data.data.url;
                 }
                 if (/doumei/.test(url)) {
                     const list = data.data;
@@ -639,25 +678,37 @@ function FullScreen() {
 		            starty = e.touches[0].pageY;
 		        }, false);
 		        //手指离开屏幕
+		        function huaping() {
+    document.getElementById("tipMessage").textContent = '下一个';
+    document.getElementById("myModal").style.display = "flex";
+    setTimeout(function() {
+        document.getElementById("myModal").style.display = "none";
+    }, 2000);
+}
 		        document.addEventListener("touchend", function(e) {
 		            var endx, endy;
 		            endx = e.changedTouches[0].pageX;
 		            endy = e.changedTouches[0].pageY;
 		            var direction = getDirection(startx, starty, endx, endy);
+		            
 		            switch (direction) {
 		                case 1:
 		                    console.log("向上！");
+		                    huaping()
 		                    players()
 		                    break;
 		                case 3:
 		                    console.log("向左！");
+		                    huaping()
 		                    players()
 		                    break;
 		                case 4:
+		                   console.log("向右！");
 		                    player.webkitExitFullscreen();
 		                    break;
 		                case 2:
-		                    player.webkitExitFullscreen();
+		                   console.log("向下！");
+		                    players()                                       
 		                    break;
 		            }
 		        }, false)  
