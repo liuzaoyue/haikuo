@@ -530,7 +530,7 @@
  let videoHistory = [];
  // 标记当前正在播放的视频唯一标识（自行替换成你的视频id/url）
  let currentVideoKey = "";
-
+var currentVideoIndex = -1
 function players() {
     var url = localStorage.getItem('jjurl');
     if (null === url) {
@@ -554,13 +554,15 @@ function players() {
             const i = Math.floor(Math.random() * list.length);
             var url = list[i].attachment.video[0].link;
             url = url.replace(/http\:\/\/wulishe\.site\/wp-content\/uploads/, 'https://file.wifou.com/d/139/list/wulishe')
-            if(currentVideoKey){
-         videoHistory.push(currentVideoKey);
+              if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
+                  videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
+      }
+         videoHistory.push(url);
          if(videoHistory.length > 15){
         videoHistory.shift();
     }
-     }    
-      currentVideoKey = url;
+         
+      currentVideoIndex = videoHistory.length - 1;
             $("#myVideo").attr("src", url);
         }).catch(error => {
             console.error("发生错误:", error);
@@ -584,13 +586,15 @@ function players() {
             return $.get(url, function(data, status) {
                 if (status === "success") {
                     var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];   
-                    if(currentVideoKey){
-         videoHistory.push(currentVideoKey);
+                    if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
+                  videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
+      }
+         videoHistory.push(audioSrc);
          if(videoHistory.length > 15){
         videoHistory.shift();
     }
-     }    
-      currentVideoKey = audioSrc;                
+         
+      currentVideoIndex = videoHistory.length - 1;
                    // fba.log(audioSrc);
                     $("#myVideo").attr("src", audioSrc);
                 }
@@ -622,13 +626,15 @@ function players() {
                 }
                 
                 // 1. 把当前视频存入历史栈
-     if(currentVideoKey){
-         videoHistory.push(currentVideoKey);
+     if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
+                  videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
+      }
+         videoHistory.push(data);
          if(videoHistory.length > 15){
         videoHistory.shift();
     }
-     }    
-      currentVideoKey = data;
+         
+      currentVideoIndex = videoHistory.length - 1;
      // ======================
    
                 callback(data);
@@ -655,22 +661,31 @@ function players() {
 }
 
 // 回看历史上一条视频（下滑调用）
- function prevVideo() {
-     // 历史为空，无法回看
-     if(videoHistory.length === 0){
-         showTip("暂无历史视频");
-         return;
-     }
-     // 取出最后一条历史
-     const lastKey = videoHistory.pop();
-      $("#myVideo").attr("src", lastKey);
-     
-     // ======================
-     // 这里写加载历史视频逻辑，使用 lastKey 加载对应视频
-     // 加载完成后更新 currentVideoKey = lastKey
-     // ======================
-     //showTip("切换上一个");
- }
+ var loadPreviousVideo = function() {
+      if (currentVideoIndex > 0) {
+        //markPlaybackRequested();
+        currentVideoIndex--;
+        player.src = videoHistory[currentVideoIndex];
+        player.play();
+        //showTip();
+      } else {
+       // showSwipeFeedback('up', true); // 没有上一个视频时显示错误反馈
+      }
+    }
+
+    // 加载下一个视频
+    var loadNextVideo = function() {
+      if (currentVideoIndex < videoHistory.length - 1) {
+        // 如果有已加载的下一个视频
+        
+        currentVideoIndex++;
+        player.src = videoHistory[currentVideoIndex];
+        player.play();
+      } else {
+        // 否则加载新视频
+        players();
+      }
+      }
           //fba.log(prevVideo()) 
 /*	
 function getJSON(url) {
@@ -745,7 +760,7 @@ function FullScreen() {
 		                case 1:
 		                    console.log("向上！");
 		                    showTip('切换下一个')
-		                    players()
+		                    loadNextVideo()
 		                    break;
 		                case 3:
 		                    console.log("向左！");
@@ -759,7 +774,7 @@ function FullScreen() {
 		                case 2:
 		                   console.log("向下！");
 		                   showTip('切换上一个')
-		                    prevVideo()                                 
+		                    loadPreviousVideo()                                 
 		                    break;
 		            }
 		        }, false)  
