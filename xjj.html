@@ -203,6 +203,14 @@
 			</div>
 		</div>
 	<script>
+			    //弹窗提示
+	 function showTip(text) {
+     document.getElementById("tipMessage").textContent = text;
+     document.getElementById("myModal").style.display = "flex";
+     setTimeout(function() {
+         document.getElementById("myModal").style.display = "none";
+     }, 2000);
+ }
 		$(document).ready(function() {
 		    auto = true;
 		    player = document.getElementById("myVideo");
@@ -210,12 +218,11 @@
 		    playicon = document.querySelector(".play-icon");
 		    playicons = document.querySelector(".play-icons");
 		    players();
-		    
+ 
 		    $("#bth").on("click", function() {
 		        auto = !auto;
 		        this.innerText = (auto ? '连播' : '循环');
-		        document.getElementById("tipMessage").textContent = auto ? '已开启连续播放' : '已开启单曲循环';
-		        document.getElementById("myModal").style.display = "flex";
+		        showTip(auto ? '已开启连续播放' : '已开启单曲循环');
 		        setTimeout(function() {
 		            closeTip();
 		        }, 3000);
@@ -519,6 +526,11 @@
 		    });		    
 })	
 
+// 播放历史栈，用来存看过的视频标识/链接
+ let videoHistory = [];
+ // 标记当前正在播放的视频唯一标识（自行替换成你的视频id/url）
+ let currentVideoKey = "";
+
 function players() {
     var url = localStorage.getItem('jjurl');
     if (null === url) {
@@ -542,6 +554,13 @@ function players() {
             const i = Math.floor(Math.random() * list.length);
             var url = list[i].attachment.video[0].link;
             url = url.replace(/http\:\/\/wulishe\.site\/wp-content\/uploads/, 'https://file.wifou.com/d/139/list/wulishe')
+            if(currentVideoKey){
+         videoHistory.push(currentVideoKey);
+         if(videoHistory.length > 15){
+        videoHistory.shift();
+    }
+     }    
+      currentVideoKey = url;
             $("#myVideo").attr("src", url);
         }).catch(error => {
             console.error("发生错误:", error);
@@ -564,7 +583,14 @@ function players() {
         }).then(url => {
             return $.get(url, function(data, status) {
                 if (status === "success") {
-                    var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];                   
+                    var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];   
+                    if(currentVideoKey){
+         videoHistory.push(currentVideoKey);
+         if(videoHistory.length > 15){
+        videoHistory.shift();
+    }
+     }    
+      currentVideoKey = audioSrc;                
                    // fba.log(audioSrc);
                     $("#myVideo").attr("src", audioSrc);
                 }
@@ -594,6 +620,17 @@ function players() {
                 if (!data.startsWith("http")) {
                     data = 'https:' + data;
                 }
+                
+                // 1. 把当前视频存入历史栈
+     if(currentVideoKey){
+         videoHistory.push(currentVideoKey);
+         if(videoHistory.length > 15){
+        videoHistory.shift();
+    }
+     }    
+      currentVideoKey = data;
+     // ======================
+   
                 callback(data);
             } else {
                 console.log("失败，重新发起请求！");
@@ -616,6 +653,25 @@ function players() {
 
     playicon.style.opacity = 0;
 }
+
+// 回看历史上一条视频（下滑调用）
+ function prevVideo() {
+     // 历史为空，无法回看
+     if(videoHistory.length === 0){
+         showTip("暂无历史视频");
+         return;
+     }
+     // 取出最后一条历史
+     const lastKey = videoHistory.pop();
+      $("#myVideo").attr("src", lastKey);
+     
+     // ======================
+     // 这里写加载历史视频逻辑，使用 lastKey 加载对应视频
+     // 加载完成后更新 currentVideoKey = lastKey
+     // ======================
+     //showTip("切换上一个");
+ }
+          //fba.log(prevVideo()) 
 /*	
 function getJSON(url) {
     fetch(url).then(function(response) {
@@ -678,13 +734,7 @@ function FullScreen() {
 		            starty = e.touches[0].pageY;
 		        }, false);
 		        //手指离开屏幕
-		        function huaping() {
-    document.getElementById("tipMessage").textContent = '切换下一个';
-    document.getElementById("myModal").style.display = "flex";
-    setTimeout(function() {
-        document.getElementById("myModal").style.display = "none";
-    }, 2000);
-}
+		        
 		        document.addEventListener("touchend", function(e) {
 		            var endx, endy;
 		            endx = e.changedTouches[0].pageX;
@@ -694,12 +744,12 @@ function FullScreen() {
 		            switch (direction) {
 		                case 1:
 		                    console.log("向上！");
-		                    huaping()
+		                    showTip('切换下一个')
 		                    players()
 		                    break;
 		                case 3:
 		                    console.log("向左！");
-		                    huaping()
+		                    showTip('切换下一个')
 		                    players()
 		                    break;
 		                case 4:
@@ -708,7 +758,8 @@ function FullScreen() {
 		                    break;
 		                case 2:
 		                   console.log("向下！");
-		                    players()                                       
+		                   showTip('切换上一个')
+		                    prevVideo()                                 
 		                    break;
 		            }
 		        }, false)  
