@@ -203,7 +203,7 @@
 			</div>
 		</div>
 	<script>
-			    //弹窗提示
+			   //弹窗提示
 	 function showTip(text) {
      document.getElementById("tipMessage").textContent = text;
      document.getElementById("myModal").style.display = "flex";
@@ -211,29 +211,66 @@
          document.getElementById("myModal").style.display = "none";
      }, 2000);
  }
+ 
+ // 自动隐藏控制栏
+     function hideControl() {
+         setTimeout(()=>{
+             buttons.style.opacity = 0;
+             playicon.style.opacity = 0;
+         },5000)
+     } 
 		$(document).ready(function() {
 		    auto = true;
-		    player = document.getElementById("myVideo");
-		    buttons = document.querySelector("#buttons");
-		    playicon = document.querySelector(".play-icon");
-		    playicons = document.querySelector(".play-icons");
-		    players();
- 
+		  player = document.getElementById("myVideo");
+		  buttons = document.querySelector("#buttons");
+		  playicon = document.querySelector(".play-icon");
+		  playicons = document.querySelector(".play-icons");
+	   const progressBar = document.getElementById('progress-bar');
+		 const timeDiv = document.getElementById('time-div');
+		 const timeDivs = document.getElementById('time-divs');	
+		      players();
+		
+	// 格式化时间
+     function formatTime(time) {
+         if(isNaN(time)) return "00:00";
+         const m = Math.floor(time / 60);
+         const s = Math.floor(time % 60);
+         return `${m<10?'0':''}${m}:${s<10?'0':''}${s}`;
+     }
+     // 进度条更新
+     player.addEventListener('loadedmetadata', () => {
+         durationStr = formatTime(player.duration);
+         timeDiv.textContent = durationStr;
+     })
+     player.addEventListener('timeupdate', () => {
+         const cur = player.currentTime;
+         const dur = player.duration;
+         if(!isNaN(dur)){
+             progressBar.style.width = (cur/dur*100)+"%";
+             timeDivs.textContent = formatTime(cur);
+             timeDiv.textContent = durationStr;
+         }
+     })
+        
+		   	// 长按2倍速（优化：仅长按加速，滑动不触发）
+     let longPressTimer = null;
+     document.addEventListener("touchstart", (e) => {
+         if(e.touches.length === 1){
+             longPressTimer = setTimeout(()=>{
+                 player.playbackRate = 2;
+             },300)
+         }
+     },{passive:true});
+     document.addEventListener("touchend", () => {
+         clearTimeout(longPressTimer);
+         player.playbackRate = 1;
+     },{passive:true});//长按倍速   
+     
 		    $("#bth").on("click", function() {
 		        auto = !auto;
 		        this.innerText = (auto ? '连播' : '循环');
 		        showTip(auto ? '已开启连续播放' : '已开启单曲循环');
-		        setTimeout(function() {
-		            closeTip();
-		        }, 3000);
-		        function closeTip() {
-		            document.getElementById("myModal").style.display = "none";
-		        }
-		       setTimeout(function() {
-		            buttons.style.opacity = 0;
-		            playicon.style.opacity = 0;
-		        }, 5000);
-		        
+		        hideControl();	        
 		        player.play()
 		    });
 		
@@ -247,10 +284,7 @@
 		            player.style.objectFit = "contain";
 		            player.play()
 		        } 		        	
-		        setTimeout(function() {
-		            playicon.style.opacity = 0; 
-		            buttons.style.opacity = 0;
-		        }, 5000);	              
+		        hideControl();      
 		    })  
 		        
 		        
@@ -267,44 +301,28 @@
 		        }
 		    }, false);
 		    
-		    $("#myVideo").on("dblclick", function(){
-    console.log("dblclick");
-    FullScreen();
-    player.style.objectFit = "contain";
-    playicon.style.opacity = 0; 
-    
-  });
-   
-         /*   $("#myVideo").on("click", function(){
-  if (player.paused) {
-    playicon.style.opacity = 0; 
-    buttons.style.opacity = 0; 
-    player.play();
-	   } else {	   
-	playicon.style.opacity = 1; 
-	buttons.style.opacity = 1; 
-    player.pause();
-	   }
- });*/
- 
-         $("#myVideo").on("click", function(){
-         if (playicon.style.opacity == 0) {
-                    buttons.style.opacity = 1; 
-                    playicon.style.opacity = 1; 
- setTimeout(function() {
-		            buttons.style.opacity = 0;
-		            playicon.style.opacity =0; 
-		           // playicons.style.opacity = 0; 
-		        }, 5000);
-	playicons.style.opacity = 0; 	            
-    player.play();
-	   } else {	   
-	playicons.style.opacity = 1; 
-	buttons.style.opacity = 0;
-    playicon.style.opacity = 0; 
-    player.pause();
-	   }
- });
+		   // 双击全屏
+     $("#myVideo").on("dblclick", function(){
+         if (player.requestFullscreen) player.requestFullscreen();
+         else if (player.webkitRequestFullscreen) player.webkitRequestFullscreen();
+         else if (player.mozRequestFullScreen) player.mozRequestFullScreen();
+         hideControl();
+     });    
+         // 单击视频 显示/暂停
+     $("#myVideo").on("click", function(){
+         if (parseFloat(playicon.style.opacity) === 0 || playicon.style.opacity === "") {
+             buttons.style.opacity = 1;
+             playicon.style.opacity = 1;
+             playicons.style.opacity = 0;
+             player.play();
+             hideControl();
+         } else {
+             playicons.style.opacity = 1;
+             buttons.style.opacity = 0;
+             playicon.style.opacity = 0;
+             player.pause();
+         }
+     });
 		
 		    var isOptionsOpen = false;
 		
@@ -528,9 +546,17 @@
 
 // 播放历史栈，用来存看过的视频标识/链接
  let videoHistory = [];
- // 标记当前正在播放的视频唯一标识（自行替换成你的视频id/url）
- let currentVideoKey = "";
-var currentVideoIndex = -1
+var currentVideoIndex = -1;
+function videoHistorys(url){
+    if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
+                  videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
+      }
+         videoHistory.push(url);
+         if(videoHistory.length > 15){
+        videoHistory.shift();
+    }       
+      currentVideoIndex = videoHistory.length - 1;
+}
 function players() {
     var url = localStorage.getItem('jjurl');
     if (null === url) {
@@ -546,7 +572,7 @@ function players() {
             body: 'paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0'
         }).then(response => {
             if (!response.ok) {
-                throw new Error("网络请求失败，正在重新尝试...");
+                showTip("网络请求失败，正在重新尝试...");
             }
             return response.json();
         }).then(data => {
@@ -554,15 +580,7 @@ function players() {
             const i = Math.floor(Math.random() * list.length);
             var url = list[i].attachment.video[0].link;
             url = url.replace(/http\:\/\/wulishe\.site\/wp-content\/uploads/, 'https://file.wifou.com/d/139/list/wulishe')
-              if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
-                  videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
-      }
-         videoHistory.push(url);
-         if(videoHistory.length > 15){
-        videoHistory.shift();
-    }
-         
-      currentVideoIndex = videoHistory.length - 1;
+              videoHistorys(url)
             $("#myVideo").attr("src", url);
         }).catch(error => {
             console.error("发生错误:", error);
@@ -574,7 +592,7 @@ function players() {
             method: 'GET'
         }).then(response => {
             if (!response.ok) {
-                throw new Error("网络请求失败，正在重新尝试...");
+                showTip("网络请求失败，正在重新尝试...");
             }
             return response.text();
         }).then(data => {
@@ -586,17 +604,10 @@ function players() {
             return $.get(url, function(data, status) {
                 if (status === "success") {
                     var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];   
-                    if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
-                  videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
-      }
-         videoHistory.push(audioSrc);
-         if(videoHistory.length > 15){
-        videoHistory.shift();
-    }
-         
-      currentVideoIndex = videoHistory.length - 1;
+                    videoHistorys(audioSrc)
                    // fba.log(audioSrc);
                     $("#myVideo").attr("src", audioSrc);
+                    
                 }
             });
         }).catch(error => {
@@ -626,20 +637,12 @@ function players() {
                 }
                 
                 // 1. 把当前视频存入历史栈
-     if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
-                  videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
-      }
-         videoHistory.push(data);
-         if(videoHistory.length > 15){
-        videoHistory.shift();
-    }
-         
-      currentVideoIndex = videoHistory.length - 1;
+     videoHistorys(data)
      // ======================
    
                 callback(data);
             } else {
-                console.log("失败，重新发起请求！");
+                showTip("失败，重新发起请求！");
                 players()
             }
         });
@@ -650,6 +653,7 @@ function players() {
     } else if (/kuaiyuhudong/.test(url)) {
         fetchUrl();
     } else if (/t=0|\.mp4|cam|yujn|NewSp|jkapi/.test(url)) {
+        videoHistorys(url)
         $("#myVideo").attr("src", url);
     } else {
         fetchAnd(data => {
@@ -661,7 +665,7 @@ function players() {
 }
 
 // 回看历史上一条视频（下滑调用）
- var loadPreviousVideo = function() {
+ function loadPreviousVideo() {
       if (currentVideoIndex > 0) {
         showTip('切换上一个')
         currentVideoIndex--;
@@ -674,7 +678,7 @@ function players() {
     }
 
     // 加载下一个视频
-    var loadNextVideo = function() {
+    function loadNextVideo() {
       if (currentVideoIndex < videoHistory.length - 1) {
         // 如果有已加载的下一个视频
         showTip('切换下一个')
@@ -686,35 +690,9 @@ function players() {
         showTip('切换随机')
         players();
       }
-      }
-          //fba.log(prevVideo()) 
-/*	
-function getJSON(url) {
-    fetch(url).then(function(response) {
-      return response.text();//json()
-    }).then(function(data) {
-      player.src = data;
-    }).catch(function(e) {
-      console.log("Oops, error");
-    });
-  }
-	*/			
-function FullScreen() {
-	 if (player.requestFullscreen) {
-		   player.requestFullscreen();
-		        player.play();
-		    } else 
-     if (player.mozRequestFullScreen) {
-		        player.mozRequestFullScreen();
-		        player.play();
-		    } else 
-     if (player.webkitRequestFullScreen) {
-		        player.webkitRequestFullScreen();
-		        player.play();
-		    }
-		}	
-	</script>
-	<script>
+      }          
+</script>
+	<script>	
 		var startx, starty;
 		        //获得角度
 		        function getAngle(angx, angy) {
@@ -760,12 +738,11 @@ function FullScreen() {
 		            switch (direction) {
 		                case 1:
 		                    console.log("向上！");
-		                    showTip('切换下一个')
+		                    //showTip('切换下一个')
 		                    loadNextVideo()
 		                    break;
 		                case 3:
-		                    console.log("向左！");
-		                    
+		                    console.log("向左！");		                    
 		                    players()
 		                    break;
 		                case 4:
@@ -773,70 +750,11 @@ function FullScreen() {
 		                    player.webkitExitFullscreen();
 		                    break;
 		                case 2:
-		                   console.log("向下！");
-		                   
+		                   console.log("向下！");		                   
 		                    loadPreviousVideo()                                 
 		                    break;
 		            }
-		        }, false)  
-		        
-	const progressBar = document.getElementById('progress-bar');
-		    const timeDiv = document.getElementById('time-div');
-		    const timeDivs = document.getElementById('time-divs');	
-		    player = document.getElementById("myVideo");	  
-		
-	player.addEventListener('loadedmetadata', () => {
-    const duration = player.duration;
-    // 格式化总时长
-    let formattedDuration = formatTime(duration);
-
-    // 设置总时长
-    timeDiv.textContent = `${formattedDuration}`;
-    
-    player.ontimeupdate = () => {
-        const currentTime = player.currentTime;
-        const duration = player.duration;
-        const progressWidth = (currentTime / duration) * 100;
-        progressBar.style.width = `${progressWidth}%`;
-        timeDiv.textContent =formattedDuration;
-        timeDivs.textContent = formatTime(currentTime)
-    };
-});
-        
-		   	document.addEventListener("touchstart", (e) => {
-		  if (e.touches.length === 1) {
-		   player.playbackRate = 2;
-		  }
-		}, { passive: false });
-		document.addEventListener("touchend", (e) => {
-		  if (e.touches.length === 0) {
-		   player.playbackRate = 1;   
-		  }
-		}, { passive: false });//长按倍速                			
-		    const intervalId = setInterval(() => {
-    if (player.ended) {
-        clearInterval(intervalId);
-
-        // 重置进度条
-        progressBar.style.width = '0%';
-
-        // 设置当前时间为总时长
-        timeDiv.textContent = `${formatTime(player.duration)}`;
-    } else {
-        const currentTime = player.currentTime;
-        const duration = player.duration;
-        const progressWidth = (currentTime / duration) * 100;
-        progressBar.style.width = `${progressWidth}%`;
-        timeDiv.textContent = formattedDuration;
-    }
-}, 100);
-		
-		    function formatTime(time) {
-		        const minutes = Math.floor(time / 60);
-		        const seconds = Math.floor(time % 60);
-		        return `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-		    }
-		    
+		        }, false)  	    
 	</script>
 	<script>
 		eval(fy_bridge_app.getInternalJs());
