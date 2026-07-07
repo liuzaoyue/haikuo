@@ -209,14 +209,14 @@
      document.getElementById("myModal").style.display = "flex";
      setTimeout(function() {
          document.getElementById("myModal").style.display = "none";
-     }, 2000);
+     }, 3000);
  }
  
  // 自动隐藏控制栏
      function hideControl() {
          setTimeout(()=>{
              buttons.style.opacity = 0;
-             playicon.style.opacity = 0;
+             playicon.style.opacity = 0;            
          },5000)
      } 
 		$(document).ready(function() {
@@ -310,17 +310,18 @@
      });    
          // 单击视频 显示/暂停
      $("#myVideo").on("click", function(){
-         if (parseFloat(playicon.style.opacity) === 0 || playicon.style.opacity === "") {
-             buttons.style.opacity = 1;
-             playicon.style.opacity = 1;
-             playicons.style.opacity = 0;
-             player.play();
-             hideControl();
-         } else {
-             playicons.style.opacity = 1;
+         if (parseFloat(playicon.style.opacity) === 1 || playicon.style.opacity === "") {
              buttons.style.opacity = 0;
              playicon.style.opacity = 0;
+             playicons.style.opacity = 1;
              player.pause();
+             //hideControl();
+         } else {
+             playicons.style.opacity = 0;
+             buttons.style.opacity = 1;
+             playicon.style.opacity = 1;
+             player.play();
+             hideControl();
          }
      });
 		
@@ -557,6 +558,7 @@ function videoHistorys(url){
     }       
       currentVideoIndex = videoHistory.length - 1;
 }
+
 function players() {
     var url = localStorage.getItem('jjurl');
     if (null === url) {
@@ -605,9 +607,9 @@ function players() {
                 if (status === "success") {
                     var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];   
                     videoHistorys(audioSrc)
-                   // fba.log(audioSrc);
-                    $("#myVideo").attr("src", audioSrc);
-                    
+                 //   fba.log(videoHistory.length-1);
+                     
+         $("#myVideo").attr("src", audioSrc);                   
                 }
             });
         }).catch(error => {
@@ -740,10 +742,12 @@ function players() {
 		                    console.log("向上！");
 		                    //showTip('切换下一个')
 		                    loadNextVideo()
+		                    playicons.style.opacity = 0;
 		                    break;
 		                case 3:
 		                    console.log("向左！");		                    
 		                    players()
+		                    playicons.style.opacity = 0;
 		                    break;
 		                case 4:
 		                   console.log("向右！");
@@ -751,7 +755,8 @@ function players() {
 		                    break;
 		                case 2:
 		                   console.log("向下！");		                   
-		                    loadPreviousVideo()                                 
+		                    loadPreviousVideo()
+		                    playicons.style.opacity = 0;                                 
 		                    break;
 		            }
 		        }, false)  	    
