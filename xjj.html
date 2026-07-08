@@ -474,11 +474,7 @@
 		                    url: 'http://api.4qb.cn/api/suiji-sp?msg=%E7%83%AD%E8%88%9E&type=json' 
 		                }
 		            ];	           
-		            
-		                options.push({
-		                    name: 'pf0',
-		                    url: 'https://pf129.com/xjj/get/get.php'
-		                });
+		            		                
 		            	options.push({
 		                    name: 'pf1',
 		                    url: 'https://pf129.com/xjj/get/get1.php'
@@ -654,8 +650,8 @@ function players() {
         fetchAndSetSrc();
     } else if (/kuaiyuhudong/.test(url)) {
         fetchUrl();
-    } else if (/t=0|\.mp4|cam|yujn|NewSp|jkapi/.test(url)) {
-        videoHistorys(url)
+    } else if (/t=0|yujn|NewSp|jkapi/.test(url)) {
+        //videoHistorys(url)
         $("#myVideo").attr("src", url);
     } else {
         fetchAnd(data => {
@@ -746,16 +742,25 @@ function players() {
 		                    break;
 		                case 3:
 		                    console.log("向左！");		                    
-		                    players()
+		                    loadNextVideo()
 		                    playicons.style.opacity = 0;
 		                    break;
 		                case 4:
 		                   console.log("向右！");
-		                    player.webkitExitFullscreen();
+		                    if (/t=0|yujn|NewSp|jkapi/.test(player.src)) {  
+		                   player.webkitExitFullscreen(); 
+		                   } else{            
+		                    loadPreviousVideo()
+		                    }
+		                    playicons.style.opacity = 0;    
 		                    break;
 		                case 2:
-		                   console.log("向下！");		                   
+		                   console.log("向下！");		
+		                   if (/t=0|yujn|NewSp|jkapi/.test(player.src)) {  
+		                   player.webkitExitFullscreen(); 
+		                   } else{            
 		                    loadPreviousVideo()
+		                    }
 		                    playicons.style.opacity = 0;                                 
 		                    break;
 		            }
