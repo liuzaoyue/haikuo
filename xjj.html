@@ -202,495 +202,485 @@
 			</div>
 		</div>
 	<script>
-	// 全局变量统一声明
- let auto = true;
- let player, buttons, playicon, playicons;
- let durationStr = "00:00";
- let isOptionsOpen = false;
- let videoHistory = [];
- let currentVideoIndex = -1;
- let hideTimer = null;
-			   //弹窗提示
-	 function showTip(text) {
-     document.getElementById("tipMessage").textContent = text;
-     document.getElementById("myModal").style.display = "flex";
-     setTimeout(function() {
-         document.getElementById("myModal").style.display = "none";
-     }, 1000);
- }
- 
- // 自动隐藏控制栏
-     function hideControl() {
-         setTimeout(()=>{
-             buttons.style.opacity = 0;
-             playicon.style.opacity = 0;            
-         },3000)
-     } 
-     	// 格式化时间
-     function formatTime(time) {
-         if(isNaN(time)) return "00:00";
-         const m = Math.floor(time / 60);
-         const s = Math.floor(time % 60);
-         return `${m<10?'0':''}${m}:${s<10?'0':''}${s}`;
-     }
-     // 播放历史栈，用来存看过的视频标识/链接
-function videoHistorys(url){
-    if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
-                  videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
-      }
-         videoHistory.push(url);
-         if(videoHistory.length > 15){
-        videoHistory.shift();
-    }       
-      currentVideoIndex = videoHistory.length - 1;
-}
-// 回看历史上一条视频（下滑调用）
- function loadPreviousVideo() {
-      if (currentVideoIndex > 0) {
-        showTip('切换上一个')
-        currentVideoIndex--;
-        player.src = videoHistory[currentVideoIndex];
-        player.play();
-        //showTip();
-      } else {
-       showTip('已是第一条视频')
-      }
+	    // 全局变量统一声明
+    let auto = true;
+    let player, buttons, playicon, playicons;
+    let durationStr = "00:00";
+    let isOptionsOpen = false;
+    let videoHistory = [];
+    let currentVideoIndex = -1;
+    let hideTimer = null;
+    //弹窗提示
+    function showTip(text) {
+        document.getElementById("tipMessage").textContent = text;
+        document.getElementById("myModal").style.display = "flex";
+        setTimeout(function() {
+            document.getElementById("myModal").style.display = "none";
+        }, 1000);
     }
-
+    // 自动隐藏控制栏
+    function hideControl() {
+        setTimeout(() => {
+            buttons.style.opacity = 0;
+            playicon.style.opacity = 0;
+        }, 3000)
+    }
+    // 格式化时间
+    function formatTime(time) {
+        if (isNaN(time)) return "00:00";
+        const m = Math.floor(time / 60);
+        const s = Math.floor(time % 60);
+        return `${m<10?'0':''}${m}:${s<10?'0':''}${s}`;
+    }
+    // 播放历史栈，用来存看过的视频标识/链接
+    function videoHistorys(url) {
+        if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
+            videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
+        }
+        videoHistory.push(url);
+        if (videoHistory.length > 15) {
+            videoHistory.shift();
+        }
+        currentVideoIndex = videoHistory.length - 1;
+    }
+    // 回看历史上一条视频（下滑调用）
+    function loadPreviousVideo() {
+        if (currentVideoIndex > 0) {
+            showTip('切换上一个')
+            currentVideoIndex--;
+            player.src = videoHistory[currentVideoIndex];
+            player.play();
+            //showTip();
+        } else {
+            showTip('已是第一条视频')
+        }
+    }
     // 加载下一个视频
     function loadNextVideo() {
-      if (currentVideoIndex < videoHistory.length - 1) {
-        // 如果有已加载的下一个视频
-        showTip('切换下一个')
-        currentVideoIndex++;
-        player.src = videoHistory[currentVideoIndex];
-        player.play();
-      } else {
-        // 否则加载新视频
-       showTip('加载新视频');
-        players();
-      }
-      }  
-      function players() {
-    var url = localStorage.getItem('jjurl');
-    if (null === url) {
-        url = 'https://v.nrzj.vip/video.php?_t=0' + Math.random();
-    };
-
-    function fetchAndSetSrc() {
-        return fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: 'paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0'
-        }).then(response => {
-            if (!response.ok) {
-                showTip("网络请求失败，正在重新尝试...");
-            }
-            return response.json();
-        }).then(data => {
-            const list = data.data;
-            const i = Math.floor(Math.random() * list.length);
-            var url = list[i].attachment.video[0].link;
-            url = url.replace(/http\:\/\/wulishe\.site\/wp-content\/uploads/, 'https://file.wifou.com/d/139/list/wulishe')
-              videoHistorys(url)
-            $("#myVideo").attr("src", url);
-        }).catch(error => {
-            console.error("发生错误:", error);
-        });
+        if (currentVideoIndex < videoHistory.length - 1) {
+            // 如果有已加载的下一个视频
+            showTip('切换下一个')
+            currentVideoIndex++;
+            player.src = videoHistory[currentVideoIndex];
+            player.play();
+        } else {
+            // 否则加载新视频
+            showTip('加载新视频');
+            players();
+        }
     }
 
-    function fetchUrl() {
-        return fetch(url, {
-            method: 'GET'
-        }).then(response => {
-            if (!response.ok) {
-                showTip("网络请求失败，正在重新尝试...");
-            }
-            return response.text();
-        }).then(data => {
-            var list = data.match(/data-url="(.*?)"\>/g);
-            var i = Math.floor(Math.random() * list.length);
-            var url = 'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php' + list[i].split('"')[1];
-            return url;
-        }).then(url => {
-            return $.get(url, function(data, status) {
-                if (status === "success") {
-                    var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];   
-                    videoHistorys(audioSrc)
-                 //   fba.log(videoHistory.length-1);
-                     
-         $("#myVideo").attr("src", audioSrc);                   
+    function players() {
+        var url = localStorage.getItem('jjurl');
+        if (null === url) {
+            url = 'https://v.nrzj.vip/video.php?_t=0' + Math.random();
+        };
+
+        function fetchAndSetSrc() {
+            return fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0'
+            }).then(response => {
+                if (!response.ok) {
+                    showTip("网络请求失败，正在重新尝试...");
+                }
+                return response.json();
+            }).then(data => {
+                const list = data.data;
+                const i = Math.floor(Math.random() * list.length);
+                var url = list[i].attachment.video[0].link;
+                url = url.replace(/http\:\/\/wulishe\.site\/wp-content\/uploads/, 'https://file.wifou.com/d/139/list/wulishe')
+                videoHistorys(url)
+                $("#myVideo").attr("src", url);
+            }).catch(error => {
+                console.error("发生错误:", error);
+            });
+        }
+
+        function fetchUrl() {
+            return fetch(url, {
+                method: 'GET'
+            }).then(response => {
+                if (!response.ok) {
+                    showTip("网络请求失败，正在重新尝试...");
+                }
+                return response.text();
+            }).then(data => {
+                var list = data.match(/data-url="(.*?)"\>/g);
+                var i = Math.floor(Math.random() * list.length);
+                var url = 'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php' + list[i].split('"')[1];
+                return url;
+            }).then(url => {
+                return $.get(url, function(data, status) {
+                    if (status === "success") {
+                        var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];
+                        videoHistorys(audioSrc)
+                        //   fba.log(videoHistory.length-1);
+
+                        $("#myVideo").attr("src", audioSrc);
+                    }
+                });
+            }).catch(error => {
+                console.error(error.message);
+            });
+        }
+
+        function fetchAnd(callback) {
+            $.get(url, function(data, status) {
+                if (status === status) {
+                    if (/txqq/.test(url)) {
+                        data = JSON.parse(data).list[0].video_url;
+                    }
+                    if (/ScSp|wp\.qinggongju|apihz/.test(url)) {
+                        data = data.video || data.视频 || data.data;
+                    }
+                    if (/4qb/.test(url)) {
+                        data = data.data.url;
+                    }
+                    if (/doumei/.test(url)) {
+                        const list = data.data;
+                        const i = Math.floor(Math.random() * list.length);
+                        data = list[i].content;
+                    }
+                    if (!data.startsWith("http")) {
+                        data = 'https:' + data;
+                    }
+                    // 1. 把当前视频存入历史栈
+                    videoHistorys(data)
+                    callback(data);
+                } else {
+                    showTip("失败，重新发起请求！");
+                    players()
                 }
             });
-        }).catch(error => {
-            console.error(error.message);
-        });
-    }
+        }
 
-    function fetchAnd(callback) {
-        $.get(url, function(data, status) {
-            if (status === status) {
-                if (/txqq/.test(url)) {
-                    data = JSON.parse(data).list[0].video_url;
-                }
-                if (/ScSp|wp\.qinggongju|apihz/.test(url)) {
-                    data = data.video || data.视频 || data.data;
-                }
-                if (/4qb/.test(url)) {
-                    data = data.data.url;
-                }
-                if (/doumei/.test(url)) {
-                    const list = data.data;
-                    const i = Math.floor(Math.random() * list.length);
-                    data = list[i].content;
-                }
-                if (!data.startsWith("http")) {
-                    data = 'https:' + data;
-                }
-                
-                // 1. 把当前视频存入历史栈
-     videoHistorys(data)
-     // ======================
-   
-                callback(data);
+        if (/wulishe/.test(url)) {
+            fetchAndSetSrc();
+        } else if (/kuaiyuhudong/.test(url)) {
+            fetchUrl();
+        } else if (/t=0|yujn|NewSp|jkapi/.test(url)) {
+            //videoHistorys(url)
+            $("#myVideo").attr("src", url);
+        } else {
+            fetchAnd(data => {
+                $("#myVideo").attr("src", data);
+            });
+        }
+        playicon.style.opacity = 0;
+    }
+    $(document).ready(function() {
+        auto = true;
+        player = document.getElementById("myVideo");
+        buttons = document.querySelector("#buttons");
+        playicon = document.querySelector(".play-icon");
+        playicons = document.querySelector(".play-icons");
+        const progressBar = document.getElementById('progress-bar');
+        const timeDiv = document.getElementById('time-div');
+        const timeDivs = document.getElementById('time-divs');
+        players();
+
+        // 进度条更新
+        player.addEventListener('loadedmetadata', () => {
+            durationStr = formatTime(player.duration);
+            timeDiv.textContent = durationStr;
+        })
+        player.addEventListener('timeupdate', () => {
+            const cur = player.currentTime;
+            const dur = player.duration;
+            if (!isNaN(dur)) {
+                progressBar.style.width = (cur / dur * 100) + "%";
+                timeDivs.textContent = formatTime(cur);
+                timeDiv.textContent = durationStr;
+            }
+        })
+
+        // 长按2倍速（优化：仅长按加速，滑动不触发）
+        let longPressTimer = null;
+        document.addEventListener("touchstart", (e) => {
+            if (e.touches.length === 1) {
+                longPressTimer = setTimeout(() => {
+                    player.playbackRate = 2;
+                }, 300)
+            }
+        }, {
+            passive: true
+        });
+        document.addEventListener("touchend", () => {
+            clearTimeout(longPressTimer);
+            player.playbackRate = 1;
+        }, {
+            passive: true
+        }); //长按倍速   
+
+        $("#bth").on("click", function() {
+            auto = !auto;
+            this.innerText = (auto ? '连播' : '循环');
+            showTip(auto ? '已开启连续播放' : '已开启单曲循环');
+            hideControl();
+            player.play()
+        });
+
+        $("#ping").on("click", function() {
+            //fba.log(this.innerText)
+            this.innerText = (this.innerText == '原始' ? '满屏' : '原始');
+            if (this.innerText == '满屏') {
+                player.style.objectFit = "cover";
+                player.play()
             } else {
-                showTip("失败，重新发起请求！");
-                players()
+                player.style.objectFit = "contain";
+                player.play()
+            }
+            hideControl();
+        })
+
+
+        $("#myVideo").on("error", function() {
+            players();
+        }); //错误从新播放
+
+        player.addEventListener('ended', function() {
+            console.log("播放结束");
+            if (auto == false) {
+                player.play();
+            } else {
+                loadNextVideo();
+            }
+        }, false);
+
+        // 双击全屏
+        $("#myVideo").on("dblclick", function() {
+            if (player.requestFullscreen) player.requestFullscreen();
+            else if (player.webkitRequestFullscreen) player.webkitRequestFullscreen();
+            else if (player.mozRequestFullScreen) player.mozRequestFullScreen();
+            hideControl();
+        });
+        // 单击视频 显示/暂停
+        $("#myVideo").on("click", function() {
+            if (parseFloat(playicon.style.opacity) === 1 || playicon.style.opacity === "") {
+                buttons.style.opacity = 0;
+                playicon.style.opacity = 0;
+                playicons.style.opacity = 1;
+                player.pause();
+                //hideControl();
+            } else {
+                playicons.style.opacity = 0;
+                buttons.style.opacity = 1;
+                playicon.style.opacity = 1;
+                player.play();
+                hideControl();
             }
         });
-    }
 
-    if (/wulishe/.test(url)) {
-        fetchAndSetSrc();
-    } else if (/kuaiyuhudong/.test(url)) {
-        fetchUrl();
-    } else if (/t=0|yujn|NewSp|jkapi/.test(url)) {
-        //videoHistorys(url)
-        $("#myVideo").attr("src", url);
-    } else {
-        fetchAnd(data => {
-            $("#myVideo").attr("src", data);
+        $(document).on("click", "#yuan", function() {
+            if (isOptionsOpen) {
+                // 弹窗已经打开，我们需要关闭它
+                $("#options").hide();
+                isOptionsOpen = false;
+            } else {
+                // 弹窗已经关闭，我们需要打开它
+                var options = [{
+                    name: '源5',
+                    url: 'https://www.hhlqilongzhu.cn/api/MP4_xiaojiejie.php?_t=0' + Math.random()
+                }, {
+                    name: '源6',
+                    url: 'https://jkapi.com/api/xjj_video?apiKey=69b159635b2789ee4e3a807985090777'
+                }, {
+                    name: "源08",
+                    url: "https://v.nrzj.vip/video.php?_t=0" + Math.random(),
+                }, {
+                    name: '快9',
+                    url: 'https://openapi.dwo.cc/api/ksvideo?_t=0' + Math.random()
+                }, {
+                    name: '源10',
+                    url: 'https://www.wudada.online/Api/NewSp'
+                }, {
+                    name: '源11',
+                    url: 'https://openapi.dwo.cc/api/v?_t=0' + Math.random()
+                }, {
+                    name: '源12',
+                    url: 'https://openapi.dwo.cc/api/fh_mvsp?_t=0' + Math.random()
+                }, {
+                    name: '源15',
+                    url: 'http://www.wudada.online/Api/ScSp'
+                }, {
+                    name: '源16',
+                    url: 'http://api.yujn.cn/api/zzxjj.php?type=video',
+                }, {
+                    name: '源17',
+                    url: 'http://api.yujn.cn/api/xjj.php',
+                }, {
+                    name: '女大',
+                    url: 'http://api.yujn.cn/api/nvda.php',
+                }, {
+                    name: '黑丝',
+                    url: 'http://api.yujn.cn/api/heisis.php',
+                }, {
+                    name: '汉服',
+                    url: 'http://api.yujn.cn/api/hanfu.php',
+                }, {
+                    name: '源21',
+                    url: 'https://api.kuleu.com/api/MP4_xiaojiejie?_t=0' + Math.random()
+                }, {
+                    name: '源22',
+                    url: 'https://api.7645.cn/video/?_t=0' + Math.random()
+                }, {
+                    name: "抖抖",
+                    url: "http://dou.plus/get/get1.php",
+                }, {
+                    name: "极致",
+                    url: "https://p.txqq.pro/api/girls?limit=1",
+                }, {
+                    name: "新",
+                    url: "http://api.yujn.cn/api/xjj.php",
+                }, {
+                    name: "TikTok",
+                    url: "https://diskgirl.com/get/get1.php",
+                }, {
+                    name: "新2",
+                    url: "https://diskgirl.com/get/get2.php",
+                }, {
+                    name: "新3",
+                    url: "https://diskgirl.com/get/get3.php",
+                }, {
+                    name: '新4',
+                    url: 'https://xjj.ciyer.com/video.php?lx=video&_t=0' + Math.random()
+                }, {
+                    name: '新5',
+                    url: 'https://www.cunshao.com/666666/api/web.php?_t=0' + Math.random()
+                }, {
+                    name: '新6',
+                    url: 'https://188sp.711888.xyz/188/video.php?_t=0' + Math.random()
+                }, {
+                    name: '新7',
+                    url: 'https://28apk.com/mm/video.php?_t=0' + Math.random()
+                }, {
+                    name: '新8',
+                    url: 'https://www.xiaolufx.net/suiji/video.php?_t=0' + Math.random()
+                }, {
+                    name: '新9',
+                    url: 'http://api.mmp.cc/api/ksvideo?type=mp4&id=NvGao&_t=0' + Math.random()
+                }, {
+                    name: '新10',
+                    url: 'https://api.mmp.cc/api/ksvideo?type=mp4&id=NvDa&_t=0' + Math.random()
+                }, {
+                    name: '新11',
+                    url: 'https://api.mmp.cc/api/ksvideo?type=mp4&id=YuMeng&_t=0' + Math.random()
+                }, {
+                    name: '新12',
+                    url: 'http://api.mmp.cc/api/ksvideo?type=mp4&id=jk&_t=0' + Math.random()
+                }, {
+                    name: '新13',
+                    url: 'https://api.suyanw.cn/api/xjj/api.php?_t=0' + Math.random()
+                }, {
+                    name: '新14',
+                    url: 'https://openapi.dwo.cc/api/4qb_sp?msg=%E7%83%AD%E8%88%9E'
+                }, {
+                    name: '新15',
+                    url: 'https://openapi.dwo.cc/api/viodes?_t=0' + Math.random()
+                }, {
+                    name: '新16',
+                    url: 'https://openapi.dwo.cc/api/xjj?_t=0' + Math.random()
+                }, {
+                    name: '新17',
+                    url: 'https://api.xudu.org/vos/vc?_t=' + Math.random()
+                }, {
+                    name: '18',
+                    url: 'https://api.yujn.cn/api/zzxjj.php?_t=' + Math.random()
+                }, {
+                    name: '抖一抖',
+                    url: 'https://www.douyidou.com/get/get1.php'
+                }, {
+                    name: '精品',
+                    url: 'https://api.wwgz.cn:520/dsp/get/get1.php'
+                }, {
+                    name: '屋里社',
+                    url: 'http://wulishe.site/wp-json/b2/v1/getTopicList'
+                }, {
+                    name: '抖妹',
+                    url: 'https://www.doumei.cc/api/v1/recommend'
+                }, {
+                    name: '抖美女',
+                    url: 'https://wp.qinggongju.com/wp-content/themes/onenavsub/tool/douyin_proxy.php'
+                }, {
+                    name: '甜美',
+                    url: 'https://cn.apihz.cn/api/fun/girl.php?id=10008308&key=7e3e249519990e557cd9c79458f2b084'
+                }, {
+                    name: '快美女',
+                    url: 'https://qinggongju.com/xiaojie/video.php?_t=0' + Math.random()
+                }, {
+                    name: '横屏',
+                    url: 'https://www.cunshao.com/666666/api/pc.php?_t=0' + Math.random()
+                }, {
+                    name: '抖艺术',
+                    url: 'https://random-api.czl.net/video/dy-art?_t=0' + Math.random()
+                }, {
+                    name: '热舞',
+                    url: 'http://api.4qb.cn/api/suiji-sp?msg=%E7%83%AD%E8%88%9E&type=json'
+                }];
+
+                options.push({
+                    name: 'pf1',
+                    url: 'https://pf129.com/xjj/get/get1.php'
+                });
+                options.push({
+                    name: 'DJ秀',
+                    url: 'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php'
+                });
+                options.push({
+                    name: '美女',
+                    url: 'https://v1.21lhz.cn/API/Video/api.php?_t=0' + Math.random()
+                });
+                var options = options.filter(data => {
+                    return !data.name.match(/pf07/)
+                });
+                var name = localStorage.getItem('xjjname');
+                if (null === name) {
+                    name = '源08';
+                }
+                const index = options.findIndex(function(val) {
+                    return val.name === name
+                });
+                options[index].name = '<span style="color:red">' + options[index].name + '</span>';
+                var optionsHtml = "";
+                options.forEach(function(option) {
+                    optionsHtml += "<div class='option'>" + option.name + "<span class='url' data-url='" + option.url + "'></span></div>";
+                });
+                document.getElementById("options").style.display = 'flex';
+                $("#options").html(optionsHtml);
+                $("#options").show();
+                isOptionsOpen = true;
+                $(".option").on("click", function() {
+                    var name = $(this).text();
+                    var url = $(this).find(".url").attr("data-url");
+                    localStorage.setItem('jjurl', url);
+                    localStorage.setItem('xjjname', name)
+                    document.getElementById('yuan').innerText = name;
+                    players();
+                    $("#options").hide();
+                });
+            }
         });
-    }
 
-    playicon.style.opacity = 0;
-} 
-		$(document).ready(function() {
-		    auto = true;
-		  player = document.getElementById("myVideo");
-		  buttons = document.querySelector("#buttons");
-		  playicon = document.querySelector(".play-icon");
-		  playicons = document.querySelector(".play-icons");
-	   const progressBar = document.getElementById('progress-bar');
-		 const timeDiv = document.getElementById('time-div');
-		 const timeDivs = document.getElementById('time-divs');	
-		      players();
-		
-     // 进度条更新
-     player.addEventListener('loadedmetadata', () => {
-         durationStr = formatTime(player.duration);
-         timeDiv.textContent = durationStr;
-     })
-     player.addEventListener('timeupdate', () => {
-         const cur = player.currentTime;
-         const dur = player.duration;
-         if(!isNaN(dur)){
-             progressBar.style.width = (cur/dur*100)+"%";
-             timeDivs.textContent = formatTime(cur);
-             timeDiv.textContent = durationStr;
-         }
-     })
-        
-		   	// 长按2倍速（优化：仅长按加速，滑动不触发）
-     let longPressTimer = null;
-     document.addEventListener("touchstart", (e) => {
-         if(e.touches.length === 1){
-             longPressTimer = setTimeout(()=>{
-                 player.playbackRate = 2;
-             },300)
-         }
-     },{passive:true});
-     document.addEventListener("touchend", () => {
-         clearTimeout(longPressTimer);
-         player.playbackRate = 1;
-     },{passive:true});//长按倍速   
-     
-		    $("#bth").on("click", function() {
-		        auto = !auto;
-		        this.innerText = (auto ? '连播' : '循环');
-		        showTip(auto ? '已开启连续播放' : '已开启单曲循环');
-		        hideControl();	        
-		        player.play()
-		    });
-		
-		    $("#ping").on("click", function() {
-		    //fba.log(this.innerText)
-		        this.innerText = (this.innerText == '原始' ? '满屏' : '原始');
-		        if (this.innerText == '满屏') {
-		            player.style.objectFit = "cover";		            
-		            player.play()
-		        } else {
-		            player.style.objectFit = "contain";
-		            player.play()
-		        } 		        	
-		        hideControl();      
-		    })  
-		        
-		        
-		    $("#myVideo").on("error", function() {
-		        players();
-		    }); //错误从新播放
-		
-		    player.addEventListener('ended', function() {
-		        console.log("播放结束");
-		        if (auto == false) {
-		            player.play();
-		        } else {
-		            loadNextVideo();
-		        }
-		    }, false);
-		    
-		   // 双击全屏
-     $("#myVideo").on("dblclick", function(){
-         if (player.requestFullscreen) player.requestFullscreen();
-         else if (player.webkitRequestFullscreen) player.webkitRequestFullscreen();
-         else if (player.mozRequestFullScreen) player.mozRequestFullScreen();
-         hideControl();
-     });    
-         // 单击视频 显示/暂停
-     $("#myVideo").on("click", function(){
-         if (parseFloat(playicon.style.opacity) === 1 || playicon.style.opacity === "") {
-             buttons.style.opacity = 0;
-             playicon.style.opacity = 0;
-             playicons.style.opacity = 1;
-             player.pause();
-             //hideControl();
-         } else {
-             playicons.style.opacity = 0;
-             buttons.style.opacity = 1;
-             playicon.style.opacity = 1;
-             player.play();
-             hideControl();
-         }
-     });
-		
-		    
-		
-		    $(document).on("click", "#yuan", function() {
-		        if (isOptionsOpen) {
-		            // 弹窗已经打开，我们需要关闭它
-		            $("#options").hide();
-		            isOptionsOpen = false;
-		        } else {
-		            // 弹窗已经关闭，我们需要打开它
-		            var options = [{
-		                    name: '源5',
-		                    url: 'https://www.hhlqilongzhu.cn/api/MP4_xiaojiejie.php?_t=0' + Math.random()
-		                }, {
-		                    name: '源6',
-		                    url: 'https://jkapi.com/api/xjj_video?apiKey=69b159635b2789ee4e3a807985090777'
-		                }, {
-		                    name: "源08",
-		                    url: "https://v.nrzj.vip/video.php?_t=0" + Math.random(),
-		                }, {
-		                    name: '快9',
-		                    url: 'https://openapi.dwo.cc/api/ksvideo?_t=0' + Math.random()
-		                }, {
-		                    name: '源10',
-		                    url: 'https://www.wudada.online/Api/NewSp'
-		                }, {
-		                    name: '源11',
-		                    url:'https://openapi.dwo.cc/api/v?_t=0' + Math.random()
-		                }, {
-		                    name: '源12',
-		                    url: 'https://openapi.dwo.cc/api/fh_mvsp?_t=0'+ Math.random()
-		                }, {
-		                    name: '源15',
-		                    url: 'http://www.wudada.online/Api/ScSp'
-		                }, {
-		                    name: '源16',
-		                    url: 'http://api.yujn.cn/api/zzxjj.php?type=video',
-		                }, {
-		                    name: '源17',
-		                    url: 'http://api.yujn.cn/api/xjj.php',
-		                }, {
-		                    name: '女大',
-		                    url: 'http://api.yujn.cn/api/nvda.php',
-		                }, {
-		                    name: '黑丝',
-		                    url: 'http://api.yujn.cn/api/heisis.php',
-		                }, {
-		                    name: '汉服',
-		                    url: 'http://api.yujn.cn/api/hanfu.php',
-		                }, {
-		                    name: '源21',
-		                    url: 'https://api.kuleu.com/api/MP4_xiaojiejie?_t=0' + Math.random()
-		                }, {
-		                    name: '源22',
-		                    url: 'https://api.7645.cn/video/?_t=0' + Math.random()
-		                }, {
-		                    name: "抖抖",
-		                    url: "http://dou.plus/get/get1.php",
-		                }, {
-		                    name: "极致",
-		                    url: "https://p.txqq.pro/api/girls?limit=1",
-		                }, {
-		                    name: "新",
-		                    url: "http://api.yujn.cn/api/xjj.php",
-		                },  {
-		                    name: "TikTok",
-		                    url: "https://diskgirl.com/get/get1.php",
-		                },  {
-		                    name: "新2",
-		                    url: "https://diskgirl.com/get/get2.php",
-		                },  {
-		                    name: "新3",
-		                    url: "https://diskgirl.com/get/get3.php",
-		                }, {
-		                    name: '新4',
-		                    url: 'https://xjj.ciyer.com/video.php?lx=video&_t=0' + Math.random()
-		                }, {
-		                    name: '新5',
-		                    url: 'https://www.cunshao.com/666666/api/web.php?_t=0' + Math.random()
-		                }, {
-		                    name: '新6',
-		                    url: 'https://188sp.711888.xyz/188/video.php?_t=0' + Math.random()
-		                }, {
-		                    name: '新7',
-		                    url: 'https://28apk.com/mm/video.php?_t=0' + Math.random()
-		                }, {
-		                    name: '新8',
-		                    url: 'https://www.xiaolufx.net/suiji/video.php?_t=0' + Math.random()
-		                }, {
-		                    name: '新9',
-		                    url: 'http://api.mmp.cc/api/ksvideo?type=mp4&id=NvGao&_t=0' + Math.random()
-		                }, {
-		                    name: '新10',
-		                    url: 'https://api.mmp.cc/api/ksvideo?type=mp4&id=NvDa&_t=0' + Math.random()
-		                }, {
-		                    name: '新11',
-		                    url: 'https://api.mmp.cc/api/ksvideo?type=mp4&id=YuMeng&_t=0' + Math.random()
-		                }, {
-		                    name: '新12',
-		                    url: 'http://api.mmp.cc/api/ksvideo?type=mp4&id=jk&_t=0' + Math.random()
-		                }, {
-		                    name: '新13',
-		                    url: 'https://api.suyanw.cn/api/xjj/api.php?_t=0' + Math.random()
-		                }, {
-		                    name: '新14',
-		                    url: 'https://openapi.dwo.cc/api/4qb_sp?msg=%E7%83%AD%E8%88%9E'
-		                },{
-		                    name: '新15',
-		                    url: 'https://openapi.dwo.cc/api/viodes?_t=0' + Math.random()
-		                },{
-		                    name: '新16',
-		                    url: 'https://openapi.dwo.cc/api/xjj?_t=0' + Math.random()
-		                },{
-		                    name: '新17',
-		                    url: 'https://api.xudu.org/vos/vc?_t=' + Math.random()
-		                },{
-		                    name: '18',
-		                    url:'https://api.yujn.cn/api/zzxjj.php?_t=' + Math.random()
-		                },{
-		                    name: '抖一抖',
-		                    url: 'https://www.douyidou.com/get/get1.php'
-		                }, {
-		                    name: '精品',
-		                    url: 'https://api.wwgz.cn:520/dsp/get/get1.php'
-		                }, {
-		                    name: '屋里社',
-		                    url: 'http://wulishe.site/wp-json/b2/v1/getTopicList'
-		                }, {
-		                    name: '抖妹',
-		                    url: 'https://www.doumei.cc/api/v1/recommend'
-		                }, {
-		                    name: '抖美女',
-		                    url: 'https://wp.qinggongju.com/wp-content/themes/onenavsub/tool/douyin_proxy.php'
-		                }, {
-		                    name: '甜美',
-		                    url: 'https://cn.apihz.cn/api/fun/girl.php?id=10008308&key=7e3e249519990e557cd9c79458f2b084'
-		                }, {
-		                    name: '快美女',
-		                    url: 'https://qinggongju.com/xiaojie/video.php?_t=0' + Math.random()
-		                }, {
-		                    name: '横屏',
-		                    url: 'https://www.cunshao.com/666666/api/pc.php?_t=0' + Math.random()
-		                }, {
-		                    name: '抖艺术',
-		                    url: 'https://random-api.czl.net/video/dy-art?_t=0'+ Math.random()
-		                }, {
-		                    name: '热舞',
-		                    url: 'http://api.4qb.cn/api/suiji-sp?msg=%E7%83%AD%E8%88%9E&type=json' 
-		                }
-		            ];	           
-		            		                
-		            	options.push({
-		                    name: 'pf1',
-		                    url: 'https://pf129.com/xjj/get/get1.php'
-		                });	            
-		                options.push({
-		                    name: 'DJ秀',
-		                    url: 'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php'
-		                });
-		                options.push(
-		                {
-		                    name: '美女',
-		                    url: 'https://v1.21lhz.cn/API/Video/api.php?_t=0' + Math.random()
-		                });
-		            var options = options.filter(data => {
-        return !data.name.match(/pf07/)
-    });     
-                        
-		            var name = localStorage.getItem('xjjname');
-		           if(null === name) {
-		                name = '源08';
-		           }
-		            const index = options.findIndex(function(val) {
-		                return val.name === name
-		            });
-		            options[index].name = '<span style="color:red">' + options[index].name + '</span>';
-		            var optionsHtml = "";
-		            options.forEach(function(option) {
-		                optionsHtml += "<div class='option'>" + option.name + "<span class='url' data-url='" + option.url + "'></span></div>";
-		            });
-		           
-		            
-		            document.getElementById("options").style.display ='flex';
-		
-		            $("#options").html(optionsHtml);
-		            $("#options").show();
-		            isOptionsOpen = true;
-		            $(".option").on("click", function() {
-		        var name = $(this).text();
-		        var url = $(this).find(".url").attr("data-url");   
-		                  
-		        localStorage.setItem('jjurl', url);
-		        localStorage.setItem('xjjname', name)
-		        document.getElementById('yuan').innerText = name;
-		        players();
-		        $("#options").hide();
-		    });
-		        }
-		    });
-		
-		    // 点击弹窗内部的任何元素都可以关闭弹窗
-		    $(document).on("click", ".option", function(event) {
-		        $("#options").hide();
-		        isOptionsOpen = false;
-		    });
-		
-		    // 点击屏幕其他地方可以关闭弹窗
-		    $(document).on("click", function(event) {
-		        if (!$(event.target).closest("#yuan, .option").length && isOptionsOpen) {
-		            $("#options").hide();
-		            isOptionsOpen = false;
-		            player.play()
-		            playicon.style.opacity = 0; 
-		        }
-		    });		    
-})	    
+        // 点击弹窗内部的任何元素都可以关闭弹窗
+        $(document).on("click", ".option", function(event) {
+            $("#options").hide();
+            isOptionsOpen = false;
+        });
+
+        // 点击屏幕其他地方可以关闭弹窗
+        $(document).on("click", function(event) {
+            if (!$(event.target).closest("#yuan, .option").length && isOptionsOpen) {
+                $("#options").hide();
+                isOptionsOpen = false;
+                player.play()
+                playicon.style.opacity = 0;
+            }
+        });
+    })  
 </script>
 	<script>	
 		var startx, starty;
