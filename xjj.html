@@ -264,18 +264,23 @@
     }
     
     function loadVideo(){
-     player.src = videoList[x];
-     fba.log(videoList.length)
+     player.src = videoList[x];   
      fba.log(x)
-     checkMp4Playable(player.src).then(isPlay => {
+     fba.log(videoList.length) 
+     if(x+1!=videoList.length){
+         checkMp4Playable(player.src).then(isPlay => {
    if (isPlay) {
      //alert('该MP4可以正常播放');
    } else {
-     player.src = 'https://v.nrzj.vip/video.php?_t=0' + Math.random()
-     showTip("文件损坏，已随机播放");
+     x = x+1
+     showTip("视频文件损坏，已跳过");
    }
  });
      player.play();
+     }else{
+     showTip('加载新视频');
+            players();
+     }
  }
     // 播放历史栈，用来存看过的视频标识/链接
     function videoHistorys(url) {
@@ -335,11 +340,13 @@
                 return response.json();
             }).then(data => {
                 const list = data.data;
-                const i = Math.floor(Math.random() * list.length);
+                for (i = 0; i < list.length; i++) {
+                //const i = Math.floor(Math.random() * list.length);
                 var url = list[i].attachment.video[0].link;
                 url = url.replace(/http\:\/\/wulishe\.site\/wp-content\/uploads/, 'https://file.wifou.com/d/139/list/wulishe')
-                videoHistorys(url)
-                $("#myVideo").attr("src", url);
+                videoList.push(url)
+                }
+                loadVideo()     
             }).catch(error => {
                 console.error("发生错误:", error);
             });
@@ -355,23 +362,18 @@
                 return response.text();
             }).then(data => {
                 var list = data.match(/data-url="(.*?)"\>/g);
-                var i = Math.floor(Math.random() * list.length);
+                for (i = 0; i < list.length; i++) {
+                //var i = Math.floor(Math.random() * list.length);
                 var url = 'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php' + list[i].split('"')[1];
-                return url;
-            }).then(url => {
-                return $.get(url, function(data, status) {
-                    if (status === "success") {
-                        var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];
-                        videoHistorys(audioSrc)
-                        //   fba.log(videoHistory.length-1);
-
-                        $("#myVideo").attr("src", audioSrc);
-                    }
-                });
-            }).catch(error => {
-                console.error(error.message);
-            });
-        }
+                 $.get(url, function(data, status) {                                       
+                        var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];                       
+                        videoList.push(audioSrc)                      
+                     });
+                  }
+                        loadVideo()      
+           })
+     }
+           
 
         function fetchAnd(callback) {
             $.get(url, function(data, status) {
@@ -382,11 +384,7 @@
                     if (/4qb/.test(url)) {
                         data = data.data.url;
                     }
-                    if (/doumei/.test(url)) {
-                        const list = data.data;
-                        const i = Math.floor(Math.random() * list.length);
-                        data = list[i].content;
-                    }
+                    
                     if (!data.startsWith("http")) {
                         data = 'https:' + data;
                     }
@@ -410,12 +408,13 @@
                 }
                 return response.json();
             }).then(data => {                                  
-                        json = data.list;    
+                        json = data.list||data.data;    
                         //videoList.length = 0
                               //fba.log(json[0].video_url)              
                            for (i = 0; i < json.length; i++) {
-                        videoList.push(json[i].video_url)
-                        }                                                                
+                        videoList.push(json[i].video_url||json[i].content)
+                        }  
+                        loadVideo()                                                                     
                   } ).catch(error => {
                       showTip("资源加载失败，重试");
                 console.error(error.message);
@@ -424,10 +423,10 @@
 
         if (/wulishe/.test(url)) {
             fetchAndSetSrc();
-        } else if (/txqq/.test(url)) {       
+        } else if (/txqq|doumei/.test(url)) {       
         
         fetchjingz() 
-        loadVideo()       
+        
         }else if (/kuaiyuhudong/.test(url)) {
             fetchUrl();
         } else if (/t=0|yujn|NewSp|jkapi/.test(url)) {
@@ -514,17 +513,9 @@
             if (auto == false) {
                 player.play();
             } else {
-                if (/txqq/.test(localStorage.getItem('jjurl'))) {	                       
-                       x = (x+1)%videoList.length;
-                       
-                       if (x!=19) {                 
-                       loadVideo();
-                       showTip('切换下一个')
-                       }else {
-            // 否则加载新视频
-                       showTip('加载新视频');
-                       players();                                            
-                      }                 
+                if (/txqq|doumei|wulishe|kuaiyuhudong/.test(localStorage.getItem('jjurl'))) {	                       
+                       x = (x+1)%videoList.length;                                     
+                       loadVideo();                       
                       }else{
                 loadNextVideo();
                 }
@@ -749,7 +740,8 @@
         $(document).on("click", ".option", function(event) {
             $("#options").hide();
             isOptionsOpen = false;
-            videoHistory.length = 0          
+            videoHistory.length = 0
+            videoList.length = 0             
         });
 
         // 点击屏幕其他地方可以关闭弹窗
@@ -811,17 +803,10 @@
 		                    console.log("向上！");	  		                                    	                    
 		                  if (/t=0|yujn|NewSp|jkapi/.test(url)) {  
 		                   player.webkitExitFullscreen(); 
-		                   } else if (/txqq/.test(url)) {	                       
+		                   } else if (/txqq|doumei|wulishe|kuaiyuhudong/.test(url)) {	                       
                        x = (x+1)%videoList.length;   
-                       
-                       if (x!=19) {                 
-                       loadVideo();
-                       showTip('切换下一个')
-                       }else {
-            // 否则加载新视频
-                       showTip('加载新视频');
-                       players();                                            
-                      }
+                           loadVideo();  
+                           showTip('切换下一个')              
                       }else{
 		                   loadNextVideo()
 		                   showTip('切换下一个')
@@ -846,7 +831,7 @@
 		                   console.log("向下！");		
 		                   if (/t=0|yujn|NewSp|jkapi/.test(url)) {  
 		                   player.webkitExitFullscreen(); 
-		                   } else if (/txqq/.test(url)) {	                       
+		                   } else if (/txqq|doumei|wulishe|kuaiyuhudong/.test(url)) {	                       
                        x = x-1 <0 ? videoList.length-1 : x-1;                                         
                        loadVideo();
                        showTip('切换上一个')                       
