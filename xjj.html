@@ -208,11 +208,41 @@
     let durationStr = "00:00";
     let isOptionsOpen = false;
     let videoHistory = [];
+    let videoList = [];
     let currentVideoIndex = -1;
     let hideTimer = null;
+    let x = 1
+    
+    /**
+  * 校验指定MP4文件能否正常播放
+  * @param {string} src 视频地址
+  * @returns Promise<boolean>
+  */
+ function checkMp4Playable(src) {
+   return new Promise((resolve) => {
+     const video = document.createElement('video');
+     video.muted = true; // 静音，避免自动播放限制
+     video.preload = 'metadata'; // 只加载元数据，不完整下载
+     // 成功获取视频信息 = 可播放
+     video.onloadedmetadata = () => {
+       video.remove();
+       resolve(true);
+     };
+     // 加载失败/格式损坏/跨域报错
+     video.onerror = () => {
+       video.remove();
+       resolve(false);
+     };
+     video.src = src;
+     video.load();
+   });
+ }
+ // 调用示例
+ 
+    
     //弹窗提示
     function showTip(text) {
-        document.getElementById("tipMessage").textContent = text;
+             document.getElementById("tipMessage").textContent = text;
         document.getElementById("myModal").style.display = "flex";
         setTimeout(function() {
             document.getElementById("myModal").style.display = "none";
@@ -232,6 +262,21 @@
         const s = Math.floor(time % 60);
         return `${m<10?'0':''}${m}:${s<10?'0':''}${s}`;
     }
+    
+    function loadVideo(){
+     player.src = videoList[x];
+     fba.log(videoList.length)
+     fba.log(x)
+     checkMp4Playable(player.src).then(isPlay => {
+   if (isPlay) {
+     //alert('该MP4可以正常播放');
+   } else {
+     player.src = 'https://v.nrzj.vip/video.php?_t=0' + Math.random()
+     showTip("文件损坏，已随机播放");
+   }
+ });
+     player.play();
+ }
     // 播放历史栈，用来存看过的视频标识/链接
     function videoHistorys(url) {
         if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
@@ -331,9 +376,6 @@
         function fetchAnd(callback) {
             $.get(url, function(data, status) {
                 if (status === status) {
-                    if (/txqq/.test(url)) {
-                        data = JSON.parse(data).list[0].video_url;
-                    }
                     if (/ScSp|wp\.qinggongju|apihz/.test(url)) {
                         data = data.video || data.视频 || data.data;
                     }
@@ -358,9 +400,35 @@
             });
         }
 
+    function fetchjingz() {
+        fba.log('1111111')
+            return fetch(url, {
+                method: 'GET'
+            }).then(response => {
+                if (!response.ok) {
+                    showTip("网络请求失败，正在重新尝试...");
+                }
+                return response.json();
+            }).then(data => {                                  
+                        json = data.list;    
+                        //videoList.length = 0
+                              //fba.log(json[0].video_url)              
+                           for (i = 0; i < json.length; i++) {
+                        videoList.push(json[i].video_url)
+                        }                                                                
+                  } ).catch(error => {
+                      showTip("资源加载失败，重试");
+                console.error(error.message);
+            });                   
+               }
+
         if (/wulishe/.test(url)) {
             fetchAndSetSrc();
-        } else if (/kuaiyuhudong/.test(url)) {
+        } else if (/txqq/.test(url)) {       
+        
+        fetchjingz() 
+        loadVideo()       
+        }else if (/kuaiyuhudong/.test(url)) {
             fetchUrl();
         } else if (/t=0|yujn|NewSp|jkapi/.test(url)) {
             //videoHistorys(url)
@@ -382,7 +450,6 @@
         const timeDiv = document.getElementById('time-div');
         const timeDivs = document.getElementById('time-divs');
         players();
-
         // 进度条更新
         player.addEventListener('loadedmetadata', () => {
             durationStr = formatTime(player.duration);
@@ -447,7 +514,20 @@
             if (auto == false) {
                 player.play();
             } else {
+                if (/txqq/.test(localStorage.getItem('jjurl'))) {	                       
+                       x = (x+1)%videoList.length;
+                       
+                       if (x!=19) {                 
+                       loadVideo();
+                       showTip('切换下一个')
+                       }else {
+            // 否则加载新视频
+                       showTip('加载新视频');
+                       players();                                            
+                      }                 
+                      }else{
                 loadNextVideo();
+                }
             }
         }, false);
 
@@ -532,7 +612,7 @@
                     url: "http://dou.plus/get/get1.php",
                 }, {
                     name: "极致",
-                    url: "https://p.txqq.pro/api/girls?limit=1",
+                    url: "https://p.txqq.pro/api/girls?limit=20",
                 }, {
                     name: "新",
                     url: "http://api.yujn.cn/api/xjj.php",
@@ -669,6 +749,7 @@
         $(document).on("click", ".option", function(event) {
             $("#options").hide();
             isOptionsOpen = false;
+            videoHistory.length = 0          
         });
 
         // 点击屏幕其他地方可以关闭弹窗
@@ -724,12 +805,27 @@
 		            endx = e.changedTouches[0].pageX;
 		            endy = e.changedTouches[0].pageY;
 		            var direction = getDirection(startx, starty, endx, endy);
-		            
+		            var url = localStorage.getItem('jjurl')
 		            switch (direction) {
 		                case 1:
-		                    console.log("向上！");
-		                    //showTip('切换下一个')
-		                    loadNextVideo()
+		                    console.log("向上！");	  		                                    	                    
+		                  if (/t=0|yujn|NewSp|jkapi/.test(url)) {  
+		                   player.webkitExitFullscreen(); 
+		                   } else if (/txqq/.test(url)) {	                       
+                       x = (x+1)%videoList.length;   
+                       
+                       if (x!=19) {                 
+                       loadVideo();
+                       showTip('切换下一个')
+                       }else {
+            // 否则加载新视频
+                       showTip('加载新视频');
+                       players();                                            
+                      }
+                      }else{
+		                   loadNextVideo()
+		                   showTip('切换下一个')
+		                  }  
 		                    playicons.style.opacity = 0;
 		                    break;
 		                case 3:
@@ -739,7 +835,7 @@
 		                    break;
 		                case 4:
 		                   console.log("向右！");
-		                    if (/t=0|yujn|NewSp|jkapi/.test(player.src)) {  
+		                    if (/t=0|yujn|NewSp|jkapi/.test(url)) {  
 		                   player.webkitExitFullscreen(); 
 		                   } else{            
 		                    loadPreviousVideo()
@@ -748,10 +844,15 @@
 		                    break;
 		                case 2:
 		                   console.log("向下！");		
-		                   if (/t=0|yujn|NewSp|jkapi/.test(player.src)) {  
+		                   if (/t=0|yujn|NewSp|jkapi/.test(url)) {  
 		                   player.webkitExitFullscreen(); 
-		                   } else{            
+		                   } else if (/txqq/.test(url)) {	                       
+                       x = x-1 <0 ? videoList.length-1 : x-1;                                         
+                       loadVideo();
+                       showTip('切换上一个')                       
+                      }else{            
 		                    loadPreviousVideo()
+		                    showTip('切换上一个')
 		                    }
 		                    playicons.style.opacity = 0;                                 
 		                    break;
