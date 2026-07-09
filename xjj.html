@@ -273,6 +273,7 @@
      //alert('该MP4可以正常播放');
    } else {
      x = x+1
+     player.play();
      showTip("视频文件损坏，已跳过");
    }
  });
@@ -415,7 +416,7 @@
                         videoList.push(json[i].video_url||json[i].content)
                         }  
                         loadVideo()                                                                     
-                  } ).catch(error => {
+                  }).catch(error => {
                       showTip("资源加载失败，重试");
                 console.error(error.message);
             });                   
@@ -741,7 +742,8 @@
             $("#options").hide();
             isOptionsOpen = false;
             videoHistory.length = 0
-            videoList.length = 0             
+            videoList.length = 0      
+              x= 1     
         });
 
         // 点击屏幕其他地方可以关闭弹窗
