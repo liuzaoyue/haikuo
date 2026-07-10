@@ -211,7 +211,7 @@
     let videoList = [];
     let currentVideoIndex = -1;
     let hideTimer = null;
-    let x = 1
+    let x = 0
     
     /**
   * 校验指定MP4文件能否正常播放
@@ -263,26 +263,6 @@
         return `${m<10?'0':''}${m}:${s<10?'0':''}${s}`;
     }
     
-    function loadVideo(){
-     player.src = videoList[x];   
-     fba.log(x)
-     fba.log(videoList.length) 
-     if(x+1!=videoList.length){
-         checkMp4Playable(player.src).then(isPlay => {
-   if (isPlay) {
-     //alert('该MP4可以正常播放');
-   } else {
-     x = x+1
-     player.play();
-     showTip("视频文件损坏，已跳过");
-   }
- });
-     player.play();
-     }else{
-     showTip('加载新视频');
-            players();
-     }
- }
     // 播放历史栈，用来存看过的视频标识/链接
     function videoHistorys(url) {
         if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
@@ -321,59 +301,95 @@
         }
     }
 
+async function loadVideo() {
+        fba.log(x)
+        fba.log(videoList.length)
+   // 下标越界，重新拉取视频列表
+   if (x >= videoList.length) {
+     showTip('视频列表播放完毕，重新加载新视频');
+     await players();
+     return;
+   }
+   const currentSrc = videoList[x];
+   player.src = currentSrc;
+   // 异步校验视频能否播放
+   const canPlay = await checkMp4Playable(currentSrc);
+   if (canPlay) {
+     // 正常视频直接播放
+     player.play().catch(err => console.log("播放失败：", err));   
+   } else {
+     // 视频损坏/无法播放，下标+1跳过
+     videoList.splice(x, 1)
+     showTip("视频文件损坏，已自动跳过");
+     await loadVideo(); // 递归加载下一个
+   }
+ }
+
     function players() {
+        videoList = [];
+        x = 0;
         var url = localStorage.getItem('jjurl');
         if (null === url) {
             url = 'https://v.nrzj.vip/video.php?_t=0' + Math.random();
         };
 
-        function fetchAndSetSrc() {
-            return fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: 'paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0'
-            }).then(response => {
-                if (!response.ok) {
-                    showTip("网络请求失败，正在重新尝试...");
-                }
-                return response.json();
-            }).then(data => {
-                const list = data.data;
-                for (i = 0; i < list.length; i++) {
-                //const i = Math.floor(Math.random() * list.length);
-                var url = list[i].attachment.video[0].link;
-                url = url.replace(/http\:\/\/wulishe\.site\/wp-content\/uploads/, 'https://file.wifou.com/d/139/list/wulishe')
-                videoList.push(url)
-                }
-                loadVideo()     
-            }).catch(error => {
-                console.error("发生错误:", error);
-            });
-        }
+        /** wulishe 列表接口 */
+ function loadWuLiShe() {
+     fetch(url, {
+         method: "POST",
+         headers: { "Content-Type": "application/x-www-form-urlencoded" },
+         body: "paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0"
+     }).then(res => res.json()).then(data => {
+         const arr = data.data || [];
+         for (let i = 0; i < arr.length; i++) {
+             let url = arr[i].attachment.video[0].link;
+             url = url.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");
+             videoList.push(url);
+         }
+         loadVideo();
+     }).catch(() => {
+         showTip("屋里社接口失败，切换其他源");
+     })
+ }
+ 
 
-        function fetchUrl() {
-            return fetch(url, {
-                method: 'GET'
-            }).then(response => {
-                if (!response.ok) {
-                    showTip("网络请求失败，正在重新尝试...");
-                }
-                return response.text();
-            }).then(data => {
-                var list = data.match(/data-url="(.*?)"\>/g);
-                for (i = 0; i < list.length; i++) {
-                //var i = Math.floor(Math.random() * list.length);
-                var url = 'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php' + list[i].split('"')[1];
-                 $.get(url, function(data, status) {                                       
-                        var audioSrc = data.match(/audiodiv" src="(.*?)"/)[1];                       
-                        videoList.push(audioSrc)                      
-                     });
-                  }
-                        loadVideo()      
-           })
-     }
+        /** DJ接口 */
+async function loadDjApi() {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("接口请求失败");
+        const html = await res.text();
+        const matchList = html.match(/data-url="(.*?)"/g) || [];
+        if (matchList.length === 0) {
+            showTip("DJ接口未获取视频");
+            return;
+        }
+        // 并发请求全部详情页
+        const taskArr = [];
+        for (let i = 0; i < matchList.length; i++) {
+            const path = matchList[i].split('"')[1];
+            const detailUrl = url + path;
+            taskArr.push(new Promise(resolve => {
+                $.get(detailUrl, data => {
+                    const match = data.match(/audiodiv" src="(.*?)"/);
+                    if (match?.[1]) videoList.push(match[1]);
+                    resolve();
+                })
+            }))
+        }
+        await Promise.all(taskArr);
+        if (videoList.length === 0) {
+            showTip("未解析到DJ视频地址");
+            return;
+        }
+        loadVideo();
+    } catch (err) {
+        showTip("DJ接口加载失败，2秒重试");
+        setTimeout(loadDjApi, 2000);
+        console.error(err);
+    }
+}
+
            
 
         function fetchAnd(callback) {
@@ -399,37 +415,28 @@
             });
         }
 
-    function fetchjingz() {
-        fba.log('1111111')
-            return fetch(url, {
-                method: 'GET'
-            }).then(response => {
-                if (!response.ok) {
-                    showTip("网络请求失败，正在重新尝试...");
-                }
-                return response.json();
-            }).then(data => {                                  
-                        json = data.list||data.data;    
-                        //videoList.length = 0
-                              //fba.log(json[0].video_url)              
-                           for (i = 0; i < json.length; i++) {
-                        videoList.push(json[i].video_url||json[i].content)
-                        }  
-                        loadVideo()                                                                     
-                  }).catch(error => {
-                      showTip("资源加载失败，重试");
-                console.error(error.message);
-            });                   
-               }
+    /** json数组类接口（doumei、txqq等） */
+function loadJsonList() {
+    fetch(url).then(res => res.json()).then(data => {
+        const arr = data.list || data.data || [];
+        for (let i = 0; i < arr.length; i++) {
+            const url = arr[i].video_url || arr[i].content;
+            if(url) videoList.push(url);
+        }
+        loadVideo();
+    }).catch(() => {
+        showTip("列表接口加载失败");
+    })
+}
 
         if (/wulishe/.test(url)) {
-            fetchAndSetSrc();
+            loadWuLiShe()
         } else if (/txqq|doumei/.test(url)) {       
         
-        fetchjingz() 
+        loadJsonList()
         
         }else if (/kuaiyuhudong/.test(url)) {
-            fetchUrl();
+            loadDjApi() 
         } else if (/t=0|yujn|NewSp|jkapi/.test(url)) {
             //videoHistorys(url)
             $("#myVideo").attr("src", url);
@@ -515,7 +522,7 @@
                 player.play();
             } else {
                 if (/txqq|doumei|wulishe|kuaiyuhudong/.test(localStorage.getItem('jjurl'))) {	                       
-                       x = (x+1)%videoList.length;                                     
+                       x++;                                     
                        loadVideo();                       
                       }else{
                 loadNextVideo();
@@ -741,9 +748,10 @@
         $(document).on("click", ".option", function(event) {
             $("#options").hide();
             isOptionsOpen = false;
-            videoHistory.length = 0
-            videoList.length = 0      
-              x= 1     
+            videoList = [];
+        videoHistory = [];
+        x = 0;
+        currentVideoIndex = -1;                       
         });
 
         // 点击屏幕其他地方可以关闭弹窗
@@ -806,7 +814,7 @@
 		                  if (/t=0|yujn|NewSp|jkapi/.test(url)) {  
 		                   player.webkitExitFullscreen(); 
 		                   } else if (/txqq|doumei|wulishe|kuaiyuhudong/.test(url)) {	                       
-                       x = (x+1)%videoList.length;   
+                           x++
                            loadVideo();  
                            showTip('切换下一个')              
                       }else{
