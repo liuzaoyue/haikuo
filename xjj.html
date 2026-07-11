@@ -202,6 +202,7 @@
 			</div>
 		</div>
 	<script>
+	
 	    // 全局变量统一声明
     let auto = true;
     let player, buttons, playicon, playicons;
@@ -310,7 +311,7 @@ async function loadVideo() {
      await players();
      return;
    }
-   const currentSrc = videoList[x];
+   var currentSrc = videoList[x];
    player.src = currentSrc;
    // 异步校验视频能否播放
    const canPlay = await checkMp4Playable(currentSrc);
@@ -325,6 +326,10 @@ async function loadVideo() {
    }
  }
 
+
+
+
+
     function players() {
         videoList = [];
         x = 0;
@@ -332,21 +337,25 @@ async function loadVideo() {
         if (null === url) {
             url = 'https://v.nrzj.vip/video.php?_t=0' + Math.random();
         };
-
         /** wulishe 列表接口 */
- function loadWuLiShe() {
+ function loadWuLiShe() {    
      fetch(url, {
          method: "POST",
          headers: { "Content-Type": "application/x-www-form-urlencoded" },
          body: "paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0"
-     }).then(res => res.json()).then(data => {
-         const arr = data.data || [];
-         for (let i = 0; i < arr.length; i++) {
-             let url = arr[i].attachment.video[0].link;
-             url = url.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");
-             videoList.push(url);
-         }
-         loadVideo();
+     }).then(res => res.json()).then(data => {         
+         const list = data.data;
+            const i = Math.floor(Math.random() * list.length);
+            var url = list[i].attachment.video[0].link;             
+                   url = url.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");     
+                eval(fy_bridge_app.getInternalJs());
+		    window.request = window.request00 || window.request;
+		             url = JSON.parse(request(url, {
+                onlyHeaders: true
+            })).url                    
+                
+             $("#myVideo").attr("src", url);
+             videoHistorys(url);
      }).catch(() => {
          showTip("屋里社接口失败，切换其他源");
      })
@@ -405,9 +414,9 @@ async function loadDjApi() {
                     if (!data.startsWith("http")) {
                         data = 'https:' + data;
                     }
-                    // 1. 把当前视频存入历史栈
-                    videoHistorys(data)
+                    // 1. 把当前视频存入历史栈                    
                     callback(data);
+                    videoHistorys(data)
                 } else {
                     showTip("失败，重新发起请求！");
                     players()
@@ -439,7 +448,13 @@ function loadJsonList() {
             loadDjApi() 
         } else if (/t=0|yujn|NewSp|jkapi/.test(url)) {
             //videoHistorys(url)
+            eval(fy_bridge_app.getInternalJs());
+		    window.request = window.request00 || window.request;
+		    var url = JSON.parse(request(url, {
+                onlyHeaders: true
+            })).url
             $("#myVideo").attr("src", url);
+            videoHistorys(url)           
         } else {
             fetchAnd(data => {
                 $("#myVideo").attr("src", data);
@@ -521,7 +536,7 @@ function loadJsonList() {
             if (auto == false) {
                 player.play();
             } else {
-                if (/txqq|doumei|wulishe|kuaiyuhudong/.test(localStorage.getItem('jjurl'))) {	                       
+                if (/txqq|doumei|kuaiyuhudong/.test(localStorage.getItem('jjurl'))) {	                       
                        x++;                                     
                        loadVideo();                       
                       }else{
@@ -810,10 +825,8 @@ function loadJsonList() {
 		            var url = localStorage.getItem('jjurl')
 		            switch (direction) {
 		                case 1:
-		                    console.log("向上！");	  		                                    	                    
-		                  if (/t=0|yujn|NewSp|jkapi/.test(url)) {  
-		                   player.webkitExitFullscreen(); 
-		                   } else if (/txqq|doumei|wulishe|kuaiyuhudong/.test(url)) {	                       
+		                    console.log("向上！");	  		                                      
+		                   if (/txqq|doumei|kuaiyuhudong/.test(url)) {	                       
                            x++
                            loadVideo();  
                            showTip('切换下一个')              
@@ -839,10 +852,8 @@ function loadJsonList() {
 		                    break;
 		                case 2:
 		                   console.log("向下！");		
-		                   if (/t=0|yujn|NewSp|jkapi/.test(url)) {  
-		                   player.webkitExitFullscreen(); 
-		                   } else if (/txqq|doumei|wulishe|kuaiyuhudong/.test(url)) {	                       
-                       x = x-1 <0 ? videoList.length-1 : x-1;                                         
+                        if (/txqq|doumei|kuaiyuhudong/.test(url)) {	                       
+                       x = x <0 ? videoList.length-1 : x-1;                                         
                        loadVideo();
                        showTip('切换上一个')                       
                       }else{            
