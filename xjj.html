@@ -383,8 +383,14 @@ async function loadVideo() {
 		    var url = JSON.parse(request(url, {
                 onlyHeaders: true
             })).url
-            $("#myVideo").attr("src", url);
-            videoHistorys(url)
+           const canPlay = await checkMp4Playable(url);
+          if(canPlay){
+              $("#myVideo").attr("src", url);
+              videoHistorys(url); // 校验通过才存入历史
+          }else{
+              showTip("视频失效，重新加载");
+              players();
+          }            
      }).catch(() => {
          showTip("屋里社接口失败，切换其他源");
      })
