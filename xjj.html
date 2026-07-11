@@ -148,7 +148,32 @@
               opacity: 0.6; /* 透明度 */
 			  border-radius: 10px; /*圆角*/
               align-items: center;
-             }							
+             }		
+             /* 新增可拖动进度控制器 默认隐藏 */
+.drag-progress-wrap {
+    position: absolute;
+    left: 3%;
+    right: 3%;
+    bottom: 30px;
+    z-index: 95;
+    padding: 10px;
+    background: rgba(0,0,0,0.0);
+    border-radius: 12px;
+    display: none;
+}
+#dragSlider {
+    width: 100%;
+    height: 6px;
+    cursor: pointer;
+}
+.drag-time-text {
+    display: flex;
+    justify-content: space-between;
+    color: #fff;
+    font-size: 12px;
+    margin-top: 6px;
+}
+					
 		</style>
 	   <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script> 
 	</head>
@@ -160,6 +185,14 @@
 		    </div>
 			<video id="myVideo" preload="auto" autoplay="autoplay" poster="http://123.56.105.145/weisyr/img/Loading1.gif" src="">
 			</video>		
+			<!-- 新增拖动进度条 -->
+     <div class="drag-progress-wrap" id="dragProgressBox">
+         <input type="range" id="dragSlider" min="0" max="100" value="0">
+         <div class="drag-time-text">
+             <span id="dragCurTime">00:00</span>
+             <span id="dragTotalTime">00:00</span>
+         </div>
+        </div>
         </div>
 		<div class="progress">
 			<div id="progress-bar" class="progress-bar"></div>
@@ -271,11 +304,11 @@
          videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
      }
      videoHistory.push(url);
-     if (videoHistory.length > 15) videoHistory.shift();
      currentVideoIndex = videoHistory.length - 1;
     }
     // 回看历史上一条视频（下滑调用）
     function loadPreviousVideo() {
+        fba.log(currentVideoIndex)
         if (currentVideoIndex > 0) {            
             currentVideoIndex--;
             player.src = videoHistory[currentVideoIndex];
@@ -314,7 +347,7 @@ async function loadVideo() {
    var currentSrc = videoList[x];
    player.src = currentSrc;
    // 异步校验视频能否播放
-   const canPlay = await checkMp4Playable(currentSrc);
+    canPlay = await checkMp4Playable(currentSrc);
    if (canPlay) {
      // 正常视频直接播放
      player.play().catch(err => console.log("播放失败：", err));   
@@ -326,11 +359,7 @@ async function loadVideo() {
    }
  }
 
-
-
-
-
-    function players() {
+  async function players() {
         videoList = [];       
         x = 0;
         var url = localStorage.getItem('jjurl');
@@ -338,24 +367,24 @@ async function loadVideo() {
             url = 'https://v.nrzj.vip/video.php?_t=0' + Math.random();
         };
         /** wulishe 列表接口 */
- function loadWuLiShe() {    
+ async function loadWuLiShe() {    
      fetch(url, {
          method: "POST",
          headers: { "Content-Type": "application/x-www-form-urlencoded" },
          body: "paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0"
-     }).then(res => res.json()).then(data => {         
+     }).then(res => res.json()).then(async data => {         
          const list = data.data;
             const i = Math.floor(Math.random() * list.length);
             var url = list[i].attachment.video[0].link;             
-                   url = url.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");     
-                eval(fy_bridge_app.getInternalJs());
+                   url = url.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");  
+                   // 获取多层重定向后的真实播放地址
+         eval(fy_bridge_app.getInternalJs());
 		    window.request = window.request00 || window.request;
-		             url = JSON.parse(request(url, {
+		    var url = JSON.parse(request(url, {
                 onlyHeaders: true
-            })).url                    
-                
-             $("#myVideo").attr("src", url);
-             videoHistorys(url);
+            })).url
+            $("#myVideo").attr("src", url);
+            videoHistorys(url)
      }).catch(() => {
          showTip("屋里社接口失败，切换其他源");
      })
@@ -439,7 +468,7 @@ function loadJsonList() {
 }
 
         if (/wulishe/.test(url)) {
-            loadWuLiShe()
+           await loadWuLiShe()
         } else if (/txqq|doumei/.test(url)) {       
         
         loadJsonList()
@@ -453,8 +482,14 @@ function loadJsonList() {
 		    var url = JSON.parse(request(url, {
                 onlyHeaders: true
             })).url
-            $("#myVideo").attr("src", url);
-            videoHistorys(url)           
+            const canPlay = await checkMp4Playable(url);
+          if(canPlay){
+              $("#myVideo").attr("src", url);
+              videoHistorys(url); // 校验通过才存入历史
+          }else{
+              showTip("视频失效，重新加载");
+              players();
+          }            
         } else {
             fetchAnd(data => {
                 $("#myVideo").attr("src", data);
@@ -527,9 +562,15 @@ function loadJsonList() {
         })
 
 
-        $("#myVideo").on("error", function() {
-            players();
-        }); //错误从新播放
+        $("#myVideo").on("error", async function() {
+    // 仅当不是校验阶段的报错才重新加载
+    if(videoHistory.length > 0){
+        videoHistory.pop();
+        currentVideoIndex = videoHistory.length - 1;
+    }
+    // 延迟加载，避免异步冲突
+    setTimeout(()=>players(),500);
+});
 
         player.addEventListener('ended', function() {
             console.log("播放结束");
@@ -566,6 +607,8 @@ function loadJsonList() {
                 playicon.style.opacity = 1;
                 player.play();
                 hideControl();
+                // 新增：点击视频弹出拖动进度条
+                toggleDragProgress();
             }
         });
 
@@ -778,6 +821,55 @@ function loadJsonList() {
                 playicon.style.opacity = 0;
             }
         });
+        // ===================== 新增拖动进度条逻辑 =====================
+const dragProgressBox = document.getElementById("dragProgressBox");
+const dragSlider = document.getElementById("dragSlider");
+const dragCurTime = document.getElementById("dragCurTime");
+const dragTotalTime = document.getElementById("dragTotalTime");
+let dragHideTimer = null;
+
+// 切换进度条显示/隐藏
+function toggleDragProgress() {
+    clearTimeout(dragHideTimer);
+    if(dragProgressBox.style.display === "block"){
+        dragProgressBox.style.display = "none";
+    }else{
+        dragProgressBox.style.display = "block";
+        // 3秒自动隐藏
+        dragHideTimer = setTimeout(()=>{
+            dragProgressBox.style.display = "none";
+        },3000);
+    }
+}
+
+// 视频时长加载完成
+player.addEventListener("loadedmetadata",()=>{
+    dragSlider.max = 100;
+    dragTotalTime.innerText = formatTime(player.duration);
+})
+
+// 实时同步进度
+player.addEventListener("timeupdate",()=>{
+    const cur = player.currentTime;
+    const dur = player.duration;
+    if(isNaN(dur)) return;
+    dragSlider.value = (cur / dur) * 100;
+    dragCurTime.innerText = formatTime(cur);
+})
+
+// 拖动滑块跳转播放时间
+dragSlider.addEventListener("input",()=>{
+    const val = dragSlider.value;
+    player.currentTime = (val / 100) * player.duration;
+    // 拖动重置自动隐藏计时
+    clearTimeout(dragHideTimer);
+    dragHideTimer = setTimeout(()=>{
+        dragProgressBox.style.display = "none";
+    },3000);
+})
+
+// 点击进度条区域不触发自动隐藏倒计时关闭
+dragProgressBox.addEventListener("click",e=>e.stopPropagation());
     })  
 </script>
 	<script>	
@@ -838,32 +930,26 @@ function loadJsonList() {
 		                    break;
 		                case 3:
 		                    console.log("向左！");		                    
-		                    loadNextVideo()
-		                    playicons.style.opacity = 0;
+		                    player.webkitExitFullscreen(); 
 		                    break;
 		                case 4:
 		                   console.log("向右！");
-		                    if (/t=0|yujn|NewSp|jkapi/.test(url)) {  
 		                   player.webkitExitFullscreen(); 
-		                   } else{            
-		                    loadPreviousVideo()
-		                    }
-		                    playicons.style.opacity = 0;    
 		                    break;
 		                case 2:
 		                   console.log("向下！");		
                         if (/txqq|doumei|kuaiyuhudong/.test(url)) {	                       
                      if (x - 1 < 0) {
-    showTip('已经是第一个视频，无法切换上一个');
-} else {
-    x = x - 1;
-    loadVideo();
-    showTip('切换上一个');
-}
-                      }else{            
-		                    loadPreviousVideo()
-		                    //showTip('切换上一个')
-		                    }
+            showTip('已经是第一个视频，无法切换上一个');
+            break; // 直接终止，不执行下面代码
+        } else {
+            x = x - 1;
+            loadVideo();
+            showTip('切换上一个');
+        }
+    }else{            
+        loadPreviousVideo()
+    }
 		                    playicons.style.opacity = 0;                                 
 		                    break;
 		            }
