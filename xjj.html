@@ -5,7 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>精品小姐姐视频_by缘分</title>
 		<style>
-			*{
+				*{
 			    margin:0px; 
 			    padding:0px;
 			    touch-action: pan-y;
@@ -214,6 +214,7 @@
     let hideTimer = null;
     let x = 0
     
+    
     /**
   * 校验指定MP4文件能否正常播放
   * @param {string} src 视频地址
@@ -267,21 +268,19 @@
     // 播放历史栈，用来存看过的视频标识/链接
     function videoHistorys(url) {
         if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
-            videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
-        }
-        videoHistory.push(url);
-        if (videoHistory.length > 15) {
-            videoHistory.shift();
-        }
-        currentVideoIndex = videoHistory.length - 1;
+         videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
+     }
+     videoHistory.push(url);
+     if (videoHistory.length > 15) videoHistory.shift();
+     currentVideoIndex = videoHistory.length - 1;
     }
     // 回看历史上一条视频（下滑调用）
     function loadPreviousVideo() {
-        if (currentVideoIndex > 0) {
-            showTip('切换上一个')
+        if (currentVideoIndex > 0) {            
             currentVideoIndex--;
             player.src = videoHistory[currentVideoIndex];
             player.play();
+            showTip('切换上一个')
             //showTip();
         } else {
             showTip('已是第一条视频')
@@ -290,11 +289,11 @@
     // 加载下一个视频
     function loadNextVideo() {
         if (currentVideoIndex < videoHistory.length - 1) {
-            // 如果有已加载的下一个视频
-            showTip('切换下一个')
+            // 如果有已加载的下一个视频            
             currentVideoIndex++;
             player.src = videoHistory[currentVideoIndex];
             player.play();
+            showTip('切换下一个')
         } else {
             // 否则加载新视频
             showTip('加载新视频');
@@ -303,13 +302,14 @@
     }
 
 async function loadVideo() {
-        fba.log(x)
-        fba.log(videoList.length)
+        //fba.log(x)
+        //fba.log(videoList.length)
    // 下标越界，重新拉取视频列表
    if (x >= videoList.length) {
      showTip('视频列表播放完毕，重新加载新视频');
      await players();
-     return;
+     x = 0; // 加载完成索引从头开始
+     return ; // 递归重新执行加载
    }
    var currentSrc = videoList[x];
    player.src = currentSrc;
@@ -331,7 +331,7 @@ async function loadVideo() {
 
 
     function players() {
-        videoList = [];
+        videoList = [];       
         x = 0;
         var url = localStorage.getItem('jjurl');
         if (null === url) {
@@ -448,7 +448,7 @@ function loadJsonList() {
             loadDjApi() 
         } else if (/t=0|yujn|NewSp|jkapi/.test(url)) {
             //videoHistorys(url)
-            eval(fy_bridge_app.getInternalJs());
+           eval(fy_bridge_app.getInternalJs());
 		    window.request = window.request00 || window.request;
 		    var url = JSON.parse(request(url, {
                 onlyHeaders: true
@@ -832,7 +832,7 @@ function loadJsonList() {
                            showTip('切换下一个')              
                       }else{
 		                   loadNextVideo()
-		                   showTip('切换下一个')
+		                   //showTip('切换下一个')
 		                  }  
 		                    playicons.style.opacity = 0;
 		                    break;
@@ -853,12 +853,16 @@ function loadJsonList() {
 		                case 2:
 		                   console.log("向下！");		
                         if (/txqq|doumei|kuaiyuhudong/.test(url)) {	                       
-                       x = x <0 ? videoList.length-1 : x-1;                                         
-                       loadVideo();
-                       showTip('切换上一个')                       
+                     if (x - 1 < 0) {
+    showTip('已经是第一个视频，无法切换上一个');
+} else {
+    x = x - 1;
+    loadVideo();
+    showTip('切换上一个');
+}
                       }else{            
 		                    loadPreviousVideo()
-		                    showTip('切换上一个')
+		                    //showTip('切换上一个')
 		                    }
 		                    playicons.style.opacity = 0;                                 
 		                    break;
