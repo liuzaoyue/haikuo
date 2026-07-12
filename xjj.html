@@ -38,7 +38,6 @@
                 width: 100%;
                 height: 100%;
                 position: absolute;
-                //object-fit: cover; 
                 background-position: 50% 50%;
                 top: 0px;
                 left: 0px;
@@ -55,7 +54,6 @@
                 width: 100%;
                 height: 100%;
                 position: absolute;
-                //object-fit: cover; 
                 background-position: 50% 50%;
                 top: 0px;
                 left: 0px;
@@ -131,7 +129,6 @@
 			  display: none;
 			  transform: translate(1%, 20%);/*上下左右移动*/
 			  flex-wrap: wrap;
-			  //gap: 8px; /* 设置间距 */
 			}
 			
 			.option {
@@ -298,41 +295,67 @@
         return `${m<10?'0':''}${m}:${s<10?'0':''}${s}`;
     }
     
+    // 判断url是否已存在历史
+function isUrlRepeat(url) {
+    const fixUrl = url.replace(/^http:/, "https:");
+    return videoHistory.some(item => item.replace(/^http:/, "https:") === fixUrl);
+}
     // 播放历史栈，用来存看过的视频标识/链接
-    function videoHistorys(url) {
-        if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
+   function videoHistorys(url) {
+     /*   if (currentVideoIndex >= 0 && currentVideoIndex < videoHistory.length - 1) {
          videoHistory = videoHistory.slice(0, currentVideoIndex + 1);
-     }
+     }*/
+     
      videoHistory.push(url);
      currentVideoIndex = videoHistory.length - 1;
     }
     // 回看历史上一条视频（下滑调用）
-    function loadPreviousVideo() {
-        fba.log(currentVideoIndex)
-        if (currentVideoIndex > 0) {            
+  async function loadPreviousVideo() {    
+        if (currentVideoIndex <= 0) {
+     showTip("没有上一条历史视频");
+     return;
+   }            
             currentVideoIndex--;
-            player.src = videoHistory[currentVideoIndex];
-            player.play();
-            showTip('切换上一个')
-            //showTip();
-        } else {
-            showTip('已是第一条视频')
-        }
+            const oldUrl = videoHistory[currentVideoIndex];
+   // 回看强制二次校验
+   const canPlay = await checkMp4Playable(oldUrl);
+   if (canPlay) {
+     $("#myVideo").attr("src", oldUrl);
+     showTip('切换上一个')
+   } else {
+     showTip("该历史视频已失效，自动切换下一条");
+     // 失效则移除本条历史，自动往后切
+     videoHistory.splice(currentVideoIndex, 1);
+     currentVideoIndex++;
+     loadPreviousVideo();
+   }
     }
     // 加载下一个视频
-    function loadNextVideo() {
-        if (currentVideoIndex < videoHistory.length - 1) {
-            // 如果有已加载的下一个视频            
-            currentVideoIndex++;
-            player.src = videoHistory[currentVideoIndex];
-            player.play();
-            showTip('切换下一个')
-        } else {
-            // 否则加载新视频
-            showTip('加载新视频');
-            players();
-        }
-    }
+   async function loadNextVideo() {
+     // 判断是否已经到历史最后一条
+     if (currentVideoIndex >= videoHistory.length - 1) {
+         showTip("后面没有历史视频，加载新资源");
+         // 无历史则重新拉取新视频
+         await players();
+         return;
+     }
+     // 下标后移
+     currentVideoIndex++;
+     const oldUrl = videoHistory[currentVideoIndex];
+     // 回看二次校验
+     const canPlay = await checkMp4Playable(oldUrl);
+     if (canPlay) {
+         $("#myVideo").attr("src", oldUrl);
+         showTip('切换下一个')
+     } else {
+         showTip("本条历史视频失效，自动跳过");
+         // 删掉失效记录，递归继续找下一条
+         videoHistory.splice(currentVideoIndex, 1);
+         // 下标回退，防止漏视频
+         currentVideoIndex--;
+         loadNextVideo();
+     }
+ }
 
 async function loadVideo() {
         //fba.log(x)
@@ -345,11 +368,12 @@ async function loadVideo() {
      return ; // 递归重新执行加载
    }
    var currentSrc = videoList[x];
-   player.src = currentSrc;
+   
    // 异步校验视频能否播放
-    canPlay = await checkMp4Playable(currentSrc);
+    let canPlay = await checkMp4Playable(currentSrc);
    if (canPlay) {
      // 正常视频直接播放
+     player.src = currentSrc;
      player.play().catch(err => console.log("播放失败：", err));   
    } else {
      // 视频损坏/无法播放，下标+1跳过
@@ -368,7 +392,7 @@ async function loadVideo() {
         };
         /** wulishe 列表接口 */
  async function loadWuLiShe() {    
-     fetch(url, {
+     return fetch(url, {
          method: "POST",
          headers: { "Content-Type": "application/x-www-form-urlencoded" },
          body: "paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0"
@@ -380,9 +404,15 @@ async function loadVideo() {
                    // 获取多层重定向后的真实播放地址
          eval(fy_bridge_app.getInternalJs());
 		    window.request = window.request00 || window.request;
-		    var url = JSON.parse(request(url, {
+		     url = JSON.parse(request(url, {
                 onlyHeaders: true
             })).url
+            // ==========单视频去重核心==========
+         if(isUrlRepeat(url)){
+             showTip("该视频已播放过，重新加载新视频");
+             await players(); // 重新拉取新源
+             return;
+         }
            const canPlay = await checkMp4Playable(url);
           if(canPlay){
               $("#myVideo").attr("src", url);
@@ -436,28 +466,31 @@ async function loadDjApi() {
 
            
 
-        function fetchAnd(callback) {
-            $.get(url, function(data, status) {
-                if (status === status) {
-                    if (/ScSp|wp\.qinggongju|apihz/.test(url)) {
-                        data = data.video || data.视频 || data.data;
-                    }
-                    if (/4qb/.test(url)) {
-                        data = data.data.url;
-                    }
-                    
-                    if (!data.startsWith("http")) {
-                        data = 'https:' + data;
-                    }
-                    // 1. 把当前视频存入历史栈                    
-                    callback(data);
-                    videoHistorys(data)
-                } else {
-                    showTip("失败，重新发起请求！");
-                    players()
-                }
-            });
-        }
+       async function fetchAnd(callback) {
+   return new Promise((resolve) => {
+     $.get(url, async function (data, status) {
+       if (/ScSp|wp\.qinggongju|apihz/.test(url)) {
+         data = data.video || data.视频 || data.data;
+       }
+       if (/4qb/.test(url)) {
+         data = data.data.url;
+       }
+       if (!data.startsWith("http")) {
+         data = 'https:' + data;
+       }
+       // 回调函数加了async，这里才能用await
+       const canPlay = await checkMp4Playable(data);
+       if (canPlay) {
+         callback(data);
+         videoHistorys(data); // 校验通过才存入历史
+       } else {
+         showTip("视频失效，重新加载");
+         players();
+       }
+       resolve();
+     });
+   });
+ }
 
     /** json数组类接口（doumei、txqq等） */
 function loadJsonList() {
@@ -488,6 +521,12 @@ function loadJsonList() {
 		    var url = JSON.parse(request(url, {
                 onlyHeaders: true
             })).url
+            // ==========单视频去重核心==========
+         if(isUrlRepeat(url)){
+             showTip("该视频已播放过，重新加载新视频");
+             await players(); // 重新拉取新源
+             return;
+         }
             const canPlay = await checkMp4Playable(url);
           if(canPlay){
               $("#myVideo").attr("src", url);
@@ -497,13 +536,13 @@ function loadJsonList() {
               players();
           }            
         } else {
-            fetchAnd(data => {
+             await fetchAnd(data => {
                 $("#myVideo").attr("src", data);
             });
         }
         playicon.style.opacity = 0;
     }
-    $(document).ready(function() {
+    $(document).ready(async function() {
         auto = true;
         player = document.getElementById("myVideo");
         buttons = document.querySelector("#buttons");
@@ -512,7 +551,7 @@ function loadJsonList() {
         const progressBar = document.getElementById('progress-bar');
         const timeDiv = document.getElementById('time-div');
         const timeDivs = document.getElementById('time-divs');
-        players();
+      await players();
         // 进度条更新
         player.addEventListener('loadedmetadata', () => {
             durationStr = formatTime(player.duration);
@@ -804,19 +843,16 @@ function loadJsonList() {
                     document.getElementById('yuan').innerText = name;
                     players();
                     $("#options").hide();
+                    videoList = [];
+                   // videoHistory = [];
+                    x = 0;
+                   // currentVideoIndex = -1; 
                 });
             }
         });
 
         // 点击弹窗内部的任何元素都可以关闭弹窗
-        $(document).on("click", ".option", function(event) {
-            $("#options").hide();
-            isOptionsOpen = false;
-            videoList = [];
-        videoHistory = [];
-        x = 0;
-        currentVideoIndex = -1;                       
-        });
+        
 
         // 点击屏幕其他地方可以关闭弹窗
         $(document).on("click", function(event) {
