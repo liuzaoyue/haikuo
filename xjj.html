@@ -244,6 +244,14 @@ let longTouchTimer = null;
 let videoLoadErrorCount = 0;
 let historyVideoErrorCount = 0;
 
+let retryCount = 0; // 接口/视频加载重试计数器
+const maxRetry = 3; // 最多重试3次，超过停止刷新
+
+let isSourceLoading = false; // 加载锁，防止并发阻塞UI
+
+const maxRedirectRetry = 1; // 中转链接最大解析次数
+let globalRetryCount = 0; // 全局加载失败计数器
+
 // ====================== 公共工具函数 ======================
 function log(msg){
     if(typeof fba !== 'undefined' && fba.log) fba.log(msg);
@@ -394,14 +402,19 @@ function checkMp4Playable(src) {
 
 // ====================== 预加载下一条视频 ======================
 async function preloadNextVideoSource() {
+    // 预加载锁/全局停止标记，直接退出
     if (isBackgroundPreloading || stopAllPreload) return;
+    // 连续失败5次暂停预加载
     if (preloadFailTotal >= 5) {
         log("预加载连续失败5次，暂停预加载");
         preloadFailTotal = 0;
         return;
     }
+
     isBackgroundPreloading = true;
     preloadCacheUrl = null;
+    let success = false;
+
     try {
         const reqApiUrl = localStorage.getItem('jjurl') || 'https://v.nrzj.vip/video.php?_t=' + Math.random();
         const fetchRes = await fetch(reqApiUrl, {
@@ -410,47 +423,60 @@ async function preloadNextVideoSource() {
             body: "paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0"
         });
         const resData = await fetchRes.json();
-        const videoDataArr = resData.data;
+        const videoDataArr = resData.data || [];
+
+        // 校验视频列表为空
+        if (!Array.isArray(videoDataArr) || videoDataArr.length === 0) {
+            throw new Error("预加载接口无视频数据");
+        }
+
         const randomIndex = Math.floor(Math.random() * videoDataArr.length);
-        let tempPlayUrl = videoDataArr[randomIndex].attachment.video[0].link;
+        const item = videoDataArr[randomIndex];
+        // 校验视频链接存在
+        if (!item?.attachment?.video?.[0]?.link) {
+            throw new Error("预加载本条无播放链接");
+        }
+
+        let tempPlayUrl = item.attachment.video[0].link;
         tempPlayUrl = tempPlayUrl.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");
 
-        // 循环解析中转链接，最多8次
-        const maxRedirectRetry = 8;
-        let retryCount = 0;
-        while (/file\.wifou\.com/.test(tempPlayUrl) && retryCount < maxRedirectRetry) {
-            retryCount++;
-            log(`预加载第${retryCount}次解析重定向`);
+        // 循环解析中转链接，局部计数不干扰全局
+        let redirectRetry = 0;
+        while (/file\.wifou\.com/.test(tempPlayUrl) && redirectRetry < maxRedirectRetry) {
+            redirectRetry++;
+            log(`预加载中转解析第${redirectRetry}次`);
             const reqResult = JSON.parse(request(tempPlayUrl, { onlyHeaders: true }));
             tempPlayUrl = reqResult.url;
         }
-        // 中转链接解析失败，重新预加载
-        if (/file\.wifou\.com/.test(tempPlayUrl)) {
-            log("多次解析仍为中转地址，丢弃本条");
-            preloadFailTotal++;
-            await preloadNextVideoSource();
-            return;
-        }
-        // 历史重复跳过
+        // 历史重复视频，丢弃本条
         if (isVideoUrlRepeat(tempPlayUrl)) {
-            await preloadNextVideoSource();
+            log("预加载视频重复，跳过");
+            preloadFailTotal++;
             return;
         }
-        // 校验视频可用性
+
+        // 校验视频是否可播放
         const canPlay = await checkMp4Playable(tempPlayUrl);
         if (canPlay) {
             preloadCacheUrl = tempPlayUrl;
             preloadFailTotal = 0;
+            success = true;
             log("预加载完成，缓存地址：" + preloadCacheUrl);
         } else {
+            log("预加载视频无法播放，丢弃");
             preloadFailTotal++;
-            await preloadNextVideoSource();
         }
+
     } catch (error) {
         preloadFailTotal++;
-        console.error("预加载异常：", error);
+        log("预加载异常：" + error);
     } finally {
+        // 无论成功失败，必定释放预加载锁，解决永久锁死问题
         isBackgroundPreloading = false;
+        // 本条失败且未达到失败上限，延迟1s再尝试一次预加载（避免瞬间疯狂请求）
+        if (!success && preloadFailTotal < 5 && !stopAllPreload) {
+            setTimeout(() => preloadNextVideoSource(), 1000);
+        }
     }
 }
 
@@ -562,31 +588,104 @@ async function loadAllSource() {
     const reqApiUrl = localStorage.getItem('jjurl') || 'https://v.nrzj.vip/video.php?_t=' + Math.random();
 
     // 屋里社接口
-    async function loadWuLiSheSource() {
-        return fetch(reqApiUrl, {
+async function loadWuLiSheSource() {
+    // 正在加载直接退出，不新增请求，释放交互
+    if (isSourceLoading) return;
+    isSourceLoading = true;
+
+    const reqApiUrl = 'http://wulishe.site/wp-json/b2/v1/getTopicList';
+    try {
+        const res = await fetch(reqApiUrl, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: "paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0"
-        }).then(res => res.json()).then(async resData => {
-            const videoDataArr = resData.data;
-            const randomIndex = Math.floor(Math.random() * videoDataArr.length);
-            let tempPlayUrl = videoDataArr[randomIndex].attachment.video[0].link;
-            tempPlayUrl = tempPlayUrl.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");
-            log(tempPlayUrl);
-            const canPlay = await checkMp4Playable(tempPlayUrl);
-            if (canPlay) {
-                videoPlayerDom.src = tempPlayUrl;
-                saveVideoToHistory(tempPlayUrl);
-                preloadNextVideoSource();
-            } else {
-                showTip("视频失效，重新加载");
-                await loadAllSource();
+        });
+        const resData = await res.json();
+        const videoDataArr = resData.data || [];
+
+        // 校验列表为空，直接判定失败
+        if (!Array.isArray(videoDataArr) || videoDataArr.length === 0) {
+            throw new Error("接口无视频数据");
+        }
+
+        const randomIndex = Math.floor(Math.random() * videoDataArr.length);
+        const item = videoDataArr[randomIndex];
+        // 校验视频链接是否存在
+        if (!item?.attachment?.video?.[0]?.link) {
+            throw new Error("本条无播放链接");
+        }
+
+        let tempPlayUrl = item.attachment.video[0].link;
+        tempPlayUrl = tempPlayUrl.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");
+        
+        // 中转链接解析循环（局部计数，不干扰全局）
+        let redirectRetry = 0;
+        while (/file\.wifou\.com/.test(tempPlayUrl) && redirectRetry < maxRedirectRetry) {
+            redirectRetry++;
+            log(`解析中转链接第${redirectRetry}次`);
+            const reqResult = JSON.parse(request(tempPlayUrl, { onlyHeaders: true }));
+            tempPlayUrl = reqResult.url;
+        }
+
+        // 中转链接解析失败，重新拉取屋里社视频
+        if (/file\.wifou\.com/.test(tempPlayUrl)) {
+            log("多次解析仍为中转地址，丢弃本条视频");
+            preloadFailTotal++;
+            isSourceLoading = false; // 释放加载锁！关键修复
+            globalRetryCount++;
+            if (globalRetryCount >= maxRetry) {
+                showTip("多次加载失败，请手动切换源");
+                globalRetryCount = 0;
+                return;
             }
-        }).catch((error) => {
-            showTip("屋里社接口失败，切换其他源");
-            throw error;
-        })
+            showTip("中转链接解析失败，重新加载");
+            await loadWuLiSheSource();
+            return;
+        }
+
+        log("屋里社最终播放地址：" + tempPlayUrl);
+        const canPlay = await checkMp4Playable(tempPlayUrl);
+        
+        if (canPlay) {
+            // 加载成功，清空全局失败计数
+            globalRetryCount = 0;
+            videoPlayerDom.src = tempPlayUrl;
+            saveVideoToHistory(tempPlayUrl);
+            // 后台预加载，不阻塞UI
+            preloadNextVideoSource();
+        } else {
+            // 视频无法播放，重试逻辑
+            globalRetryCount++;
+            if (globalRetryCount >= maxRetry) {
+                showTip("多次加载失败，请手动切换源");
+                globalRetryCount = 0;
+                isSourceLoading = false;
+                return;
+            }
+            showTip("视频失效，重新加载");
+            isSourceLoading = false;
+            await loadAllSource();
+            return;
+        }
+    } catch (error) {
+        log("屋里社加载异常：" + error);
+        showTip("屋里社接口失败，切换其他源");
+        globalRetryCount++;
+        if (globalRetryCount >= maxRetry) {
+            showTip("多次加载失败，请手动切换源");
+            globalRetryCount = 0;
+            isSourceLoading = false;
+            return;
+        }
+        isSourceLoading = false;
+        await loadAllSource();
+        return;
     }
+    // 全部流程正常走完，释放加载锁
+    isSourceLoading = false;
+}
+
+
 
     // DJ接口
     async function loadDjSource() {
@@ -671,6 +770,12 @@ async function loadAllSource() {
                         callback(sourceUrl);
                         saveVideoToHistory(sourceUrl);
                     } else {
+                        retryCount++;
+    if (retryCount >= maxRetry) {
+        showTip("多次加载失败，请稍后再试");
+        retryCount = 0;
+        return; // 不再自动刷新，允许点击菜单
+        }
                         showTip("视频失效，重新加载");
                         await loadAllSource();
                     }
@@ -691,7 +796,8 @@ async function loadAllSource() {
     } else if (/kuaiyuhudong/.test(reqApiUrl)) {
         loadDjSource();
     } else if (/t=0|yujn|NewSp|jkapi/.test(reqApiUrl)) {
-        let tempPlayUrl = JSON.parse(request(reqApiUrl, { onlyHeaders: true })).url;
+         let jsonData = JSON.parse(request(reqApiUrl, { onlyHeaders: true }));       
+         tempPlayUrl = jsonData.url;      
         if (isVideoUrlRepeat(tempPlayUrl)) {
             showTip("该视频已播放过，重新加载新视频");
             await loadAllSource();
@@ -702,6 +808,12 @@ async function loadAllSource() {
             videoPlayerDom.src = tempPlayUrl;
             saveVideoToHistory(tempPlayUrl);
         } else {
+            retryCount++;
+    if (retryCount >= maxRetry) {
+        showTip("多次加载失败，请稍后再试");
+        retryCount = 0;
+        return; // 不再自动刷新，允许点击菜单
+        }
             showTip("视频失效，重新加载");
             await loadAllSource();
         }
