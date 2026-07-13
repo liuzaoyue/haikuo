@@ -245,6 +245,10 @@ let videoLoadErrorCount = 0;
 let historyVideoErrorCount = 0;
 
 // ====================== 公共工具函数 ======================
+function log(msg){
+    if(typeof fba !== 'undefined' && fba.log) fba.log(msg);
+    console.log(msg);
+}
 /**
  * 格式化秒数为 00:00
  */
@@ -392,7 +396,7 @@ function checkMp4Playable(src) {
 async function preloadNextVideoSource() {
     if (isBackgroundPreloading || stopAllPreload) return;
     if (preloadFailTotal >= 5) {
-        fba.log("预加载连续失败5次，暂停预加载");
+        log("预加载连续失败5次，暂停预加载");
         preloadFailTotal = 0;
         return;
     }
@@ -416,13 +420,13 @@ async function preloadNextVideoSource() {
         let retryCount = 0;
         while (/file\.wifou\.com/.test(tempPlayUrl) && retryCount < maxRedirectRetry) {
             retryCount++;
-            fba.log(`预加载第${retryCount}次解析重定向`);
+            log(`预加载第${retryCount}次解析重定向`);
             const reqResult = JSON.parse(request(tempPlayUrl, { onlyHeaders: true }));
             tempPlayUrl = reqResult.url;
         }
         // 中转链接解析失败，重新预加载
         if (/file\.wifou\.com/.test(tempPlayUrl)) {
-            fba.log("多次解析仍为中转地址，丢弃本条");
+            log("多次解析仍为中转地址，丢弃本条");
             preloadFailTotal++;
             await preloadNextVideoSource();
             return;
@@ -437,7 +441,7 @@ async function preloadNextVideoSource() {
         if (canPlay) {
             preloadCacheUrl = tempPlayUrl;
             preloadFailTotal = 0;
-            fba.log("预加载完成，缓存地址：" + preloadCacheUrl);
+            log("预加载完成，缓存地址：" + preloadCacheUrl);
         } else {
             preloadFailTotal++;
             await preloadNextVideoSource();
@@ -568,7 +572,7 @@ async function loadAllSource() {
             const randomIndex = Math.floor(Math.random() * videoDataArr.length);
             let tempPlayUrl = videoDataArr[randomIndex].attachment.video[0].link;
             tempPlayUrl = tempPlayUrl.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");
-            fba.log(tempPlayUrl);
+            log(tempPlayUrl);
             const canPlay = await checkMp4Playable(tempPlayUrl);
             if (canPlay) {
                 videoPlayerDom.src = tempPlayUrl;
@@ -633,7 +637,7 @@ async function loadAllSource() {
             await loadVideoFromList();
         } catch (error) {
             showTip("列表接口加载失败");
-            fba.log("loadJsonList异常：" + error);
+            log("loadJsonList异常：" + error);
         }
     }
 
@@ -661,7 +665,7 @@ async function loadAllSource() {
                         resolve();
                         return;
                     }
-                    fba.log(sourceUrl)
+                    log(sourceUrl)
                     const canPlay = await checkMp4Playable(sourceUrl);
                     if (canPlay) {
                         callback(sourceUrl);
@@ -671,7 +675,7 @@ async function loadAllSource() {
                         await loadAllSource();
                     }
                 } catch (error) {
-                    fba.log("fetchSourceWithCallback异常：" + error)
+                    log("fetchSourceWithCallback异常：" + error)
                 } finally {
                     resolve();
                 }
@@ -724,10 +728,20 @@ $(document).ready(async function() {
     const dragTotalTimeDom = document.getElementById("dragTotalTime");
     const dragProgressWrapDom = document.getElementById("dragProgressBox");
 
-    await loadAllSource();
-
+    
+   (async ()=>{
+         await loadAllSource();
+     })()
     // 视频元数据加载完成
-    videoPlayerDom.addEventListener('loadedmetadata', () => {
+   // 视频80%自动预加载，只绑定一次
+videoPlayerDom.addEventListener("timeupdate", async () => {
+    const dur = videoPlayerDom.duration;
+    if(isNaN(dur)) return;
+    if (videoPlayerDom.currentTime / dur > 0.8 && !preloadCacheUrl && !isBackgroundPreloading) {
+        preloadNextVideoSource();
+    }
+});
+ videoPlayerDom.addEventListener('loadedmetadata', () => {
         totalTimeStr = formatTime(videoPlayerDom.duration);
         timeTotalDom.textContent = totalTimeStr;
         dragSliderDom.max = 100;
@@ -855,6 +869,7 @@ $(document).ready(async function() {
  // 换源按钮
 $(document).on("click", "#yuan", function(e) {
     e.stopPropagation(); // 阻止冒泡，避免和空白关闭冲突
+    e.preventDefault(); // 新增：阻止触摸默认行为
     if (sourceMenuOpen) {
         $("#options").hide();
         sourceMenuOpen = false;
@@ -1043,14 +1058,7 @@ $(document).on("click", "#yuan", function(e) {
         }
     });
 
-    // 视频80%自动预加载下一条
-    setTimeout(() => {
-        videoPlayerDom.addEventListener("timeupdate", async () => {
-            if (videoPlayerDom.currentTime / videoPlayerDom.duration > 0.8 && !preloadCacheUrl && !isBackgroundPreloading) {
-                preloadNextVideoSource();
-            }
-        });
-    }, 800);
+  
 });
 </script>
 
