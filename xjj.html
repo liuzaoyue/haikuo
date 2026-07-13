@@ -474,6 +474,12 @@ async function preloadNextVideoSource() {
             success = true;
             log("预加载完成，缓存地址：" + preloadCacheUrl);
         } else {
+            retryCount++;
+    if (retryCount >= maxRetry) {
+        showTip("多次加载失败，请稍后再试");
+        retryCount = 0;
+        return; // 不再自动刷新，允许点击菜单
+        }
             log("预加载视频无法播放，丢弃");
             preloadFailTotal++;
         }
@@ -505,6 +511,12 @@ async function loadNextSource() {
             showTip('切换下一个');
             preloadNextVideoSource();
         } else {
+            retryCount++;
+    if (retryCount >= maxRetry) {
+        showTip("多次加载失败，请稍后再试");
+        retryCount = 0;
+        return; // 不再自动刷新，允许点击菜单
+        }
             showTip("预加载视频失效，重新获取");
             preloadNextVideoSource();
         }
@@ -530,6 +542,12 @@ async function loadNextSource() {
         videoPlayerDom.src = realPlayUrl;
         showTip('切换下一个');
     } else {
+        retryCount++;
+    if (retryCount >= maxRetry) {
+        showTip("多次加载失败，请稍后再试");
+        retryCount = 0;
+        return; // 不再自动刷新，允许点击菜单
+        }
         showTip("本条历史视频失效，自动跳过");
         videoHistoryList.splice(currentHistoryIndex, 1);
         currentHistoryIndex--;
@@ -557,6 +575,12 @@ async function loadPrevSource() {
         showTip('切换上一个');
         historyVideoErrorCount = 0;
     } else {
+        retryCount++;
+    if (retryCount >= maxRetry) {
+        showTip("多次加载失败，请稍后再试");
+        retryCount = 0;
+        return; // 不再自动刷新，允许点击菜单
+        }
         historyVideoErrorCount++;
         showTip("该历史视频已失效，自动切换下一条");
         videoHistoryList.splice(currentHistoryIndex, 1);
@@ -583,6 +607,12 @@ async function loadVideoFromList() {
         videoPlayerDom.src = sourceUrl;
         saveVideoToHistory(sourceUrl);
     } else {
+        retryCount++;
+    if (retryCount >= maxRetry) {
+        showTip("多次加载失败，请稍后再试");
+        retryCount = 0;
+        return; // 不再自动刷新，允许点击菜单
+        }
         videoPlayList.splice(listIndex, 1);
         showTip("视频文件损坏，已自动跳过");
         await loadVideoFromList();
