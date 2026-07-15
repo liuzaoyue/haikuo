@@ -199,7 +199,7 @@
     </div>
 
 <script>
-// ====================== 全局变量统一归集（全部置顶，无重复、无重名） ======================
+// ====================== 全局变量统一归集（已删除视频校验相关变量） ======================
 // 播放控制
 let playAutoMode = true;
 let videoPlayerDom = null;
@@ -214,21 +214,11 @@ let videoHistoryList = [];
 let currentHistoryIndex = -1;
 let listIndex = 0;
 
-// 预加载控制
-let preloadCacheUrl = null;
-let isBackgroundPreloading = false;
-let stopAllPreload = false;
-let preloadFailTotal = 0;
-
 // 换源全局接口地址（原全局url，彻底规避局部重名）
 let globalApiUrl = localStorage.getItem('jjurl') || 'https://v.nrzj.vip/video.php?_t=' + Math.random();
 
 // 进度条定时器
 let dragProgressHideTimer = null;
-
-// 视频校验复用DOM
-let tempCheckVideoDom = null;
-let isVideoChecking = false;
 
 // 弹窗菜单状态
 let sourceMenuOpen = false;
@@ -257,6 +247,17 @@ function log(msg){
     if(typeof fba !== 'undefined' && fba.log) fba.log(msg);
     console.log(msg);
 }
+
+/*跳转真实地址*/
+ function getFinalRedirectUrl(url) {
+     return fetch(url, { redirect: 'follow' })
+     .then(function(r) {
+         var finalUrl = r.url;                    
+         log('真实地址:'+finalUrl)
+         return finalUrl
+     })
+     .catch(e=>{log('跳转失败',e);return ''})
+ }
 /**
  * 格式化秒数为 00:00
  */
@@ -297,7 +298,7 @@ function isVideoUrlRepeat(checkUrl) {
 }
 
 /**
- * 写入播放历史（仅校验通过视频调用）
+ * 写入播放历史
  */
 function saveVideoToHistory(videoSrc) {
     videoHistoryList.push(videoSrc);
@@ -342,189 +343,11 @@ function getSlideDirection(startX, startY, endX, endY) {
     return 0;
 }
 
-// ====================== 视频播放校验（复用单个DOM，优化大量DOM创建问题） ======================
-function initTempCheckVideo() {
-    if (tempCheckVideoDom) return;
-    tempCheckVideoDom = document.createElement('video');
-    tempCheckVideoDom.style.position = 'absolute';
-    tempCheckVideoDom.style.width = '1px';
-    tempCheckVideoDom.style.height = '1px';
-    tempCheckVideoDom.style.opacity = '0';
-    tempCheckVideoDom.preload = 'metadata';
-    tempCheckVideoDom.muted = true;
-    document.body.appendChild(tempCheckVideoDom);
-}
-
-function checkMp4Playable(src) {
-    return new Promise(async (resolve) => {
-        initTempCheckVideo();
-        if (isVideoChecking) {
-            const waitLockTimer = setInterval(() => {
-                if (!isVideoChecking) {
-                    clearInterval(waitLockTimer);
-                    runCheckLogic();
-                }
-            }, 50);
-            return;
-        }
-        runCheckLogic();
-
-        function runCheckLogic() {
-            isVideoChecking = true;
-            tempCheckVideoDom.src = '';
-            tempCheckVideoDom.load();
-            let timeoutTimer = null;
-
-            function cleanCheckEvent() {
-                clearTimeout(timeoutTimer);
-                tempCheckVideoDom.onloadedmetadata = null;
-                tempCheckVideoDom.onerror = null;
-                isVideoChecking = false;
-            }
-
-            tempCheckVideoDom.onloadedmetadata = () => {
-                cleanCheckEvent();
-                resolve(true);
-            };
-            tempCheckVideoDom.onerror = () => {
-                cleanCheckEvent();
-                resolve(false);
-            };
-            tempCheckVideoDom.src = src;
-            tempCheckVideoDom.load();
-            timeoutTimer = setTimeout(() => {
-                cleanCheckEvent();
-                resolve(false);
-            }, 5000);
-        }
-    });
-}
-
-// ====================== 预加载下一条视频 ======================
-async function preloadNextVideoSource() {
-    if (isBackgroundPreloading || stopAllPreload) return;
-    // 连续失败5次暂停预加载
-    if (preloadFailTotal >= 5) {
-        log("预加载连续失败5次，暂停预加载");
-        preloadFailTotal = 0;
-        return;
-    }
-
-    // 关键：视频正在播放，降低预加载优先级，延后执行，防止抢带宽卡顿
-    const videoDom = document.getElementById("myVideo");
-    if (!videoDom.paused) {
-        setTimeout(() => preloadNextVideoSource(), 1500);
-        return;
-    }
-
-    isBackgroundPreloading = true;
-    preloadCacheUrl = null;
-    let success = false;
-
-    try {
-        const reqApiUrl = localStorage.getItem('jjurl') || 'https://v.nrzj.vip/video.php?_t=' + Math.random();
-        const fetchRes = await fetch(reqApiUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: "paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0"
-        });
-        const resData = await fetchRes.json();
-        const videoDataArr = resData.data || [];
-
-        if (!Array.isArray(videoDataArr) || videoDataArr.length === 0) {
-            throw new Error("预加载接口无视频数据");
-        }
-
-        const randomIndex = Math.floor(Math.random() * videoDataArr.length);
-        const item = videoDataArr[randomIndex];
-        if (!item?.attachment?.video?.[0]?.link) {
-            throw new Error("预加载本条无播放链接");
-        }
-
-        let tempPlayUrl = item.attachment.video[0].link;
-        tempPlayUrl = tempPlayUrl.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");
-
-        // 中转解析循环，每轮加微小延时，释放主线程，消除卡顿
-        let redirectRetry = 0;
-        while (/file\.wifou\.com/.test(tempPlayUrl) && redirectRetry < maxRedirectRetry) {
-            redirectRetry++;
-            log(`预加载中转解析第${redirectRetry}次`);
-            // 同步request会卡主线程，加延时让出渲染线程
-            await new Promise(resolve => setTimeout(resolve, 80));
-            const reqResult = JSON.parse(request(tempPlayUrl, { onlyHeaders: true }));
-            tempPlayUrl = reqResult.url;
-        }
-
-        // 重复视频直接跳过
-        if (isVideoUrlRepeat(tempPlayUrl)) {
-            log("预加载视频重复，跳过");
-            preloadFailTotal++;
-            return;
-        }
-
-        // 视频暂停状态再校验，播放中跳过校验减少负载
-        let canPlay = true;
-        if (videoDom.paused) {
-            canPlay = await checkMp4Playable(tempPlayUrl);
-        }
-
-        if (canPlay) {
-            preloadCacheUrl = tempPlayUrl;
-            preloadFailTotal = 0;
-            success = true;
-            log("预加载完成，缓存地址：" + preloadCacheUrl);
-        } else {
-            retryCount++;
-    if (retryCount >= maxRetry) {
-        showTip("多次加载失败，请稍后再试");
-        retryCount = 0;
-        return; // 不再自动刷新，允许点击菜单
-        }
-            log("预加载视频无法播放，丢弃");
-            preloadFailTotal++;
-        }
-
-    } catch (error) {
-        preloadFailTotal++;
-        log("预加载异常：" + error);
-    } finally {
-        isBackgroundPreloading = false;
-        // 失败重试拉长间隔，播放中不疯狂重试
-        if (!success && preloadFailTotal < 5 && !stopAllPreload) {
-            const delayTime = videoDom.paused ? 1000 : 3000;
-            setTimeout(() => preloadNextVideoSource(), delayTime);
-        }
-    }
-}
-
-
-// ====================== 加载列表下一条视频 ======================
+// ====================== 加载列表下一条视频（已删除视频校验逻辑） ======================
 async function loadNextSource() {
-    // 优先使用预缓存
-    if (preloadCacheUrl) {
-        const playUrl = preloadCacheUrl;
-        preloadCacheUrl = null;
-        const canPlay = await checkMp4Playable(playUrl);
-        if (canPlay) {
-            videoPlayerDom.src = playUrl;
-            saveVideoToHistory(playUrl);
-            showTip('切换下一个');
-            preloadNextVideoSource();
-        } else {
-            retryCount++;
-    if (retryCount >= maxRetry) {
-        showTip("多次加载失败，请稍后再试");
-        retryCount = 0;
-        return; // 不再自动刷新，允许点击菜单
-        }
-            showTip("预加载视频失效，重新获取");
-            preloadNextVideoSource();
-        }
-        return;
-    }
-    // 历史已到末尾
+    // 删除预缓存逻辑，直接读取历史/列表
     if (currentHistoryIndex >= videoHistoryList.length - 1) {
-        if (/txqq|doumei|kuaiyuhudong/.test(globalApiUrl)) {
+        if (/txqq|doumei|kuaiyuhudong|wulishe/.test(globalApiUrl)) {
             listIndex++;
             await loadVideoFromList();
             showTip('切换下一个');
@@ -537,59 +360,31 @@ async function loadNextSource() {
     // 读取下一条历史
     currentHistoryIndex++;
     const realPlayUrl = videoHistoryList[currentHistoryIndex];
-    const canPlay = await checkMp4Playable(realPlayUrl);
-    if (canPlay) {
-        videoPlayerDom.src = realPlayUrl;
-        showTip('切换下一个');
-    } else {
-        retryCount++;
-    if (retryCount >= maxRetry) {
-        showTip("多次加载失败，请稍后再试");
-        retryCount = 0;
-        return; // 不再自动刷新，允许点击菜单
-        }
-        showTip("本条历史视频失效，自动跳过");
-        videoHistoryList.splice(currentHistoryIndex, 1);
-        currentHistoryIndex--;
-        await loadNextSource();
-    }
+    // 直接播放，移除校验
+    videoPlayerDom.src = realPlayUrl;
+    showTip('切换下一个');
 }
 
-// ====================== 加载历史上一条视频 ======================
+// ====================== 加载历史上一条视频（已删除视频校验逻辑） ======================
 async function loadPrevSource() {
     if (historyVideoErrorCount >= 3) {
         showTip("多条历史视频失效，无法回看");
         historyVideoErrorCount = 0;
         return;
     }
-    preloadCacheUrl = null;
     if (currentHistoryIndex <= 0) {
         showTip("已经是第一个视频，无法切换上一个");
         return;
     }
     currentHistoryIndex--;
     const realPlayUrl = videoHistoryList[currentHistoryIndex];
-    const canPlay = await checkMp4Playable(realPlayUrl);
-    if (canPlay) {
-        videoPlayerDom.src = realPlayUrl;
-        showTip('切换上一个');
-        historyVideoErrorCount = 0;
-    } else {
-        retryCount++;
-    if (retryCount >= maxRetry) {
-        showTip("多次加载失败，请稍后再试");
-        retryCount = 0;
-        return; // 不再自动刷新，允许点击菜单
-        }
-        historyVideoErrorCount++;
-        showTip("该历史视频已失效，自动切换下一条");
-        videoHistoryList.splice(currentHistoryIndex, 1);
-        currentHistoryIndex++;
-        await loadPrevSource();
-    }
+    // 直接播放，移除校验
+    videoPlayerDom.src = realPlayUrl;
+    showTip('切换上一个');
+    historyVideoErrorCount = 0;
 }
 
-// ====================== 列表模式加载单条视频 ======================
+// ====================== 列表模式加载单条视频（已删除视频校验逻辑） ======================
 async function loadVideoFromList() {
     if (listIndex >= videoPlayList.length) {
         showTip('视频列表播放完毕，重新加载新视频');
@@ -599,43 +394,29 @@ async function loadVideoFromList() {
     }
     const sourceUrl = videoPlayList[listIndex];
     if (isVideoUrlRepeat(sourceUrl)) {
+        listIndex++;
         await loadVideoFromList();
         return;
     }
-    const canPlay = await checkMp4Playable(sourceUrl);
-    if (canPlay) {
-        videoPlayerDom.src = sourceUrl;
-        saveVideoToHistory(sourceUrl);
-    } else {
-        retryCount++;
-    if (retryCount >= maxRetry) {
-        showTip("多次加载失败，请稍后再试");
-        retryCount = 0;
-        return; // 不再自动刷新，允许点击菜单
-        }
-        videoPlayList.splice(listIndex, 1);
-        showTip("视频文件损坏，已自动跳过");
-        await loadVideoFromList();
-    }
+    // 直接播放，移除校验
+    videoPlayerDom.src = sourceUrl;
+    saveVideoToHistory(sourceUrl);
 }
 
 // ====================== 统一入口：加载全部源（原players） ======================
 async function loadAllSource() {
     videoPlayList = [];
     listIndex = 0;
-    stopAllPreload = true;
-    preloadCacheUrl = null;
-    isBackgroundPreloading = false;
-    setTimeout(() => stopAllPreload = false, 1000);
     const reqApiUrl = localStorage.getItem('jjurl') || 'https://v.nrzj.vip/video.php?_t=' + Math.random();
 
     // 屋里社接口
+// 屋里社接口
 async function loadWuLiSheSource() {
-    // 正在加载直接退出，不新增请求，释放交互
     if (isSourceLoading) return;
     isSourceLoading = true;
+    let hasPlayStart = false; // 标记是否已经启动播放，防止多次触发
 
-    const reqApiUrl = 'http://wulishe.site/wp-json/b2/v1/getTopicList';
+    //const reqApiUrl = 'http://wulishe.site/wp-json/b2/v1/getTopicList';
     try {
         const res = await fetch(reqApiUrl, {
             method: "POST",
@@ -645,70 +426,49 @@ async function loadWuLiSheSource() {
         const resData = await res.json();
         const videoDataArr = resData.data || [];
 
-        // 校验列表为空，直接判定失败
         if (!Array.isArray(videoDataArr) || videoDataArr.length === 0) {
             throw new Error("接口无视频数据");
         }
 
-        const randomIndex = Math.floor(Math.random() * videoDataArr.length);
-        const item = videoDataArr[randomIndex];
-        // 校验视频链接是否存在
-        if (!item?.attachment?.video?.[0]?.link) {
-            throw new Error("本条无播放链接");
-        }
+        //videoPlayList = [];
+        for (let i = 0; i < videoDataArr.length; i++) {        
+            const item = videoDataArr[i];        
+            let tempPlayUrl = item.attachment.video[0].link;
+            tempPlayUrl = tempPlayUrl.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");        
 
-        let tempPlayUrl = item.attachment.video[0].link;
-        tempPlayUrl = tempPlayUrl.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");
-        
-        // 中转链接解析循环（局部计数，不干扰全局）
-        let redirectRetry = 0;
-        while (/file\.wifou\.com/.test(tempPlayUrl) && redirectRetry < maxRedirectRetry) {
-            redirectRetry++;
-            log(`解析中转链接第${redirectRetry}次`);
-            const reqResult = JSON.parse(request(tempPlayUrl, { onlyHeaders: true }));
-            tempPlayUrl = reqResult.url;
-        }
-
-        // 中转链接解析失败，重新拉取屋里社视频
-        if (/file\.wifou\.com/.test(tempPlayUrl)) {
-            log("多次解析仍为中转地址，丢弃本条视频");
-            preloadFailTotal++;
-            isSourceLoading = false; // 释放加载锁！关键修复
-            globalRetryCount++;
-            if (globalRetryCount >= maxRetry) {
-                showTip("多次加载失败，请手动切换源");
-                globalRetryCount = 0;
-                return;
+            const realUrl = await getFinalRedirectUrl(tempPlayUrl);
+            if (!realUrl) {
+                log(`第${i+1}条视频跳转解析失败，跳过本条`);
+                continue;
             }
-            showTip("中转链接解析失败，重新加载");
-            await loadWuLiSheSource();
-            return;
-        }
+            tempPlayUrl = realUrl;
 
-        log("屋里社最终播放地址：" + tempPlayUrl);
-        const canPlay = await checkMp4Playable(tempPlayUrl);
-        
-        if (canPlay) {
-            // 加载成功，清空全局失败计数
+            if (isVideoUrlRepeat(tempPlayUrl)) {
+                log(`第${i+1}条视频历史重复，跳过本条`);
+                continue;
+            }
+
+            videoPlayList.push(tempPlayUrl);
             globalRetryCount = 0;
-            videoPlayerDom.src = tempPlayUrl;
-            saveVideoToHistory(tempPlayUrl);
-            // 后台预加载，不阻塞UI
-            preloadNextVideoSource();
-        } else {
-            // 视频无法播放，重试逻辑
-            globalRetryCount++;
-            if (globalRetryCount >= maxRetry) {
-                showTip("多次加载失败，请手动切换源");
-                globalRetryCount = 0;
-                isSourceLoading = false;
-                return;
+
+            // 第一条可用视频，立刻播放，仅执行一次
+            if (videoPlayList.length === 1 && !hasPlayStart) {
+                hasPlayStart = true;
+                // 新开异步执行播放，不阻塞当前循环继续解析剩下视频
+                (async () => {
+                    listIndex = 0;
+                    await loadVideoFromList();
+                })();
             }
-            showTip("视频失效，重新加载");
+        }
+
+        // 遍历完所有数据，一条有效视频都没有
+        if (videoPlayList.length === 0) {
+            showTip("未获取到可用视频资源");
             isSourceLoading = false;
-            await loadAllSource();
             return;
         }
+
     } catch (error) {
         log("屋里社加载异常：" + error);
         showTip("屋里社接口失败，切换其他源");
@@ -723,10 +483,8 @@ async function loadWuLiSheSource() {
         await loadAllSource();
         return;
     }
-    // 全部流程正常走完，释放加载锁
     isSourceLoading = false;
 }
-
 
 
     // DJ接口
@@ -782,7 +540,7 @@ async function loadWuLiSheSource() {
         }
     }
 
-    // 通用fetch回调封装
+    // 通用fetch回调封装（移除视频校验）
     async function fetchSourceWithCallback(callback) {
         return new Promise((resolve) => {
             $.get(reqApiUrl, async (data, status) => {
@@ -806,21 +564,9 @@ async function loadWuLiSheSource() {
                         resolve();
                         return;
                     }
-                    log(sourceUrl)
-                    const canPlay = await checkMp4Playable(sourceUrl);
-                    if (canPlay) {
-                        callback(sourceUrl);
-                        saveVideoToHistory(sourceUrl);
-                    } else {
-                        retryCount++;
-    if (retryCount >= maxRetry) {
-        showTip("多次加载失败，请稍后再试");
-        retryCount = 0;
-        return; // 不再自动刷新，允许点击菜单
-        }
-                        showTip("视频失效，重新加载");
-                        await loadAllSource();
-                    }
+                    // 直接播放，删除校验
+                    callback(sourceUrl);
+                    saveVideoToHistory(sourceUrl);
                 } catch (error) {
                     log("fetchSourceWithCallback异常：" + error)
                 } finally {
@@ -838,27 +584,15 @@ async function loadWuLiSheSource() {
     } else if (/kuaiyuhudong/.test(reqApiUrl)) {
         loadDjSource();
     } else if (/t=0|yujn|NewSp|jkapi/.test(reqApiUrl)) {
-         let jsonData = JSON.parse(request(reqApiUrl, { onlyHeaders: true }));       
-         tempPlayUrl = jsonData.url;      
+         const tempPlayUrl = await getFinalRedirectUrl(reqApiUrl);      
         if (isVideoUrlRepeat(tempPlayUrl)) {
             showTip("该视频已播放过，重新加载新视频");
             await loadAllSource();
             return;
         }
-        const canPlay = await checkMp4Playable(tempPlayUrl);
-        if (canPlay) {
-            videoPlayerDom.src = tempPlayUrl;
-            saveVideoToHistory(tempPlayUrl);
-        } else {
-            retryCount++;
-    if (retryCount >= maxRetry) {
-        showTip("多次加载失败，请稍后再试");
-        retryCount = 0;
-        return; // 不再自动刷新，允许点击菜单
-        }
-            showTip("视频失效，重新加载");
-            await loadAllSource();
-        }
+        // 直接赋值播放，删除校验
+        videoPlayerDom.src = tempPlayUrl;
+        saveVideoToHistory(tempPlayUrl);
     } else {
         await fetchSourceWithCallback((sourceUrl) => {
             videoPlayerDom.src = sourceUrl;
@@ -887,33 +621,27 @@ $(document).ready(async function() {
          await loadAllSource();
      })()
     // 视频元数据加载完成
-   // 视频80%自动预加载，只绑定一次
-videoPlayerDom.addEventListener("timeupdate", async () => {
-    const dur = videoPlayerDom.duration;
-    if(isNaN(dur)) return;
-    if (videoPlayerDom.currentTime / dur > 0.8 && !preloadCacheUrl && !isBackgroundPreloading) {
-        preloadNextVideoSource();
-    }
-});
- videoPlayerDom.addEventListener('loadedmetadata', () => {
+    videoPlayerDom.addEventListener('loadedmetadata', () => {
         totalTimeStr = formatTime(videoPlayerDom.duration);
         timeTotalDom.textContent = totalTimeStr;
         dragSliderDom.max = 100;
         dragTotalTimeDom.innerText = totalTimeStr;
     })
-
-    // 实时进度更新
-    videoPlayerDom.addEventListener('timeupdate', () => {
+    
+    // timeupdate 仅保留进度UI，删除80%预加载代码
+    videoPlayerDom.addEventListener("timeupdate", async () => {
         const curSec = videoPlayerDom.currentTime;
         const totalSec = videoPlayerDom.duration;
         if (isNaN(totalSec)) return;
+
+        // 1. 进度条、时间UI更新逻辑
         const percent = (curSec / totalSec * 100);
         progressBarDom.style.width = percent + "%";
         timeCurDom.textContent = formatTime(curSec);
         timeTotalDom.textContent = totalTimeStr;
         dragSliderDom.value = percent;
         dragCurTimeDom.innerText = formatTime(curSec);
-    })
+    });
 
     // 拖动滑块跳转
     dragSliderDom.addEventListener("input", () => {
@@ -1020,7 +748,6 @@ videoPlayerDom.addEventListener("timeupdate", async () => {
     });
 
     // 换源按钮
- // 换源按钮
 $(document).on("click", "#yuan", function(e) {
     e.stopPropagation(); // 阻止冒泡，避免和空白关闭冲突
     e.preventDefault(); // 新增：阻止触摸默认行为
@@ -1160,7 +887,6 @@ $(document).on("click", "#yuan", function(e) {
     sourceOptionList.push({ name: 'DJ秀', url: 'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php' });
     sourceOptionList.push({ name: '美女', url: 'https://v1.21lhz.cn/API/Video/api.php?_t=0' + Math.random() });           
 
-    // 修复：把filterSourceList 全部替换成 sourceOptionList
     const saveSourceName = localStorage.getItem('xjjname') || '源08';
     const activeIndex = sourceOptionList.findIndex(item => item.name === saveSourceName);
     if (activeIndex > -1) {
@@ -1183,8 +909,6 @@ $(document).on("click", "#yuan", function(e) {
     // 先清空所有旧点击事件，再绑定新事件
     $(".option").off("click").on("click", function(e) {
         e.stopPropagation(); // 阻止点击穿透关闭菜单
-        preloadCacheUrl = null;
-        isBackgroundPreloading = false;
         const selectName = $(this).text();
         const newApiUrl = $(this).find(".url").attr("data-url");
         
@@ -1194,13 +918,11 @@ $(document).on("click", "#yuan", function(e) {
         globalApiUrl = newApiUrl;
         videoPlayList = [];
         listIndex = 0;
-        // 复用变量，不用重复getElementById
         optDom.style.display = "none";
         sourceMenuOpen = false;
         loadAllSource();
     });
 });
-
 
     // 点击空白关闭换源菜单
     $(document).on("click", function(event) {
