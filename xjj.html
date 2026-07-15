@@ -242,6 +242,13 @@ let isSourceLoading = false; // 加载锁，防止并发阻塞UI
 const maxRedirectRetry = 5; // 中转链接最大解析次数
 let globalRetryCount = 0; // 全局加载失败计数器
 
+// 预加载全局变量
+let preloadNextUrl = null;       // 预加载好的下一条视频地址
+let isBackgroundPreloading = false;// 是否正在后台预加载
+let preloadFailCount = 0;        // 预加载连续失败次数
+const maxPreloadFail = 5;        // 预加载最大失败次数
+let stopPreload = false;         // 全局暂停预加载开关
+
 // ====================== 公共工具函数 ======================
 function log(msg){
     if(typeof fba !== 'undefined' && fba.log) fba.log(msg);
@@ -343,6 +350,115 @@ function getSlideDirection(startX, startY, endX, endY) {
     return 0;
 }
 
+/**
+ * 后台预加载下一条视频，所有源共用
+ */
+async function preloadNextVideo() {
+    // 预加载锁：正在加载 / 暂停预加载 / 已有缓存直接退出
+    if (isBackgroundPreloading || stopPreload || preloadNextUrl) return;
+    // 连续失败达到上限，暂停预加载
+    if (preloadFailCount >= maxPreloadFail) {
+        log(`预加载连续${maxPreloadFail}次失败，临时停止预加载`);
+        preloadFailCount = 0;
+        return;
+    }   
+    isBackgroundPreloading = true;
+    preloadNextUrl = null;
+    let tempRawUrl = "";
+    try {
+        // 区分两种预加载逻辑
+        // 1. 列表模式：读取videoPlayList下一条未播放视频
+        if (listIndex + 1 < videoPlayList.length) {
+            const rawUrl = videoPlayList[listIndex + 1];
+            log('第'+(listIndex + 1)+'个****' + videoPlayList.length)
+            if (rawUrl && !isVideoUrlRepeat(rawUrl)) {
+                preloadNextUrl = rawUrl;
+                preloadFailCount = 0;
+                log("预加载列表下一条成功：" + preloadNextUrl);
+            }
+        } else {
+            // 2. 列表无剩余，重新请求接口预加载新视频（复用屋里社解析逻辑）
+            const reqApiUrl = localStorage.getItem('jjurl') || 'https://v.nrzj.vip/video.php?_t=' + Math.random();
+            // 屋里社专用解析
+            if (/wulishe/.test(reqApiUrl)) {
+                const res = await fetch(reqApiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0"
+                });
+                if (!res.ok) throw new Error("屋里社接口请求失败");
+                const resData = await res.json();
+                const arr = resData.data || [];
+                if (arr.length > 0) {
+                    const randomItem = arr[0];
+                    tempRawUrl = randomItem.attachment.video[0].link;
+                    tempRawUrl = tempRawUrl.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");
+                }
+            } else if (/t=0|yujn|NewSp|jkapi/.test(reqApiUrl)) {
+                tempRawUrl = reqApiUrl
+            } else if (/pf129/.test(reqApiUrl)) {
+                // pf129专用：取文本，正则提取mp4链接（兼容网页/纯链接两种返回）
+                const fetchRes = await fetch(reqApiUrl);
+                if (!fetchRes.ok) throw new Error("pf129接口请求失败");
+                const resText = await fetchRes.text();            
+                tempRawUrl = resText.trim();
+            } else if (/kuaiyuhudong/.test(reqApiUrl)) {
+                const fetchRes = await fetch(reqApiUrl);
+                if (!fetchRes.ok) throw new Error("kuaiyuhudong接口1请求失败");
+                const htmlText = await fetchRes.text();
+                const pathMatch = htmlText.match(/data-url="(.*?)"/);
+                if (!pathMatch) throw new Error("kuaiyuhudong未匹配到详情路径");
+                const detailUrl = reqApiUrl + pathMatch[1];
+                const fetchRess = await fetch(detailUrl);
+                if (!fetchRess.ok) throw new Error("kuaiyuhudong接口2请求失败");
+                const htmlTexts = await fetchRess.text();
+                const srcMatch = htmlTexts.match(/audiodiv" src="(.*?)"/);
+                if (!srcMatch) throw new Error("kuaiyuhudong未匹配视频地址");
+                tempRawUrl = srcMatch[1];
+            } else if (/txqq|doumei/.test(reqApiUrl)) {
+                const fetchRes = await fetch(reqApiUrl);
+                if (!fetchRes.ok) throw new Error("txqq/doumei接口请求失败");
+                const resData = await fetchRes.json();
+                const videoDataArr = resData.list || resData.data || [];
+                if (videoDataArr.length > 0) {
+                    tempRawUrl = videoDataArr[0].video_url || videoDataArr[0].content;
+                }
+            } else {
+                // 其他标准JSON接口
+                const fetchRes = await fetch(reqApiUrl);
+                if (!fetchRes.ok) throw new Error("通用接口请求失败");
+                const resData = await fetchRes.json();
+                tempRawUrl = resData.video || resData.视频 || resData.data;
+                if (/4qb/.test(reqApiUrl)) {
+                    tempRawUrl = resData.data.url;
+                }
+            }
+
+            // 统一处理重定向解析（修复原逻辑覆盖bug）
+            let realUrl = tempRawUrl;
+ // 匹配屋里社替换后的域名前缀
+ const wulisheDomain = /file\.wifou\.com\/d\/139\/list\/wulishe/;
+ // 判断：非标准视频后缀 或者 屋里社链接，都要解析重定向
+ const needRedirect = !/\.mp4|\.m3u8|\.flv/.test(tempRawUrl) || wulisheDomain.test(tempRawUrl);
+ if (tempRawUrl && needRedirect) {
+     realUrl = await getFinalRedirectUrl(tempRawUrl);
+ }
+            // 校验链接有效、无重复，存入预加载缓存
+            if (realUrl && !isVideoUrlRepeat(realUrl)) {
+                preloadNextUrl = realUrl;
+                preloadFailCount = 0;
+                log("预加载新接口视频成功：" + preloadNextUrl);
+            }
+        }
+    } catch (err) {
+        preloadFailCount++;
+        log("预加载失败：" + err);
+    } finally {
+        isBackgroundPreloading = false;
+    }
+}
+
+
 // ====================== 加载列表下一条视频（已删除视频校验逻辑） ======================
 async function loadNextSource() {
     // 删除预缓存逻辑，直接读取历史/列表
@@ -350,18 +466,19 @@ async function loadNextSource() {
         if (/txqq|doumei|kuaiyuhudong|wulishe/.test(globalApiUrl)) {
             listIndex++;
             await loadVideoFromList();
+            setTimeout(()=> preloadNextVideo(), 200);
             showTip('切换下一个');
             return;
-        }
+        }     
         showTip("无更多历史视频，加载新资源");
-        await loadAllSource();
+        await loadVideoFromList() ;     
+        setTimeout(()=> preloadNextVideo(), 200);  
         return;
     }
     // 读取下一条历史
     currentHistoryIndex++;
     const realPlayUrl = videoHistoryList[currentHistoryIndex];
-    // 直接播放，移除校验
-    videoPlayerDom.src = realPlayUrl;
+    videoPlayerDom.src = realPlayUrl; 
     showTip('切换下一个');
 }
 
@@ -382,10 +499,22 @@ async function loadPrevSource() {
     videoPlayerDom.src = realPlayUrl;
     showTip('切换上一个');
     historyVideoErrorCount = 0;
+    preloadNextUrl = null;
+    setTimeout(()=> preloadNextVideo(), 100);
 }
 
 // ====================== 列表模式加载单条视频（已删除视频校验逻辑） ======================
 async function loadVideoFromList() {
+    // 优先使用预加载缓存
+    if(preloadNextUrl){
+        const cacheUrl = preloadNextUrl;
+        preloadNextUrl = null;
+        videoPlayerDom.src = cacheUrl;
+        saveVideoToHistory(cacheUrl);
+        // 播放完成立刻重新预加载下一条
+        setTimeout(()=> preloadNextVideo(), 100);
+        return;
+    }
     if (listIndex >= videoPlayList.length) {
         showTip('视频列表播放完毕，重新加载新视频');
         await loadAllSource();
@@ -458,6 +587,7 @@ async function loadWuLiSheSource() {
                 (async () => {
                     listIndex = 0;
                     await loadVideoFromList();
+                    //setTimeout(()=> preloadNextVideo(), 200);
                 })();
             }
         }
@@ -516,6 +646,7 @@ async function loadWuLiSheSource() {
                 return;
             }
             await loadVideoFromList();
+            setTimeout(()=> preloadNextVideo(), 200);
         } catch (error) {
             showTip("DJ接口加载失败，2秒重试");
             setTimeout(loadDjSource, 2000);
@@ -534,6 +665,7 @@ async function loadWuLiSheSource() {
                 if (sourceUrl) videoPlayList.push(sourceUrl);
             }
             await loadVideoFromList();
+            setTimeout(()=> preloadNextVideo(), 200);
         } catch (error) {
             showTip("列表接口加载失败");
             log("loadJsonList异常：" + error);
@@ -567,6 +699,7 @@ async function loadWuLiSheSource() {
                     // 直接播放，删除校验
                     callback(sourceUrl);
                     saveVideoToHistory(sourceUrl);
+                    setTimeout(()=> preloadNextVideo(), 200);
                 } catch (error) {
                     log("fetchSourceWithCallback异常：" + error)
                 } finally {
@@ -593,6 +726,7 @@ async function loadWuLiSheSource() {
         // 直接赋值播放，删除校验
         videoPlayerDom.src = tempPlayUrl;
         saveVideoToHistory(tempPlayUrl);
+        setTimeout(()=> preloadNextVideo(), 200);
     } else {
         await fetchSourceWithCallback((sourceUrl) => {
             videoPlayerDom.src = sourceUrl;
@@ -641,6 +775,10 @@ $(document).ready(async function() {
         timeTotalDom.textContent = totalTimeStr;
         dragSliderDom.value = percent;
         dragCurTimeDom.innerText = formatTime(curSec);
+        // 新增：播放80%自动后台预加载下一条
+        if(percent > 80 && !preloadNextUrl && !isBackgroundPreloading){
+        preloadNextVideo();
+     }
     });
 
     // 拖动滑块跳转
@@ -920,6 +1058,9 @@ $(document).on("click", "#yuan", function(e) {
         listIndex = 0;
         optDom.style.display = "none";
         sourceMenuOpen = false;
+        preloadNextUrl = null;
+        isBackgroundPreloading = false;
+        preloadFailCount = 0;
         loadAllSource();
     });
 });
