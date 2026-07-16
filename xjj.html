@@ -51,7 +51,7 @@
         video {
            width: 100%;
            height: 100%;
-           object-fit: contain
+           object-fit: cover;
            /* 修复核心：取消全局pointer-events:none，否则所有点击失效 */
            pointer-events: auto;
            playsinline;
@@ -650,7 +650,7 @@ async function loadAllSource() {
                     if (/4qb/.test(reqApiUrl)) {
                         sourceUrl = data.data.url;
                     }
-                    if (/pf129/.test(reqApiUrl)) {
+                    if (/pf129|diskgirl|douyidou|wwgz/.test(reqApiUrl)) {
                         sourceUrl = data;
                     }
                     if (!sourceUrl.startsWith("http")) {
