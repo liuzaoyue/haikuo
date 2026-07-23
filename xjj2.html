@@ -524,7 +524,7 @@ function renderSourceOptions() {
         {name:'源08',url:'https://v.nrzj.vip/video.php?_t='+Math.random()},
         {name:'快9',url:'https://openapi.dwo.cc/api/ksvideo?_t='+Math.random()},
         {name:'源10',url:'https://www.wudada.online/Api/NewSp'},{name:'源11',url:'https://openapi.dwo.cc/api/v?_t='+Math.random()},
-        {name:'源12',url:'https://openapi.dwo.cc/api/fh_mvsp?_t='+Math.random()},{name:'源15',url:'http://www.wudada.online/Api/ScSp'},
+        {name:'源12',url:'https://openapi.dwo.cc/api/fh_mvsp?_v='+Math.random()},{name:'源15',url:'http://www.wudada.online/Api/ScSp'},
         {name:'源16',url:'http://api.yujn.cn/api/zzxjj.php?type=video'},{name:'源17',url:'http://api.yujn.cn/api/xjj.php'},
         {name:'女大',url:'http://api.yujn.cn/api/nvda.php'},{name:'黑丝',url:'http://api.yujn.cn/api/heisis.php'},
         {name:'汉服',url:'http://api.yujn.cn/api/hanfu.php'},{name:'源21',url:'https://api.kuleu.com/api/MP4_xiaojiejie?_t='+Math.random()},
@@ -535,7 +535,7 @@ function renderSourceOptions() {
         {name:'新5',url:'https://www.cunshao.com/666666/api/web.php?_t='+Math.random()},{name:'新6',url:'https://188sp.711888.xyz/188/video.php?_t='+Math.random()},
         {name:'新7',url:'https://28apk.com/mm/video.php?_t='+Math.random()},{name:'新8',url:'https://www.xiaolufx.net/suiji/video.php?_t='+Math.random()},
         {name:'新13',url:'https://api.suyanw.cn/api/xjj/api.php?_t='+Math.random()},{name:'美女',url:'https://openapi.dwo.cc/api/4qb_sp?msg=%E7%83%AD%E8%88%9E'},
-        {name:'新15',url:'https://openapi.dwo.cc/api/viodes?_t='+Math.random()},{name:'新16',url:'https://openapi.dwo.cc/api/xjj?_t='+Math.random()},
+        {name:'新15',url:'https://openapi.dwo.cc/api/viodes?_t='+Math.random()},{name:'新16',url:'https://openapi.dwo.cc/api/xjj?_v='+Math.random()},
         {name:'新17',url:'https://api.xudu.org/vos/vc?_t='+Math.random()},{name:'18',url:'https://api.yujn.cn/api/zzxjj.php?_t='+Math.random()},
         {name:'抖一抖',url:'https://www.douyidou.com/get/get1.php'},{name:'精品',url:'https://api.wwgz.cn:520/dsp/get/get1.php'},
         {name:'屋里社',url:'http://wulishe.site/wp-json/b2/v1/getTopicList'},{name:'抖妹',url:'https://www.doumei.cc/api/v1/recommend'},
@@ -1035,7 +1035,7 @@ async function getFinalRedirectUrl(url) {
         } catch (e) {
             return url;
         }
-    }
+    }  
     return url;
 }
 
@@ -1155,7 +1155,7 @@ function markUrlFinished(url) {
          log("新增观看记录，当前黑名单总数：" + list.length, url);
      } catch (e) {
          // 打印完整错误堆栈，精准定位
-         log("保存观看记录异常【详情】" + e.message, e);
+         log("保存观看记录异常【详情】" + e.message + e);
      }
  }
 // 完全原样保留，不改动
@@ -1232,10 +1232,7 @@ async function loadNextSource() {
     }
 
     // 滑到历史最后一条，退出历史切播放列表
-    if (currentHistoryIndex >= videoHistoryList.length - 1) {      
-        const blackSourceReg = /coop|txqq|doumei|kuaiyuhudong|wulishe/;
-        const isBlackSource = blackSourceReg.test(reqApiUrl);
-
+    if (currentHistoryIndex >= videoHistoryList.length - 1) {              
         // 列表还有剩余视频，直接切下一条
         if (listIndex < videoPlayList.length - 1) {
             listIndex++;
@@ -1243,15 +1240,9 @@ async function loadNextSource() {
             showTip('切换下一个');
             return;
         }
-
         // 列表耗尽，加载新资源
-        if (isBlackSource) {
-            await loadAllSource();
-        } else {
-            await loadSingleSourceBatch(3);
-            listIndex++;
-        }
-        await loadVideoFromList();
+        listIndex++;
+        await loadAllSource();
         showTip('切换下一个');
         return;
     }
@@ -1328,7 +1319,7 @@ async function loadVideoFromList() {
     if (listIndex >= videoPlayList.length) {
         showTip('视频列表播放完毕，重新加载新视频');
         await loadAllSource();
-        listIndex = 0;
+        //listIndex = 0;
         return;
     }
 
@@ -1625,6 +1616,7 @@ async function fetchSourceWithCallback() {
 
                 if (/ScSp|wp\.qinggongju|apihz|tucdn/.test(reqApiUrl)) {
                     url = resData.video || resData.视频 || resData.data || resData.mp4;
+                    coverSrc = "";
                 }
                 if (/4qb|xzdx/.test(reqApiUrl)) {
                     url = resData.data.url;
@@ -1673,10 +1665,9 @@ async function loadSingleSourceBatch(count = 3) {
             if (!originVideoUrl) continue;
             const realPlayUrl = await getFinalRedirectUrl(originVideoUrl);
             if (!realPlayUrl) continue;
-
             if (isVideoUrlRepeat(realPlayUrl)) {
                 continue;
-            }
+            }           
             videoPlayList.push(realPlayUrl);
             if (coverSrc) {
                 window.videoCoverMap.set(realPlayUrl, coverSrc);
@@ -1684,7 +1675,7 @@ async function loadSingleSourceBatch(count = 3) {
             successNum++;
         }
     } catch (err) {
-        //log("单源批量加载失败", err);
+        log("单源批量加载失败" + err);
     } finally {
         isSourceLoading = false;
     }
@@ -1701,6 +1692,8 @@ async function loadAllSource() {
          await load591Source(true); 
     } else if (/kuaiyuhudong/.test(reqApiUrl)) {
         await loadDjSource();
+    } else if (/v=0/.test(reqApiUrl)) {
+        videoPlayerDom.src= reqApiUrl
     } else {
         await loadSingleSourceBatch(3);        
     } 
@@ -2051,11 +2044,11 @@ videoPlayerDom.addEventListener('loadedmetadata', () => {
 
     videoPlayerDom.addEventListener('ended', async function() {
     pauseIconDom.style.opacity = 0
-    log('@@@@@@'+currentPlayOriginUrl)
+   // log('@@@@@@'+currentPlayOriginUrl)
     // 播放结束，清除当前视频进度记录
     if (currentPlayOriginUrl) {
         await VideoDB.clearPlayProgress(currentPlayOriginUrl);
-        log("视频播放完毕，清除进度：" + currentPlayOriginUrl);
+        //log("视频播放完毕，清除进度：" + currentPlayOriginUrl);
 
         // =====新增：完整播放完毕，记录到观看历史（仅在线模式，缓存不记录）=====
         if (!isLocalCachePlay) {
@@ -2077,14 +2070,9 @@ videoPlayerDom.addEventListener('loadedmetadata', () => {
             loadNextSource();
         }
         return;
-    }
-    // 下面是原本在线模式逻辑不动
-    if (/txqq|doumei|kuaiyuhudong|coop/.test(reqApiUrl)) {
-        listIndex++;
-        loadVideoFromList();
-    } else {
+    }   
+      //  listIndex++;      
         loadNextSource();
-    }
 }, false);
 
 
@@ -2301,7 +2289,6 @@ VideoDB.init();
 </script>
 <!-- 海阔视界桥接、自动更新逻辑 -->
 <script>      
-		    log('<<<<<<<<<<');		    
 		    let time = new Date().getDate().toString();
 		    ////log(time)
 		function formatLocalDate(date) {
@@ -2314,8 +2301,8 @@ VideoDB.init();
 		    let xjjtime = localStorage.getItem('xjjtime');
 		    if (xjjtime !== time || null === xjjtime) {
 		        localStorage.setItem('xjjtime', time);
-		        var 本地 = 'hiker://files/yuan/xjj.html';
-		        //var 远程 = 'https://raw.githubusercontent.com/liuzaoyue/haikuo/refs/heads/master/xjj.html';
+		        var 本地 = 'hiker://files/yuan/xjj2.html';
+		        //var 远程 = 'https://raw.githubusercontent.com/liuzaoyue/haikuo/refs/heads/master/xjj2.html';
 		        var newtime = formatLocalDate(new Date());
 		        var gx = '优化，欢迎使用。__缘分';		        
 		        if (request(远程) != request(本地)) {
