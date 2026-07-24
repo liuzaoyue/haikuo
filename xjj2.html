@@ -11,17 +11,17 @@
             touch-action: pan-y;
             text-align: center;
         }
-        .app{
-            width: 100%; 
-            height:100%; 
-            position: absolute; 
-            top:0px; 
-            right:0px; 
-            bottom: 0px; 
-            left:0px; 
-            overflow: hidden;
-            background-color: #000000;
-        } 
+      .app{
+     width: 100%; 
+     height: calc(100% + 20px);
+     position: fixed; 
+     top: -20px;  
+     right:0px; 
+     left:0px; 
+     overflow: hidden;
+     background-color: #000000;
+     /* 禁止写 bottom:0 */
+ }
         #myVideo{
             width: 100%;
             height: 100%;
@@ -104,14 +104,14 @@
         }
                      #options {			
             display: none;
-            transform: translate(1%, 20%);
+            transform: translate(1%, 10%);
             flex-wrap: wrap;
         }
         .option {
-            width: 56px;
-            height: 15px;
+            width: 39px;
+            height: 10px;
             padding: 10px;
-            font-size: 14px;
+            font-size: 12px;
             border: 1px solid #ddd;
             background-color: #FFFFCC;
             display: flex;
@@ -524,7 +524,8 @@ function renderSourceOptions() {
         {name:'源08',url:'https://v.nrzj.vip/video.php?_t='+Math.random()},
         {name:'快9',url:'https://openapi.dwo.cc/api/ksvideo?_t='+Math.random()},
         {name:'源10',url:'https://www.wudada.online/Api/NewSp'},{name:'源11',url:'https://openapi.dwo.cc/api/v?_t='+Math.random()},
-        {name:'源12',url:'https://openapi.dwo.cc/api/fh_mvsp?_v='+Math.random()},{name:'源15',url:'http://www.wudada.online/Api/ScSp'},
+      /*  {name:'源12',url:'https://openapi.dwo.cc/api/fh_mvsp?_v='+Math.random()},*/
+        {name:'源15',url:'http://www.wudada.online/Api/ScSp'},
         {name:'源16',url:'http://api.yujn.cn/api/zzxjj.php?type=video'},{name:'源17',url:'http://api.yujn.cn/api/xjj.php'},
         {name:'女大',url:'http://api.yujn.cn/api/nvda.php'},{name:'黑丝',url:'http://api.yujn.cn/api/heisis.php'},
         {name:'汉服',url:'http://api.yujn.cn/api/hanfu.php'},{name:'源21',url:'https://api.kuleu.com/api/MP4_xiaojiejie?_t='+Math.random()},
@@ -535,7 +536,8 @@ function renderSourceOptions() {
         {name:'新5',url:'https://www.cunshao.com/666666/api/web.php?_t='+Math.random()},{name:'新6',url:'https://188sp.711888.xyz/188/video.php?_t='+Math.random()},
         {name:'新7',url:'https://28apk.com/mm/video.php?_t='+Math.random()},{name:'新8',url:'https://www.xiaolufx.net/suiji/video.php?_t='+Math.random()},
         {name:'新13',url:'https://api.suyanw.cn/api/xjj/api.php?_t='+Math.random()},{name:'美女',url:'https://openapi.dwo.cc/api/4qb_sp?msg=%E7%83%AD%E8%88%9E'},
-        {name:'新15',url:'https://openapi.dwo.cc/api/viodes?_t='+Math.random()},{name:'新16',url:'https://openapi.dwo.cc/api/xjj?_v='+Math.random()},
+        {name:'新15',url:'https://openapi.dwo.cc/api/viodes?_t='+Math.random()},
+        /*{name:'新16',url:'https://openapi.dwo.cc/api/xjj?_v='+Math.random()},*/
         {name:'新17',url:'https://api.xudu.org/vos/vc?_t='+Math.random()},{name:'18',url:'https://api.yujn.cn/api/zzxjj.php?_t='+Math.random()},
         {name:'抖一抖',url:'https://www.douyidou.com/get/get1.php'},{name:'精品',url:'https://api.wwgz.cn:520/dsp/get/get1.php'},
         {name:'屋里社',url:'http://wulishe.site/wp-json/b2/v1/getTopicList'},{name:'抖妹',url:'https://www.doumei.cc/api/v1/recommend'},
@@ -940,7 +942,7 @@ function closeCachePopup() {
 async function preCacheOnly(sourceUrl, coverImg="") {
      const localBlob = await VideoDB.get(sourceUrl);
      if (localBlob) {
-         log(`预缓存跳过：已存在缓存 ${sourceUrl}`);
+         //log(`预缓存跳过：已存在缓存 ${sourceUrl}`);
          return;
      }
      const controller = new AbortController();
@@ -954,7 +956,7 @@ async function preCacheOnly(sourceUrl, coverImg="") {
          if (!res.ok) throw new Error(`HTTP ${res.status}`);
          const blob = await res.blob();
          await VideoDB.save(sourceUrl, blob, coverImg);
-         log(`预缓存成功：${sourceUrl}`);
+         //log(`预缓存成功：${sourceUrl}`);
      } catch (err) {
          clearTimeout(timer);
          if(err.name === "AbortError"){
@@ -971,7 +973,7 @@ async function getCachedVideoPlayUrl(sourceUrl, autoSave = false) {
     const localBlob = await VideoDB.get(sourceUrl);
     if (localBlob) {
         playUrl = URL.createObjectURL(localBlob);
-        log(`命中本地缓存：${sourceUrl}`);
+       // log(`命中本地缓存：${sourceUrl}`);
     } else if(autoSave) {
         try {
             const res = await fetch(sourceUrl, { cache: "default" });
@@ -1030,7 +1032,7 @@ async function getFinalRedirectUrl(url) {
                 redirect: "follow",
                 signal: ctrl.signal
             });
-            log("【最终地址】" + resp.url);
+            //log("【最终地址】" + resp.url);
             return resp.url;
         } catch (e) {
             return url;
@@ -1152,7 +1154,7 @@ function markUrlFinished(url) {
              list.shift();
          }
          localStorage.setItem("watched_finish_url", JSON.stringify(list));
-         log("新增观看记录，当前黑名单总数：" + list.length, url);
+         //log("新增观看记录，当前黑名单总数：" + list.length + url);
      } catch (e) {
          // 打印完整错误堆栈，精准定位
          log("保存观看记录异常【详情】" + e.message + e);
@@ -1325,7 +1327,7 @@ async function loadVideoFromList() {
 
     const sourceUrl = videoPlayList[listIndex];
     // 统一校验在线视频，一处修改全部在线场景生效
-    if (/v=0/.test(reqApiUrl)) {
+  
      const canPlay = await checkVideoUsable(sourceUrl);
       if (!canPlay) {
          showTip('当前视频资源损坏，自动切换下一条');
@@ -1333,9 +1335,9 @@ async function loadVideoFromList() {
          loadVideoFromList();
          return;
      }
-     }
+     
     log(`正在播放第:${listIndex}个  总数：${videoPlayList.length}`);
-    const isDoumeiSource = /doumei|v=0/.test(reqApiUrl);
+    const isDoumeiSource = /doumei/.test(reqApiUrl);
     if (isDoumeiSource) {
    videoPlayerDom.src = sourceUrl  
     currentPlayOriginUrl = sourceUrl; // 记录原始链接
@@ -1361,7 +1363,7 @@ if (cacheTargetIdx < videoPlayList.length) {
         if (isDoumeiSource) {
              log("抖妹流媒体，跳过预缓存");
          } else {
-        log(`【切视频自动预缓存】下标${cacheTargetIdx}`);
+       // log(`【切视频自动预缓存】下标${cacheTargetIdx}`);
         // 从全局map提前取出封面，传给预缓存
         const posterUrl = window.videoCoverMap?.get(cacheUrl) || "";
         preCacheOnly(cacheUrl, posterUrl);
@@ -1654,7 +1656,7 @@ async function loadSingleSourceBatch(count = 3) {
             let originVideoUrl = "";
             let coverSrc = "";
 
-            const apiRule = /t=0|v=0|yujn|NewSp|jkapi/;
+            const apiRule = /t=0|yujn|NewSp|jkapi/;
             if (apiRule.test(reqApiUrl)) {              
                 originVideoUrl = reqApiUrl;
                 coverSrc = "";
@@ -1667,9 +1669,9 @@ async function loadSingleSourceBatch(count = 3) {
             if (!originVideoUrl) continue;
             const realPlayUrl = await getFinalRedirectUrl(originVideoUrl);
             if (!realPlayUrl) continue;
-        /*    if (isVideoUrlRepeat(realPlayUrl)) {
+           if (isVideoUrlRepeat(realPlayUrl)) {
                 continue;
-            }           */
+            }           
             videoPlayList.push(realPlayUrl);
             if (coverSrc) {
                 window.videoCoverMap.set(realPlayUrl, coverSrc);
@@ -1794,7 +1796,7 @@ $(document).ready(async function() {
      setTimeout(() => {
          const w = vid.videoWidth;
          const h = vid.videoHeight;
-         log(`canplay 分辨率 w:${w} h:${h}`);
+         //log(`canplay 分辨率 w:${w} h:${h}`);
          if (!w || !h) {
              vid.style.objectFit = "cover";
              return;
@@ -1802,10 +1804,10 @@ $(document).ready(async function() {
          const ratio = w / h;
          if (ratio > 1.0) {
              vid.style.objectFit = "contain";
-             log("自动判定横屏 → contain");
+             //log("自动判定横屏 → contain");
          } else {
              vid.style.objectFit = "cover";
-             log("自动判定竖屏 → cover");
+            // log("自动判定竖屏 → cover");
          }
      }, 70);
  });
