@@ -1325,6 +1325,7 @@ async function loadVideoFromList() {
 
     const sourceUrl = videoPlayList[listIndex];
     // 统一校验在线视频，一处修改全部在线场景生效
+    if (/v=0/.test(reqApiUrl)) {
      const canPlay = await checkVideoUsable(sourceUrl);
       if (!canPlay) {
          showTip('当前视频资源损坏，自动切换下一条');
@@ -1332,8 +1333,9 @@ async function loadVideoFromList() {
          loadVideoFromList();
          return;
      }
+     }
     log(`正在播放第:${listIndex}个  总数：${videoPlayList.length}`);
-    const isDoumeiSource = /doumei/.test(reqApiUrl);
+    const isDoumeiSource = /doumei|v=0/.test(reqApiUrl);
     if (isDoumeiSource) {
    videoPlayerDom.src = sourceUrl  
     currentPlayOriginUrl = sourceUrl; // 记录原始链接
@@ -1402,7 +1404,7 @@ async function loadWuLiSheSource() {
                     return;
                 }
                 if (isVideoUrlRepeat(realUrl)) {
-                    //log(`第${i+1}条视频历史重复，跳过本条`);
+                    log(`第${i+1}条视频历史重复，跳过本条`);
                     return;
                 }
                 videoPlayList.push(realUrl);
@@ -1652,7 +1654,7 @@ async function loadSingleSourceBatch(count = 3) {
             let originVideoUrl = "";
             let coverSrc = "";
 
-            const apiRule = /t=0|yujn|NewSp|jkapi/;
+            const apiRule = /t=0|v=0|yujn|NewSp|jkapi/;
             if (apiRule.test(reqApiUrl)) {              
                 originVideoUrl = reqApiUrl;
                 coverSrc = "";
@@ -1665,9 +1667,9 @@ async function loadSingleSourceBatch(count = 3) {
             if (!originVideoUrl) continue;
             const realPlayUrl = await getFinalRedirectUrl(originVideoUrl);
             if (!realPlayUrl) continue;
-            if (isVideoUrlRepeat(realPlayUrl)) {
+        /*    if (isVideoUrlRepeat(realPlayUrl)) {
                 continue;
-            }           
+            }           */
             videoPlayList.push(realPlayUrl);
             if (coverSrc) {
                 window.videoCoverMap.set(realPlayUrl, coverSrc);
@@ -1692,9 +1694,7 @@ async function loadAllSource() {
          await load591Source(true); 
     } else if (/kuaiyuhudong/.test(reqApiUrl)) {
         await loadDjSource();
-    } else if (/v=0/.test(reqApiUrl)) {
-        videoPlayerDom.src= reqApiUrl
-    } else {
+    } else  {
         await loadSingleSourceBatch(3);        
     } 
     await loadVideoFromList();
@@ -1789,6 +1789,26 @@ $(document).ready(async function() {
 
     (async ()=>{await loadAllSource();})()
 
+    videoPlayerDom.addEventListener('canplay', function() {
+     const vid = this;
+     setTimeout(() => {
+         const w = vid.videoWidth;
+         const h = vid.videoHeight;
+         log(`canplay 分辨率 w:${w} h:${h}`);
+         if (!w || !h) {
+             vid.style.objectFit = "cover";
+             return;
+         }
+         const ratio = w / h;
+         if (ratio > 1.0) {
+             vid.style.objectFit = "contain";
+             log("自动判定横屏 → contain");
+         } else {
+             vid.style.objectFit = "cover";
+             log("自动判定竖屏 → cover");
+         }
+     }, 70);
+ });
     
 videoPlayerDom.addEventListener('loadedmetadata', async () => {
     totalTimeStr = formatTime(videoPlayerDom.duration);
