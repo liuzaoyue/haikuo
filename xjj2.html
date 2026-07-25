@@ -175,15 +175,7 @@
     margin: 0 0 15px;
     text-align: center;
 }
-#cachePopup .close-btn {
-    width: 100%;
-    margin-top: 20px;
-    padding: 10px;
-    border-radius: 20px;
-    border: none;
-    background: #ff4444;
-    color: #fff;
-}
+
 #dragProgressBox {
     touch-action: manipulation;
 }
@@ -285,9 +277,7 @@ ontouchmove="event.stopPropagation();">
         <button id="yuan" style="border-radius:20px;width:35px;height:25px;opacity:1;">换源</button>      
     </div>	
        <!-- 缓存弹窗容器 -->
-<div id="cachePopup" onclick="closeCachePopup();event.stopPropagation()">
-    <button class="close-btn" style="width:100%;margin-bottom:12px;padding:8px 0;" onclick="event.stopPropagation();closeCachePopup()">关闭弹窗</button>
-    
+<div id="cachePopup" onclick="closeCachePopup();event.stopPropagation()">     
         <h4 id="cacheTitle">本地缓存（共0个）</h4>
         <!-- 整行：全选框 + 两个批量按钮 -->
         <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;margin-left:10px;margin-right:10px;">
@@ -313,6 +303,11 @@ ontouchmove="event.stopPropagation();">
         </div>
     </div>
 <script>
+
+window.addEventListener('beforeunload', function (e) {
+    // 想要弹窗生效必须写这两行
+    e.returnValue = "";
+});
  const VideoDB = {
   dbName: "videoCacheDB",
   storeName: "videoFiles",
@@ -513,6 +508,13 @@ let hideTimer = null;
 
 const DEFAULT_COVER = "https://picsum.photos/400/200";
 
+let lastEndTrigger = 0;
+
+let playEndTimer = null;
+let autoCloseCachePopup = false;   //缓存弹窗专用
+let autoCloseSourcePopup = false;  //换源弹窗专用
+
+
 if (!window.videoCoverMap) window.videoCoverMap = new Map();
 
 const MAX_WATCH_BLACK = 200;
@@ -587,12 +589,19 @@ function renderSourceOptions() {
         $("#yuan").text(selectName);     
         videoPlayList = [];
         listIndex = 0;
-        optDom.style.display = "none";
-        sourceMenuOpen = false;
+        closeSourceMenu();
         loadAllSource();
         isLocalCachePlay = false
     });
 }
+
+function closeSourceMenu() {
+    const optDom = document.getElementById("options");
+    optDom.style.display = "none";
+    sourceMenuOpen = false;    
+        history.back();
+}
+
 //let selectedCacheIndex= new Set();
 // 存放选中视频url
 let selectedCacheUrlSet = new Set();
@@ -795,17 +804,19 @@ async function renderCachePlay(index) {
     
 }
 
-window.addEventListener('popstate', function(e) {
+window.addEventListener('popstate', function() {   
     if (popupOpen) {
-        // 弹窗打开，只关弹窗，阻止页面后退
-        e.preventDefault();
+        log("执行：关闭缓存弹窗");
         closeCachePopup();
-        // 重新压一条历史，抵消返回动作
-        history.pushState({}, '', null);
+        return;
     }
-    // 弹窗关闭，不做任何拦截，正常返回页面
+    if(sourceMenuOpen){
+        log("执行：关闭换源弹窗");
+        closeSourceMenu();
+        return;
+    }
+    log("无打开弹窗，允许页面退出");
 });
-
 
 
 // 【html缓存列表点击专用】onclick="playCacheVideo('${item.url}')" 调用这个
@@ -823,6 +834,7 @@ async function playCacheVideo(index) {
     }
     // 开启缓存翻页模式
     isLocalCachePlay = true;
+    //history.pushState({}, "", null); //新增！压入一条空白历史，激活popstate监听
     nowCacheIndex = index;
     // 直接用下标播放
     renderCachePlay(nowCacheIndex);
@@ -881,7 +893,7 @@ onerror="this.onerror=null;">`;
                 const safeUrl = item.url.replace(/'/g, "\\'");
 
                 htmlStr += `
-    <div class="cache-item" onclick="playCacheVideo(${index});event.stopPropagation()" style="position:relative;padding-left:44px;">
+  <div class="cache-item" onclick="closeCachePopup();setTimeout(()=>playCacheVideo(${index}),180);event.stopPropagation()" style="position:relative;padding-left:44px;">
         <!-- 每行复选框，还原你之前存在的勾选框 -->
         <input 
          type="checkbox" 
@@ -921,20 +933,26 @@ function htmlEscape(str) {
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
 }
+//关闭弹窗
 function closeCachePopup() {
     const popup = document.getElementById("cachePopup");
     popup.style.display = "none";
     popupOpen = false;
-    // 清空url集合
+
+    autoCloseCachePopup = true;
+    history.go(-1);
+
     selectedCacheUrlSet.clear();
     document.querySelectorAll(".cache-checkbox").forEach(item => {
         item.checked = false;
     })
     const allCheck = document.getElementById("selectAllCache");
     if(allCheck) allCheck.checked = false;
+
+    setTimeout(()=>{
+        autoCloseCachePopup = false;
+    },120);
 }
-
-
 
 /**
  * 统一处理视频url：读取本地blob缓存、释放旧blob、赋值播放器
@@ -1161,11 +1179,12 @@ function markUrlFinished(url) {
      }
  }
 // 完全原样保留，不改动
+/*
 function filterFinishedList(urlArray) {
     const watched = getWatchedUrls();
     return urlArray.filter(url => !watched.has(url));
 }
-
+*/
 /**
  * 切换拖动进度条显示/隐藏
  */
@@ -1236,14 +1255,12 @@ async function loadNextSource() {
     // 滑到历史最后一条，退出历史切播放列表
     if (currentHistoryIndex >= videoHistoryList.length - 1) {              
         // 列表还有剩余视频，直接切下一条
-        if (listIndex < videoPlayList.length - 1) {
-            listIndex++;
+        if (listIndex < videoPlayList.length - 1) {          
             await loadVideoFromList();
             showTip('切换下一个');
             return;
         }
-        // 列表耗尽，加载新资源
-        listIndex++;
+        // 列表耗尽，加载新资源        
         await loadAllSource();
         showTip('切换下一个');
         return;
@@ -1314,62 +1331,82 @@ function revokeBlobUrl(videoDom) {
   }
 }
 
+// 全局增加锁变量（放到脚本最外层）
+let isVideoLoadingBusy = false;
+
 async function loadVideoFromList() {
-    if (isLocalCachePlay) {
-         return;
-     }
-    if (listIndex >= videoPlayList.length) {
-        showTip('视频列表播放完毕，重新加载新视频');
-        await loadAllSource();
-        //listIndex = 0;
+    // 并发拦截锁，防止手动滑动+ended事件同时调用
+    if (isVideoLoadingBusy) {
+        log("loadVideoFromList 正在执行，忽略重复调用");
         return;
     }
+    isVideoLoadingBusy = true;
+     // 新增超时兜底，10秒强制解锁，防止死锁
+     const safeUnlockTimer = setTimeout(()=>{
+         isVideoLoadingBusy = false;
+         log("⚠️加载锁超时强制解锁，防止卡死");
+     },10000);
+    try {
+        if (isLocalCachePlay) {
+            return;
+        }
+        listIndex++;
+        if (listIndex >= videoPlayList.length) {
+            showTip('视频列表播放完毕，重新加载新视频');
+            await loadAllSource();
+            //listIndex = 0;
+            return;
+        }
 
-    const sourceUrl = videoPlayList[listIndex];
-    // 统一校验在线视频，一处修改全部在线场景生效
-  
-     const canPlay = await checkVideoUsable(sourceUrl);
-      if (!canPlay) {
-         showTip('当前视频资源损坏，自动切换下一条');
-         listIndex++;
-         loadVideoFromList();
-         return;
-     }
-     
-    log(`正在播放第:${listIndex}个  总数：${videoPlayList.length}`);
-    const isDoumeiSource = /doumei/.test(reqApiUrl);
-    if (isDoumeiSource) {
-   videoPlayerDom.src = sourceUrl  
-    currentPlayOriginUrl = sourceUrl; // 记录原始链接
-    //log("缓存播放，原始url：" + sourceUrl);
-    }else {
-    await getCachedVideoPlayUrl(sourceUrl, true);  
-    currentPlayOriginUrl = sourceUrl; // 记录原始链接  
- //   log("缓存播放，原始url：" + sourceUrl);
-   }
-    bindVideoHistoryListener(videoPlayerDom, sourceUrl);
-    // 新增：读取进度跳转
- const lastTime = await VideoDB.getPlayProgress(sourceUrl);
-// log("读取到的保存进度秒数：" + lastTime);
- if(lastTime > 1){
-     videoPlayerDom.currentTime = lastTime;
-     showTip(`恢复上次观看位置：${Math.floor(lastTime)}秒`);
- }
- // ===== 新增预缓存逻辑 =====
-const cacheTargetIdx = listIndex + 1;
-if (cacheTargetIdx < videoPlayList.length) {
-    const cacheUrl = videoPlayList[cacheTargetIdx];
-    if (typeof cacheUrl === "string" && cacheUrl.trim()) {
+        const sourceUrl = videoPlayList[listIndex];
+        const canPlay = await checkVideoUsable(sourceUrl);
+        if (!canPlay) {
+            showTip('当前视频资源损坏，自动切换下一条');           
+            // ✅不再递归！释放锁之后再调用，避免栈堆积、连续跳下标
+            log('❎文件损坏')
+            setTimeout(()=>loadVideoFromList(), 50);
+            return;
+        }
+        
+        log(`正在播放第:${listIndex}个  总数：${videoPlayList.length}`);
+        videoLoadErrorCount=0
+        const isDoumeiSource = /doumei/.test(reqApiUrl);
         if (isDoumeiSource) {
-             log("抖妹流媒体，跳过预缓存");
-         } else {
-       // log(`【切视频自动预缓存】下标${cacheTargetIdx}`);
-        // 从全局map提前取出封面，传给预缓存
-        const posterUrl = window.videoCoverMap?.get(cacheUrl) || "";
-        preCacheOnly(cacheUrl, posterUrl);
+            videoPlayerDom.src = sourceUrl;
+            currentPlayOriginUrl = sourceUrl;
+        }else {
+            await getCachedVideoPlayUrl(sourceUrl, true);
+            currentPlayOriginUrl = sourceUrl;
+        }
+        bindVideoHistoryListener(videoPlayerDom, sourceUrl);
+
+        // 恢复播放进度
+        const lastTime = await VideoDB.getPlayProgress(sourceUrl);
+        if(lastTime > 1){
+            videoPlayerDom.currentTime = lastTime;
+            showTip(`恢复上次观看位置：${Math.floor(lastTime)}秒`);
+        }
+
+        // 预缓存下一条
+        const cacheTargetIdx = listIndex + 1;
+        if (cacheTargetIdx < videoPlayList.length) {
+            const cacheUrl = videoPlayList[cacheTargetIdx];
+            if (typeof cacheUrl === "string" && cacheUrl.trim()) {
+                if (isDoumeiSource) {
+                    log("抖妹流媒体，跳过预缓存");
+                } else {
+                    const posterUrl = window.videoCoverMap?.get(cacheUrl) || "";
+                    preCacheOnly(cacheUrl, posterUrl);
+                }
+            }
+        }
+
+    } catch (err) {
+        log("loadVideoFromList异常：",err);
+    } finally {
+        // ✅无论成功失败，必须释放锁！
+        isVideoLoadingBusy = false;
     }
-    }
-}
 }
 
 // 屋里社接口加载
@@ -1550,19 +1587,30 @@ async function loadJsonListSource() {
             videoDataArr = resData.content?.list || []
         }        
         
+        let validCount = 0; // 新增：统计当前分页真正加入列表的视频
         for (let i = 0; i < videoDataArr.length; i++) {
             const item = videoDataArr[i];
             const sourceUrl = item.video_url || item.content || item.playurl;
             if (sourceUrl) {
                 if (isVideoUrlRepeat(sourceUrl)) {          
-                log(`第${i+1}条视频历史重复，跳过本条`);     
-                continue;
-            }
+                    log(`第${i+1}条视频历史重复，跳过本条`);     
+                    continue;
+                }
                 videoPlayList.push(sourceUrl);
+                validCount++; // 有效资源计数+1
                 const coverImg = item.image || item.author_pic || item.picurl || "";
                 window.videoCoverMap.set(sourceUrl, coverImg);
             }
-        }      
+        }  
+
+        // ============新增核心判断============
+        if (validCount === 0) {
+            log("⚠️当前分页所有视频均为历史重复，没有新增资源");
+            showTip("当前批次全部为已播放内容");
+            // 可选：如果你想彻底停止后续持续预加载，可以在这里重置nextPage = null;
+            // nextPage = null;
+        }
+        // =====================================
     } catch (error) {
         showTip("列表接口加载失败");
         log("loadJsonList异常：" + error);
@@ -1770,6 +1818,7 @@ async function waitJqueryReady() {
 
 // ====================== 统一启动入口 startApp【核心改造点】======================
 async function startApp() {
+    //history.pushState({type:"exitLock"}, "", location.href);
     try {
         await waitJqueryReady();
         log("✅ jQuery就绪，开始初始化页面");
@@ -1822,7 +1871,25 @@ videoPlayerDom.addEventListener('loadedmetadata', async () => {
 videoPlayerDom.addEventListener("timeupdate", async() => {
     const curSec = videoPlayerDom.currentTime;
     const totalSec = videoPlayerDom.duration;
-
+   if (!isNaN(totalSec) && totalSec > 20) {
+         const nearEndPoint = totalSec - 3;
+         if (curSec >= nearEndPoint && !videoPlayerDom.ended) {
+             // 进入片尾区域，启动倒计时
+             if (!playEndTimer) {
+                 playEndTimer = setTimeout(() => {
+                     log("⚠️片尾兜底触发，ended事件丢失保护，自动切下一条");
+                     loadVideoFromList();
+                     playEndTimer = null;
+                 }, 4000);
+             }
+         } else {
+             // 拖动离开片尾，清除定时器
+             if (playEndTimer) {
+                 clearTimeout(playEndTimer);
+                 playEndTimer = null;
+             }
+         }
+     }
     // =========【仅新增：预加载逻辑，下方原有代码完全不动】=========
     if (!isNaN(totalSec)) {
         const totalListLen = videoPlayList.length;
@@ -1871,19 +1938,21 @@ videoPlayerDom.addEventListener("timeupdate", async() => {
     log(`【JSON列表预加载触发】当前下标${listIndex}，列表总长${totalListLen}`);
     jsonTriggeredSet.add(triggerIndex);
     jsonListPreloading = true;
-    try{
-        await loadJsonListSource();
-    }catch(err){
-        log("JSON预加载异常：", err);
-    }finally{
-        jsonListPreloading = false;
-    }
+    (async ()=>{
+         try{
+             await loadJsonListSource();
+         }catch(err){
+             log("JSON预加载异常：", err);
+         }finally{
+             jsonListPreloading = false;
+         }
+     })();
 }
             // 4、单批量源 t=0|yujn|NewSp|jkapi 下标5/10/15
            if(listIndex > 0 
     && listIndex === videoPlayList.length - 2 
     && !singlePreloading
-    && /t=0|yujn|NewSp|jkapi/.test(reqApiUrl)
+    && !/(591|kuaiyuhudong|wulishe|txqq|doumei|coop)/.test(reqApiUrl)
     && !singleTriggeredSet.has(listIndex)){
     log(`【单批量源预加载触发】当前播放倒数第二条 listIndex=${listIndex}`);
     singleTriggeredSet.add(listIndex);
@@ -2060,11 +2129,13 @@ videoPlayerDom.addEventListener('loadedmetadata', () => {
             videoLoadErrorCount = 0;
             return;
         }     
-        listIndex++;
         setTimeout(()=>loadVideoFromList(), 300);
     });
 
     videoPlayerDom.addEventListener('ended', async function() {
+        const now = Date.now();
+    if (now - lastEndTrigger < 1500) return;
+    lastEndTrigger = now;
     pauseIconDom.style.opacity = 0
    // log('@@@@@@'+currentPlayOriginUrl)
     // 播放结束，清除当前视频进度记录
@@ -2092,8 +2163,7 @@ videoPlayerDom.addEventListener('loadedmetadata', () => {
             loadNextSource();
         }
         return;
-    }   
-      //  listIndex++;      
+    }        
         loadNextSource();
 }, false);
 
@@ -2164,15 +2234,16 @@ videoPlayerDom.addEventListener("pause", () => {
     e.stopPropagation();
     e.preventDefault();
     if (sourceMenuOpen) {
-        $("#options").hide();
-        sourceMenuOpen = false;
+        closeSourceMenu();
         return;
     }
-    renderSourceOptions(); // 调用1
+    renderSourceOptions();
     optDom = document.getElementById("options");
     sourceMenuOpen = true;
     optDom.style.display = "flex";
+    history.pushState({}, "", null);
 });
+
 
     document.getElementById("clearCacheBtn").addEventListener("click", () => {
         if (confirm("确定清空所有本地缓存与播放历史？此操作不可恢复！")) {
@@ -2180,15 +2251,13 @@ videoPlayerDom.addEventListener("pause", () => {
         }
     });
 
-    $(document).on("click", function(event) {
-        if (!$(event.target).closest("#yuan, .option").length && sourceMenuOpen) {
-            document.getElementById("options").style.display = "none";
-            sourceMenuOpen = false;
-            videoPlayerDom.play()
-            //playIconDom.style.opacity = 0;
-        }
-    });
-    
+  $(document).on("click", function(event) {
+    if (!$(event.target).closest("#yuan, .option").length && sourceMenuOpen) {
+       
+        closeSourceMenu();
+        videoPlayerDom.play()
+    }
+});
     
     const cachePopupDom = document.getElementById("cachePopup");
 let popupTouchStartX = 0;
@@ -2271,34 +2340,35 @@ document.addEventListener("touchend", function(e) {
     if(popupOpen) break;
     // 源列表弹窗打开，左滑直接关闭源列表
     if (sourceMenuOpen) {
-        $("#options").hide();
-        sourceMenuOpen = false;
+        closeSourceMenu();
         break;
     }
     // 无弹窗状态，左滑打开缓存弹窗
-    $("#options").hide();
-    sourceMenuOpen = false;
     openCacheListPopup();
     break;
           case 4: // 右滑
-     // 新增：缓存弹窗打开时，直接阻断原有右滑逻辑
-     if (popupOpen) {
+     log("右滑触发检测 | sourceMenuOpen:" + sourceMenuOpen + " | popupOpen:" + popupOpen);
+     if(sourceMenuOpen){
+         log("右滑拦截：换源弹窗已经打开");
          break;
      }
-     // 无弹窗状态，右滑打开展源列表
-     closeCachePopup();
+     if (popupOpen) {
+         log("缓存弹窗打开，自动关闭");
+         closeCachePopup();
+     }
      optDom = document.getElementById("options");
+     if(!optDom){
+         log("❌严重错误：找不到options弹窗DOM！");
+         break;
+     }
+     log("✅DOM获取成功，执行renderSourceOptions渲染");
      renderSourceOptions();
-     // 动画逻辑：先重置，再延时加show触发滑入动画
-     optDom.classList.remove("show");
+     log("✅renderSourceOptions执行完毕，准备显示弹窗");
      optDom.style.display = "flex";
-     setTimeout(()=>{
-         optDom.classList.add("show");
-     }, 10)
      sourceMenuOpen = true;
      history.pushState({}, "", null);
+     log("✅换源弹窗成功打开");
      break;
-
         case 2:       
             loadPrevSource();                                 
             break;
