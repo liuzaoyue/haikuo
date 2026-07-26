@@ -606,6 +606,9 @@ cacheModeHistoryPushed = false
              }
          }
        
+        history.back();
+    
+
      }, 60);
         loadAllSource();
         
@@ -616,10 +619,10 @@ function closeSourceMenu() {
     const optDom = document.getElementById("options");
     optDom.style.display = "none";
     sourceMenuOpen = false;    
-   // if (!isLocalCachePlay) {
+    if (!isLocalCachePlay) {
         history.back();
-  //  }
-       // history.back();
+    }
+       //history.back();
 }
 
 //let selectedCacheIndex= new Set();
