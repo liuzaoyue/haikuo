@@ -514,9 +514,8 @@ let playEndTimer = null;
 let autoCloseCachePopup = false;   //缓存弹窗专用
 let autoCloseSourcePopup = false;  //换源弹窗专用
 let cacheModeHistoryPushed = false; // 缓存模式锚点是否已经压入历史
-let cacheModeHistoryStartLength = 0; // 记录进入缓存模式时历史栈长度
 
-
+let clearingHistory = false; // 全局标记，正在批量清理历史时上锁
 if (!window.videoCoverMap) window.videoCoverMap = new Map();
 
 const MAX_WATCH_BLACK = 200;
@@ -581,36 +580,55 @@ function renderSourceOptions() {
     optDom.onclick = function(e){
         e.stopPropagation();
     }
-    $(".option").off("click").on("click", function(e) {
-        e.stopPropagation();
-        const selectName = $(this).clone().find("span").remove().end().text().trim();
-        const newApiUrl = $(this).find(".url").attr("data-url");
-        reqApiUrl = newApiUrl;
-        localStorage.setItem('jjurl', newApiUrl);
-        localStorage.setItem('xjjname', selectName);
-        $("#yuan").text(selectName);     
-        videoPlayList = [];
-        listIndex = 0;
-        closeSourceMenu();
-        isLocalCachePlay = false
-        nowCacheIndex = -1;
-cacheModeHistoryPushed = false
-// ==========新增 退出缓存批量清理历史==========
-     setTimeout(()=>{
-         // 仅当初进入缓存时压入过缓存历史才执行
-         if(cacheModeHistoryStartLength && history.length > cacheModeHistoryStartLength){
-             const diff = history.length - cacheModeHistoryStartLength;
-             if(diff > 0){
-                 log("换源退出缓存，回撤缓存区间历史，diff="+diff)
-                 history.go(-diff);
-             }
-         }      
-        history.back();   
-     }, 60);
+ $(".option").off("click").on("click", function(e) {
+    e.stopPropagation();
+    const selectName = $(this).clone().find("span").remove().end().text().trim();
+    const newApiUrl = $(this).find(".url").attr("data-url");
+    reqApiUrl = newApiUrl;
+    localStorage.setItem('jjurl', newApiUrl);
+    localStorage.setItem('xjjname', selectName);
+    $("#yuan").text(selectName);     
+    videoPlayList = [];
+    listIndex = 0;
+    closeSourceMenu();
+    isLocalCachePlay = false
+    nowCacheIndex = -1;
+    cacheModeHistoryPushed = false
+    rollbackCacheHistory(); // 一行调用
+    setTimeout(()=>{
         loadAllSource();
-        
-    });
+    }, 200);
+});
 }
+
+// 统一缓存历史回退工具，自带最大次数防护，不会退出页面
+function rollbackCacheHistory(maxRoll = 30) {
+    if (clearingHistory) return;
+    clearingHistory = true;
+    let rollCount = 0;
+
+    function loopBack() {
+        rollCount++;
+        // 防护：后退超过30次直接终止，避免退出页面
+        if (rollCount >= maxRoll) {
+            clearingHistory = false;
+            return;
+        }
+        const state = history.state;
+        // 找到缓存锚点，收尾删除锚点
+        if (state && state.cacheAnchor === true) {
+            history.back();
+            setTimeout(() => {
+                clearingHistory = false;
+            }, 200);
+            return;
+        }
+        history.back();
+        setTimeout(loopBack, 120);
+    }
+    loopBack();
+}
+
 
 function closeSourceMenu() {
     const optDom = document.getElementById("options");
@@ -823,35 +841,32 @@ async function renderCachePlay(index) {
     
 }
 
-window.addEventListener('popstate', function(e) {
-    log("popstate触发 state:" + e.state);
+window.addEventListener('popstate', async function(e) {
+    log("popstate触发 state:" + JSON.stringify(e.state));
+    if(clearingHistory) return;
 
     if (popupOpen) {
-        log("执行：关闭缓存弹窗");
+        log("关闭缓存弹窗");
         closeCachePopup();
         return;
     }
     if(sourceMenuOpen){
-        log("执行：关闭换源弹窗");
+        log("关闭换源弹窗");
         closeSourceMenu();
         return;
     }
 
     if(isLocalCachePlay && cacheModeHistoryPushed && !popupOpen){
-        log("直接退出缓存模式");
-        const currentLen = history.length;
-        const diff = currentLen - cacheModeHistoryStartLength;
-        if(diff > 0){
-            history.go(-diff);
-        }
+        log("退出缓存模式，循环回退至缓存锚点");
+        rollbackCacheHistory(); // 内部自带上锁逻辑，外部不用处理锁
+        // 重置缓存状态
         isLocalCachePlay = false;
         cacheModeHistoryPushed = false;
         showTip("进入在线播放");
-        
         loadVideoFromList();
         return;
     }
-    log("无打开弹窗，允许页面退出");
+    log("无弹窗，正常退出页面");
 });
 
 
@@ -876,8 +891,7 @@ window.addEventListener('popstate', function(e) {
     if(!cacheModeHistoryPushed){
         // 重点改动：增加state标识 cacheAnchor:true
         history.pushState({cacheAnchor:true}, "", null);
-        cacheModeHistoryPushed = true;
-        cacheModeHistoryStartLength = history.length; // 记录起点！
+        cacheModeHistoryPushed = true;        
     }
     nowCacheIndex = index;
     renderCachePlay(nowCacheIndex);
@@ -897,7 +911,8 @@ async function openCacheListPopup() {
     const titleDom = document.getElementById("cacheTitle");
     popup.style.display = "block";
     popupOpen = true;
-    history.pushState({}, "", null);
+// 带上专属type标记
+    history.pushState({type:"cachePopup"}, "", null);
     listBox.innerHTML = "正在加载中...";
     titleDom.textContent = "本地缓存（加载中...）";
 
@@ -1286,27 +1301,19 @@ function runLimitCache(urlArr, maxParallel = 3) {
 async function loadNextSource() {
     // 缓存模式优先拦截
     if (isLocalCachePlay) {
-        // 没到缓存最后一条，下标+1播放缓存
-        if (nowCacheIndex < allCacheList.length - 1) {
-            nowCacheIndex++;
-            renderCachePlay(nowCacheIndex);
-            return;
-        }
-        // 缓存全部看完，退出缓存模式，走网络逻辑
-        isLocalCachePlay = false;
-        showTip("本地缓存全部播放完毕，加载网络资源");
-        // 新增：批量清理缓存阶段历史
-         setTimeout(()=>{
-             if(cacheModeHistoryStartLength && history.length > cacheModeHistoryStartLength){
-                 const diff = history.length - cacheModeHistoryStartLength;
-                 if(diff > 0){
-                     log("缓存全部播放完毕，回撤缓存历史 diff="+diff);
-                     history.go(-diff);
-                 }
-             }
-             history.back();
-         }, 60);
-    }
+         // 没到缓存最后一条，下标+1播放缓存
+         if (nowCacheIndex < allCacheList.length - 1) {
+             nowCacheIndex++;
+             renderCachePlay(nowCacheIndex);
+             return;
+         }
+         // 缓存全部看完，退出缓存模式，走网络逻辑
+         isLocalCachePlay = false;
+         cacheModeHistoryPushed = false;
+         showTip("本地缓存全部播放完毕，加载网络资源");
+         // 直接调用统一回退方法，内部自动处理锁、循环、最大次数限制
+         rollbackCacheHistory();
+     }
 
     // 滑到历史最后一条，退出历史切播放列表
     if (currentHistoryIndex >= videoHistoryList.length - 1) {              
