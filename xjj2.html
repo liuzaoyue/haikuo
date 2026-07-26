@@ -842,33 +842,38 @@ async function renderCachePlay(index) {
 }
 
 window.addEventListener('popstate', async function(e) {
-    log("popstate触发 state:" + JSON.stringify(e.state));
-    if(clearingHistory) return;
-
-    if (popupOpen) {
-        log("关闭缓存弹窗");
-        closeCachePopup();
-        return;
-    }
-    if(sourceMenuOpen){
-        log("关闭换源弹窗");
-        closeSourceMenu();
-        return;
-    }
-
-    if(isLocalCachePlay && cacheModeHistoryPushed && !popupOpen){
-        log("退出缓存模式，循环回退至缓存锚点");
-        rollbackCacheHistory(); // 内部自带上锁逻辑，外部不用处理锁
-        // 重置缓存状态
-        isLocalCachePlay = false;
-        cacheModeHistoryPushed = false;
-        showTip("进入在线播放");
-        loadVideoFromList();
-        return;
-    }
-    log("无弹窗，正常退出页面");
-});
-
+     log("popstate触发 state:" + JSON.stringify(e.state));
+     if(clearingHistory) return;
+     if (popupOpen) {
+         log("关闭缓存弹窗");
+         closeCachePopup();
+         return;
+     }
+     if(sourceMenuOpen){
+         log("关闭换源弹窗");
+         closeSourceMenu();
+         return;
+     }
+     if(isLocalCachePlay && cacheModeHistoryPushed && !popupOpen){
+         log("退出缓存模式，循环回退至缓存锚点");
+         // 浏览器原生确认框
+        // history.pushState({}, "", null);
+         const isQuit = confirm("确定退出缓存播放？");
+         if(isQuit){
+             rollbackCacheHistory();
+             isLocalCachePlay = false;
+             cacheModeHistoryPushed = false;
+             showTip("进入在线播放");
+             loadVideoFromList();
+         }else{
+             //history.back();
+             log("用户取消退出缓存");
+             history.forward();
+         }
+         return;
+     }
+     log("无弹窗，正常退出页面");
+ });
 
 
 // 【html缓存列表点击专用】onclick="playCacheVideo('${item.url}')" 调用这个
