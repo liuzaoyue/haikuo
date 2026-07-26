@@ -604,11 +604,8 @@ cacheModeHistoryPushed = false
                  log("换源退出缓存，回撤缓存区间历史，diff="+diff)
                  history.go(-diff);
              }
-         }
-       
-        history.back();
-    
-
+         }      
+        history.back();   
      }, 60);
         loadAllSource();
         
@@ -1307,6 +1304,7 @@ async function loadNextSource() {
                      history.go(-diff);
                  }
              }
+             history.back();
          }, 60);
     }
 
