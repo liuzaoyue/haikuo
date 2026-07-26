@@ -1295,6 +1295,16 @@ async function loadNextSource() {
         // 缓存全部看完，退出缓存模式，走网络逻辑
         isLocalCachePlay = false;
         showTip("本地缓存全部播放完毕，加载网络资源");
+        // 新增：批量清理缓存阶段历史
+         setTimeout(()=>{
+             if(cacheModeHistoryStartLength && history.length > cacheModeHistoryStartLength){
+                 const diff = history.length - cacheModeHistoryStartLength;
+                 if(diff > 0){
+                     log("缓存全部播放完毕，回撤缓存历史 diff="+diff);
+                     history.go(-diff);
+                 }
+             }
+         }, 60);
     }
 
     // 滑到历史最后一条，退出历史切播放列表
