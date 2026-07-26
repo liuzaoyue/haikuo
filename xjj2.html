@@ -277,7 +277,7 @@ ontouchmove="event.stopPropagation();">
         <button id="yuan" style="border-radius:20px;width:35px;height:25px;opacity:1;">换源</button>      
     </div>	
        <!-- 缓存弹窗容器 -->
-<div id="cachePopup" onclick="closeCachePopup(false);event.stopPropagation()">     
+<div id="cachePopup" onclick="closeCachePopup();event.stopPropagation()">     
         <h4 id="cacheTitle">本地缓存（共0个）</h4>
         <!-- 整行：全选框 + 两个批量按钮 -->
         <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;margin-left:10px;margin-right:10px;">
@@ -595,6 +595,18 @@ function renderSourceOptions() {
         isLocalCachePlay = false
         nowCacheIndex = -1;
 cacheModeHistoryPushed = false
+// ==========新增 退出缓存批量清理历史==========
+     setTimeout(()=>{
+         // 仅当初进入缓存时压入过缓存历史才执行
+         if(cacheModeHistoryStartLength && history.length > cacheModeHistoryStartLength){
+             const diff = history.length - cacheModeHistoryStartLength;
+             if(diff > 0){
+                 log("换源退出缓存，回撤缓存区间历史，diff="+diff)
+                 history.go(-diff);
+             }
+         }
+       
+     }, 60);
         loadAllSource();
         
     });
@@ -604,9 +616,9 @@ function closeSourceMenu() {
     const optDom = document.getElementById("options");
     optDom.style.display = "none";
     sourceMenuOpen = false;    
-    if (!isLocalCachePlay) {
+   // if (!isLocalCachePlay) {
         history.back();
-    }
+  //  }
        // history.back();
 }
 
@@ -812,11 +824,11 @@ async function renderCachePlay(index) {
 }
 
 window.addEventListener('popstate', function(e) {
-    log("popstate触发 state:", e.state);
+    log("popstate触发 state:" + e.state);
 
     if (popupOpen) {
         log("执行：关闭缓存弹窗");
-        closeCachePopup(false);
+        closeCachePopup();
         return;
     }
     if(sourceMenuOpen){
@@ -834,13 +846,8 @@ window.addEventListener('popstate', function(e) {
         }
         isLocalCachePlay = false;
         cacheModeHistoryPushed = false;
-        showTip("退出缓存播放模式");
-        setTimeout(()=>{
-    // 确认当前为在线模式再执行
-    if(!isLocalCachePlay){
-        history.back();
-    }
-}, 100);
+        showTip("进入在线播放");
+        
         loadVideoFromList();
         return;
     }
@@ -852,7 +859,7 @@ window.addEventListener('popstate', function(e) {
 // 【html缓存列表点击专用】onclick="playCacheVideo('${item.url}')" 调用这个
  function playCacheVideo(index) {
     log("【playCacheVideo】开始执行，index="+ index+ " 当前isLocalCachePlay="+ isLocalCachePlay);
-    closeCachePopup(true);
+    closeCachePopup();
     // 校验全局缓存列表是否存在
     if (!allCacheList || allCacheList.length === 0) {
         showTip("缓存数据为空");
@@ -926,7 +933,7 @@ onerror="this.onerror=null;">`;
                 const safeUrl = item.url.replace(/'/g, "\\'");
 
                 htmlStr += `
-  <div class="cache-item" onclick="closeCachePopup(true);setTimeout(()=>playCacheVideo(${index}),180);event.stopPropagation()" style="position:relative;padding-left:44px;">
+  <div class="cache-item" onclick="closeCachePopup();setTimeout(()=>playCacheVideo(${index}),180);event.stopPropagation()" style="position:relative;padding-left:44px;">
         <input 
          type="checkbox" 
          class="cache-checkbox"
@@ -966,7 +973,7 @@ function htmlEscape(str) {
         .replace(/>/g, "&gt;");
 }
 //关闭弹窗
-function closeCachePopup(skipBack = false) {
+function closeCachePopup() {
     const popup = document.getElementById("cachePopup");
     popup.style.display = "none";
     popupOpen = false;
@@ -981,7 +988,7 @@ function closeCachePopup(skipBack = false) {
     })
     const allCheck = document.getElementById("selectAllCache");
     if(allCheck) allCheck.checked = false;
-   if (!skipBack && !isLocalCachePlay) {
+   if ( !isLocalCachePlay) {
           history.back();
      }
     setTimeout(()=>{
@@ -2324,7 +2331,7 @@ cachePopupDom.addEventListener("touchend", (e) => {
     }
     // 横向右滑超过阈值才关闭
     if(diffX > 80) {
-        closeCachePopup(false);
+        closeCachePopup();
     }
 });
 });
@@ -2393,7 +2400,7 @@ document.addEventListener("touchend", function(e) {
       }
       if (popupOpen) {
           log("缓存弹窗打开，自动关闭");
-          closeCachePopup(false);
+          closeCachePopup();
           //history.back()
           break; // 关键：关闭缓存弹窗，直接终止，后续代码不再运行
       }
