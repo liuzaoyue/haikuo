@@ -1114,7 +1114,7 @@ onerror="this.onerror=null;">`;
             listBox.innerHTML = htmlStr;
         }
     } catch (err) {
-        log("读取缓存列表异常：", err);
+        log("读取缓存列表异常：" + err);
         console.error("缓存弹窗错误：",err);
         listBox.innerHTML = "<p style='color:#ff6666;text-align:center;'>读取缓存失败</p>";
         titleDom.textContent = "本地缓存视频列表（读取失败）";
@@ -1304,7 +1304,7 @@ async function clearAllVideoCache() {
          await checkCache();     
      } catch (err) {
          showTip("清除失败：" + err.message);
-         log("清除缓存异常", err);
+         log("清除缓存异常" + err);
      }
  }
 /**
@@ -1358,7 +1358,7 @@ function getWatchedUrls() {
         const txt = localStorage.getItem("watched_finish_url");
         return txt ? new Set(JSON.parse(txt)) : new Set();
     } catch (err) {
-        log("读取观看记录异常", err);
+        log("读取观看记录异常" + err);
         return new Set();
     }
 }
@@ -1433,10 +1433,10 @@ function runLimitCache(urlArr, maxParallel = 3) {
     async function nextTask() {
         if(index >= urlArr.length) return;
         const url = urlArr[index++];
-        preCacheOnly(url).catch(err => log(`单条缓存异常 ${url}：`, err)).finally(() => nextTask());
+        preCacheOnly(url).catch(err => log(`单条缓存异常 ${url}：` + err)).finally(() => nextTask());
     }
     for(let i = 0; i < maxParallel; i++) {
-        nextTask().catch(err => log("并发任务启动异常：", err));
+        nextTask().catch(err => log("并发任务启动异常："+ err));
     }
 }
 
@@ -1463,13 +1463,12 @@ async function loadNextSource() {
     if (currentHistoryIndex >= videoHistoryList.length - 1) {              
         // 列表还有剩余视频，直接切下一条
         if (listIndex < videoPlayList.length - 1) {          
-            await loadVideoFromList();
-            showTip('切换下一个');
+            await loadVideoFromList();            
             return;
         }
         // 列表耗尽，加载新资源        
         await loadAllSource();
-        showTip('切换下一个');
+        //showTip('切换下一个');
         return;
     }
 
@@ -1479,7 +1478,7 @@ async function loadNextSource() {
     currentPlayOriginUrl = realPlayUrl; // 记录原始url
     //log("缓存播放，原始url：" + realPlayUrl);
     await getCachedVideoPlayUrl(realPlayUrl, false);
-    showTip('切换下一个');
+    //showTip('切换下一个');
     // 恢复进度
 const lastTime = await VideoDB.getPlayProgress(realPlayUrl);
 //log("读取到的保存进度秒数：" + lastTime);
@@ -1551,7 +1550,7 @@ async function loadVideoFromList() {
      // 新增超时兜底，10秒强制解锁，防止死锁
      const safeUnlockTimer = setTimeout(()=>{
          isVideoLoadingBusy = false;
-         log("⚠️加载锁超时强制解锁，防止卡死");
+         //log("⚠️加载锁超时强制解锁，防止卡死");
      },10000);
     try {
         if (isLocalCachePlay) {
@@ -1568,7 +1567,7 @@ async function loadVideoFromList() {
         const sourceUrl = videoPlayList[listIndex];
         const canPlay = await checkVideoUsable(sourceUrl);
         if (!canPlay) {
-            showTip('当前视频资源损坏，自动切换下一条');           
+          //  showTip('当前视频资源损坏，自动切换下一条');           
             // ✅不再递归！释放锁之后再调用，避免栈堆积、连续跳下标
             log('❎文件损坏')
             setTimeout(()=>loadVideoFromList(), 50);
@@ -1609,7 +1608,7 @@ async function loadVideoFromList() {
         }
 
     } catch (err) {
-        log("loadVideoFromList异常：",err);
+        log("loadVideoFromList异常：" + err);
     } finally {
         // ✅无论成功失败，必须释放锁！
         isVideoLoadingBusy = false;
@@ -1732,7 +1731,7 @@ async function loadDjSource() {
  await Promise.all(taskList);
     } catch (error) {
         showTip("DJ接口加载失败，2秒重试");
-        log("DJ加载异常", error);
+        log("DJ加载异常" + error);
         if (!isSourceLoading) setTimeout(loadDjSource, 2000);
     } finally {
         isSourceLoading = false;
@@ -2011,26 +2010,26 @@ async function loadJquery() {
 
         // 条件1：读取为空 ｜ 条件2：长度不足 ｜ 条件3：不包含jQuery标识
         if (jqCode === "" || jqCode.length < JQ_MIN_SIZE || !jqCode.includes("jQuery")) {
-            log("❌本地文件无效/不存在，准备下载");
+           // log("❌本地文件无效/不存在，准备下载");
             needDownload = true;
         } else {
             log("✅本地jQuery正常存在");
         }
     } catch (err) {
         // 条件4：读取直接报错，同样走下载
-        log("❌读取文件发生异常：" + err + "，准备下载");
+        //log("❌读取文件发生异常：" + err + "，准备下载");
         needDownload = true;
     }
 
     if (needDownload) {
         try {
-            log("开始在线拉取jQuery");
+            //log("开始在线拉取jQuery");
             jqCode = request(JQ_CDN);
-            log("远端源码长度：" + jqCode.length);
+            //log("远端源码长度：" + jqCode.length);
             fba.writeFile(JQ_LOCAL_PATH, jqCode);
-            log("✅文件写入本地完成");
+           // log("✅文件写入本地完成");
         } catch (e2) {
-            log("❌jQuery网络下载失败：" + e2);
+           // log("❌jQuery网络下载失败：" + e2);
             alert("网络异常，无法加载jQuery！");
             return false;
         }
@@ -2091,13 +2090,13 @@ $(document).ready(async function() {
         }
          const w = vid.videoWidth;
          const h = vid.videoHeight;
-         log(`canplay 分辨率 w:${w} h:${h}`);
+         //log(`canplay 分辨率 w:${w} h:${h}`);
          if (!w || !h) {
              vid.style.objectFit = "cover";
              return;
          }
          const ratio = w / h;
-         if (ratio > 0.8) {
+         if (ratio > 1.0) {
              vid.style.objectFit = "contain";
              //log("自动判定横屏 → contain");
          } else {
@@ -2154,7 +2153,7 @@ videoPlayerDom.addEventListener("timeupdate", async() => {
     try{
         await loadWuLiSheSource();
     }catch(err){
-        log("屋里社预加载异常", err);
+        log("屋里社预加载异常" + err);
     }finally{
         wulishePreloading = false;
     }
@@ -2170,7 +2169,7 @@ videoPlayerDom.addEventListener("timeupdate", async() => {
     try {
         await loadDjSource();
     } catch (err) {
-        log("DJ预加载异常", err);
+        log("DJ预加载异常" + err);
     } finally {
         djPreloading = false;
     }
@@ -2188,7 +2187,7 @@ videoPlayerDom.addEventListener("timeupdate", async() => {
          try{
              await loadJsonListSource();
          }catch(err){
-             log("JSON预加载异常：", err);
+             log("JSON预加载异常：" + err);
          }finally{
              jsonListPreloading = false;
          }
@@ -2206,7 +2205,7 @@ videoPlayerDom.addEventListener("timeupdate", async() => {
     try {
         await loadSingleSourceBatch(3);
     } catch (err) {
-        log("单批量源预加载异常", err);
+        log("单批量源预加载异常"+err);
     } finally {
         singlePreloading = false;
     }
@@ -2379,6 +2378,7 @@ videoPlayerDom.addEventListener('loadedmetadata', () => {
     });
 
     videoPlayerDom.addEventListener('ended', async function() {
+        dragProgressWrapDom.style.display = "none"
         const now = Date.now();
     if (now - lastEndTrigger < 1500) return;
     lastEndTrigger = now;
@@ -2533,7 +2533,7 @@ cachePopupDom.addEventListener("touchend", (e) => {
 });
         // ==============================================
     } catch (err) {
-        log("启动初始化异常", err);
+        log("启动初始化异常" + err);
     }
 }
 // 统一入口启动，删掉原来直接调用 loadJquery();
@@ -2574,8 +2574,9 @@ document.addEventListener("touchend", function(e) {
     const endY = e.changedTouches[0].pageY;
     const slideDir = getSlideDirection(touchStartX, touchStartY, endX, endY);
     switch (slideDir) {
-        case 1:                
-            loadNextSource();
+        case 1:       
+           showTip('切换下一个');         
+            loadNextSource();           
             break;
         case 3: // 左滑
     if(popupOpen) break; 
