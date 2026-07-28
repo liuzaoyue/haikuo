@@ -22,6 +22,30 @@
      background-color: #000000;
      /* 禁止写 bottom:0 */
  }
+/* 歌词容器 */
+ .lrc-box {
+     position: absolute;
+     left: 0;
+     right: 0;
+     bottom: 65px; /* 避开底部进度条，可上下微调 */
+     max-height: 160px;
+     overflow: hidden;
+     pointer-events: none; /* 不遮挡滑动、点击 */
+ }
+ .lrc-content {
+     transition: transform 0.3s ease;
+ }
+ .lrc-line {
+    line-height: 32px;
+    font-size: 18px;
+    color: #aaa;
+    text-align: center;
+}
+.lrc-line.active {
+    color: #ffd22e !important;
+    font-size: 22px !important;
+    font-weight: bold !important;
+}
         #myVideo{
             width: 100%;
             height: 100%;
@@ -249,6 +273,10 @@
       <div class="play-icon" id="playIcon"></div>-->
         <div class="play-icons" id="playIcons"></div>
         <video id="myVideo" preload="auto" autoplay="autoplay" poster="http://123.56.105.145/weisyr/img/Loading1.gif" src=""></video>		
+        <!-- 新增LRC歌词区域 -->
+       <div class="lrc-box" style="display:none;">
+    <div class="lrc-content">暂无歌词，谢谢欣赏</div>
+</div>
         <!-- 拖动进度条 -->
         <div class="drag-progress-wrap" id="dragProgressBox"
 ontouchstart="event.stopPropagation();"
@@ -506,7 +534,7 @@ let cacheSafeCopy = [];
 let lastSaveProgress = 0;
 let hideTimer = null;
 
-const DEFAULT_COVER = "https://picsum.photos/400/200";
+const DEFAULT_COVER = "https://api3.mhimg.cn/api/Image_partitioning";
 
 let lastEndTrigger = 0;
 
@@ -522,6 +550,7 @@ let isClosingSource = false;
 let isClosingCache = false;
 let autoHistoryOperate = false; // 必须加在监听函数外面，全局生效
 const MAX_WATCH_BLACK = 200;
+let forceContain528 = false;
 // 全局渲染源列表函数
 function renderSourceOptions() {
     const sourceOptionList = [
@@ -550,14 +579,22 @@ function renderSourceOptions() {
         {name:'抖美女',url:'https://wp.qinggongju.com/wp-content/themes/onenavsub/tool/douyin_proxy.php'},
         {name:'甜美',url:'https://cn.apihz.cn/api/fun/girl.php?id=10008308&key=7e3e249519990e557cd9c79458f2b084'},
         {name:'快美女',url:'https://qinggongju.com/xiaojie/video.php?_t='+Math.random()},{name:'横屏',url:'https://www.cunshao.com/666666/api/pc.php?_t='+Math.random()},
-        {name:'抖艺术',url:'https://random-api.czl.net/video/dy-art?_t='+Math.random()},{name:'热舞',url:'http://api.4qb.cn/api/suiji-sp?msg=%E7%83%AD%E8%88%9E&type=json'},
+        {name:'抖艺术',url:'https://random-api.czl.net/video/dy-art?_t='+Math.random()},{name:'热舞',url:'http://api.4qb.cn/api/suiji-sp?msg=热舞&type=json'},{name:'明星',url:'http://api.4qb.cn/api/suiji-sp?msg=明星&type=json'},{name:'动漫',url:'http://api.4qb.cn/api/suiji-sp?msg=动漫&type=json'},{name:'游戏',url:'http://api.4qb.cn/api/suiji-sp?msg=游戏&type=json'},{name:'风景',url:'http://api.4qb.cn/api/suiji-sp?msg=风景&type=json'},
         {name:'抖1',url:'https://www.douyidou.com/get/get2.php'},{name:'抖2',url:'https://www.douyidou.com/get/get18.php'},
                      {name:'pf1',url:'https://pf129.com/xjj/get/get1.php'}, {name:'DJ秀',url:'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php'}, {name:'美女1',url:'https://v1.21lhz.cn/API/Video/api.php?_t='+Math.random()}, {name:'591',url:'https://v.591meta.com/ks.txt'},
-  {name:'六间房',url:'https://v.6.cn/coop/mobile/index.php?padapi=minivideo-getMiniVideoList.php&av=3.0&encpass=&logiuid=&act=recommend&pagesize=20&page='}                   
+  {name:'六间房',url:'https://v.6.cn/coop/mobile/index.php?padapi=minivideo-getMiniVideoList.php&av=3.0&encpass=&logiuid=&act=recommend&pagesize=20&page='},             
     ];
    let listUrl = [
    'https://api.yuafeng.cn/API/ly/sjxl.php?_t=0',
- 'https://api.xzdx.top/xjj', 'http://xjj2.716888.xyz/fenlei/djxjj/dj1.php?_t=0', 'https://tucdn.wpon.cn/api-girl/index.php?wpon=json'
+ 'https://api.xzdx.top/xjj', 'http://xjj2.716888.xyz/fenlei/djxjj/dj1.php?_t=0', 'https://tucdn.wpon.cn/api-girl/index.php?wpon=json',
+  "https://api.xunjinlu.fun/api/sjspks/ksvideo.php?_t=0"+Math.random(),
+  "https://img.8845.top/xjj?_t="+Math.random(),
+    "https://api3.mhimg.cn/api/girls_video?_t="+Math.random(),
+   "https://api.528sq.cn/api/neran.php?type=url",
+ "https://api.qqsuu.cn/api/dm-randmusic?format=json",
+ "https://v2.xxapi.cn/api/randomkuwo",
+ "https://api3.mhimg.cn/api/dj_music",
+ "https://free.wqwlkj.cn/wqwlapi/wyy_random.php?type=json"
  ]; 
  
    listUrl.forEach((url, idx) => {
@@ -585,6 +622,14 @@ function renderSourceOptions() {
     }
 $(".option").off("click").on("click", function(e) {
     e.stopPropagation();
+    const lrcBox = document.querySelector('.lrc-box');
+     const lrcContent = document.querySelector('.lrc-content');
+     lyricData = [];
+     forceContain528 = false;
+//myVideo.style.objectFit = "";
+     myVideo.poster = "http://123.56.105.145/weisyr/img/Loading1.gif"
+     if(lrcBox) lrcBox.style.display = "none";
+     if(lrcContent) lrcContent.innerHTML = "";
     const selectName = $(this).clone().find("span").remove().end().text().trim();
     const newApiUrl = $(this).find(".url").attr("data-url");
 
@@ -946,6 +991,61 @@ function log(msg){
     if(typeof fba !== 'undefined' && fba.log) fba.log(msg);
     console.log(msg);
 }
+
+// 传入你拿到的lrc字符串，输出解析好的歌词列表
+ // 全局歌词存储
+
+let lyricData = [];
+const lrcBox = document.querySelector(".lrc-box");
+const lrcContent = document.querySelector(".lrc-content");
+
+// LRC歌词解析
+function parseLrc(raw) {
+    const lines = raw.split("\n");
+    const list = [];
+    // 兼容2位/3位毫秒 .xx 或 .xxx
+    const reg = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
+
+    lines.forEach(line => {
+        const match = line.match(reg);
+        if (!match) return;
+
+        const minute = Number(match[1]);
+        const second = Number(match[2]);
+        const ms = Number(match[3]);
+        const text = match[4].trim();
+
+        // 跳过时间后完全空白的行，其余全部保留（作词、作曲、歌词都留下）
+        if (text === "") return;
+
+        const totalTime = minute * 60 + second + ms / Math.pow(10, match[3].length);
+        list.push({ time: totalTime, text: text });
+    })
+    return list;
+}
+
+
+// 渲染歌词，自动滚动居中
+function renderLyric(index) {
+    let html = "";
+    lyricData.forEach((item, i) => {
+        html += `<div class="lrc-line ${i === index ? 'active' : ''}">${item.text}</div>`
+    })
+    lrcContent.innerHTML = html;
+    lrcContent.style.transform = `translateY(${ -index * 32 + 65 }px)`;
+}
+
+// 监听播放进度，自动切换歌词（全局只写一次）
+myVideo.addEventListener("timeupdate", () => {
+    if (!lyricData.length) return;
+    const now = myVideo.currentTime;
+    let curIndex = 0;
+    for (let i = 0; i < lyricData.length; i++) {
+        if (lyricData[i].time <= now) curIndex = i;
+    }
+    renderLyric(curIndex);
+})
+
 
 // 打开缓存弹窗，渲染缓存列表
 async function openCacheListPopup() {
@@ -1479,7 +1579,7 @@ async function loadVideoFromList() {
         videoLoadErrorCount=0
         const isDoumeiSource = /doumei/.test(reqApiUrl);
         if (isDoumeiSource) {
-            videoPlayerDom.src = sourceUrl;
+            videoPlayerDom.src = sourceUrl;         
             currentPlayOriginUrl = sourceUrl;
         }else {
             await getCachedVideoPlayUrl(sourceUrl, true);
@@ -1772,25 +1872,30 @@ async function fetchSourceWithCallback() {
             try {
                 let url = resData;
                 let coverSrc = "";
-
-                if (/ScSp|wp\.qinggongju|apihz|tucdn/.test(reqApiUrl)) {
-                    url = resData.video || resData.视频 || resData.data || resData.mp4;
-                    coverSrc = "";
+                let lrcText = ""; // 新增歌词变量               
+                if (/ScSp|wp\.qinggongju|apihz|tucdn|528sq/.test(reqApiUrl)) {
+                    url = resData.video || resData.视频 || resData.data || resData.mp4||resData.mp3url;
+$                    
+                    coverSrc = resData.picurl||"";
+                    lrcText = resData.lyric || ""; // 读取接口返回歌词
                 }
-                if (/4qb|xzdx/.test(reqApiUrl)) {
-                    url = resData.data.url;
-                    coverSrc = resData.data.img; // 封面提取
+                if (/4qb|xzdx|randmusic|randomkuwo|dj_music|wyy_random/.test(reqApiUrl)) {
+                    url = resData.data.url||resData.data.original_link||"";
+                    coverSrc = resData.data.img||resData.data.picurl||resData.data.image||DEFAULT_COVER; // 封面提取
+                    lrcText = resData.data.lrc || ""; // 对应字段自行修改
                 }
                 if (!url.startsWith("http")) {
                     url = "https:" + url;
                 }
+                log(url)
                 // 返回对象
                 resolve({
                     videoUrl: url,
-                    coverSrc: coverSrc
+                    coverSrc: coverSrc,
+                    lrc: lrcText
                 });
             } catch (err) {
-                resolve({ videoUrl: "", coverSrc: "" });
+                resolve({ videoUrl: "", coverSrc: "", lrc: "" });
             }
         })
     })
@@ -1809,8 +1914,7 @@ async function loadSingleSourceBatch(count = 3) {
         while (successNum < count && loopCount < maxLoop) {
             loopCount++;
             let originVideoUrl = "";
-            let coverSrc = "";
-
+            let coverSrc = "";           
             const apiRule = /t=0|yujn|NewSp|jkapi/;
             if (apiRule.test(reqApiUrl)) {              
                 originVideoUrl = reqApiUrl;
@@ -1819,6 +1923,35 @@ async function loadSingleSourceBatch(count = 3) {
                 const res = await fetchSourceWithCallback();
                 originVideoUrl = res.videoUrl;
                 coverSrc = res.coverSrc;
+                const lrcRaw = res.lrc||""; // 取出歌词
+                if (/528sq|randmusic|randomkuwo|dj_music|wyy_random/.test(reqApiUrl)) {
+     forceContain528 = true;
+     myVideo.poster = coverSrc
+     myVideo.src = originVideoUrl
+     myVideo.style.objectFit = "contain";     
+     isSourceLoading = false;  
+     const lrcBox = document.querySelector('.lrc-box');
+     const lrcContent = document.querySelector('.lrc-content');
+     if (!lrcBox) return;
+     // 关键：每次切视频先强制隐藏、清空旧歌词，解决残留问题
+     lrcBox.style.display = "none";
+     lyricData = [];
+     lrcContent.innerHTML = "";
+     if(lrcRaw) {
+         log("原始完整歌词文本：" + lrcRaw);
+         lyricData = parseLrc(lrcRaw);
+         log("解析后歌词数量：" + lyricData.length, lyricData);
+         lrcBox.style.display = "block";
+         // 渲染歌词
+         log("执行渲染歌词");
+         renderLyric(0);
+     }else{
+         lrcBox.style.display = "none";
+         log("解析完无有效歌词，隐藏弹窗");
+         showTip("暂无歌词，谢谢欣赏");      
+     }
+     return
+ }
             }
 
             if (!originVideoUrl) continue;
@@ -1854,7 +1987,9 @@ async function loadAllSource() {
     } else  {
         await loadSingleSourceBatch(3);        
     } 
-    await loadVideoFromList();
+    if (!/(528sq|randmusic|randomkuwo|dj_music|wyy_random)/.test(reqApiUrl)) {
+            await loadVideoFromList();        
+                    }    
 }
 
 // ====================== 页面初始化 ======================
@@ -1950,15 +2085,19 @@ $(document).ready(async function() {
     videoPlayerDom.addEventListener('canplay', function() {
      const vid = this;
      setTimeout(() => {
+         if(forceContain528){
+            vid.style.objectFit = "contain";
+            return;
+        }
          const w = vid.videoWidth;
          const h = vid.videoHeight;
-         //log(`canplay 分辨率 w:${w} h:${h}`);
+         log(`canplay 分辨率 w:${w} h:${h}`);
          if (!w || !h) {
              vid.style.objectFit = "cover";
              return;
          }
          const ratio = w / h;
-         if (ratio > 1.0) {
+         if (ratio > 0.8) {
              vid.style.objectFit = "contain";
              //log("自动判定横屏 → contain");
          } else {
@@ -2339,7 +2478,7 @@ videoPlayerDom.addEventListener("pause", () => {
 //点击换源按钮
     $(document).on("click", "#yuan", function(e) {
     e.stopPropagation();
-    e.preventDefault();
+    e.preventDefault();  
     if (sourceMenuOpen) {
         closeSourceMenu();
         return;
