@@ -1876,33 +1876,101 @@ async function fetchSourceWithCallback() {
             try {
                 let url = resData;
                 let coverSrc = "";
-                let lrcText = ""; // 新增歌词变量               
+                let lrcText = "";
+                let lrcTexts = "";
+                let isKuwoSource = false; //标记是否酷我源
+
                 if (/ScSp|wp\.qinggongju|apihz|tucdn|528sq/.test(reqApiUrl)) {
-                    url = resData.video || resData.视频 || resData.data || resData.mp4||resData.mp3url;                   
+                    url = resData.video || resData.视频 || resData.data || resData.mp4||resData.mp3url;
+                    if (/528sq/.test(reqApiUrl)){
+                        url = "https://meting.mikus.ink/api?server=netease&type=url&id="+resData.id
+                    }                  
                     coverSrc = resData.picurl||"";
-                    lrcText = resData.lyric || ""; // 读取接口返回歌词
+                    lrcText = resData.lyric || "";
                 }
+
                 if (/4qb|xzdx|randmusic|randomkuwo|dj_music|wyy_random/.test(reqApiUrl)) {
                     url = resData.data.url||resData.data.original_link||"";
-                    coverSrc = resData.data.img||resData.data.picurl||resData.data.image||DEFAULT_COVER; // 封面提取
-                    lrcText = resData.data.lrc || ""; // 对应字段自行修改
+                    lrcTexts = "";
+                    isKuwoSource = /randomkuwo/.test(reqApiUrl);
+
+                    if (/randomkuwo/.test(reqApiUrl)){
+                        try{
+                            let name =  resData.data.name || ""; 
+                            let searchUrl = "https://apione.apibyte.cn/kwmusic?key=Shanhai-0P3tUKBwQ3B8be3LQ9u2m83A5H7wbvgvCON1MSDw3yux1PRr&action=search&keyword=" + encodeURIComponent(name);                         
+                            let searchResp = JSON.parse(request(searchUrl));
+                            if(!searchResp?.data || !searchResp.data[0]){
+                                log("酷我搜索无结果");
+                            }else{
+                                let rid = searchResp.data[0].rid;                     
+                                let playResp = JSON.parse(request("https://apione.apibyte.cn/kwmusic?key=Shanhai-0P3tUKBwQ3B8be3LQ9u2m83A5H7wbvgvCON1MSDw3yux1PRr&action=music_url&music_id=" + rid));
+                                url = playResp?.data?.url || "";
+
+                                let lrcResp = JSON.parse(request("https://apione.apibyte.cn/kwmusic?key=Shanhai-0P3tUKBwQ3B8be3LQ9u2m83A5H7wbvgvCON1MSDw3yux1PRr&action=lyric&music_id=" + rid));
+                                lrcTexts = lrcResp?.data?.lyric_text || "";
+                                log("酷我歌词:"+lrcTexts)
+                            }
+                        }catch(e){
+                            log("randomkuwo接口异常:"+e.message);
+                        }
+                    }
+
+                    if (/wyy_random/.test(reqApiUrl)){
+                        url = "https://meting.mikus.ink/api?server=netease&type=url&id="+resData.data.id;
+                    }
+                    if (/randmusic/.test(reqApiUrl)){
+                        const m = url.match(/id=([^&]+)/);
+                        if(m){
+                            url = "https://meting.mikus.ink/api?server=netease&type=url&id="+m[1];
+                        }
+                    }
+
+                    coverSrc = resData.data.img||resData.data.picurl||resData.data.image||DEFAULT_COVER;
+                    lrcText = resData.data.lrc ||"";
+
+                    if (/randomkuwo/.test(reqApiUrl) && lrcTexts){
+                        lrcText = lrcTexts
+                    }
+
+                    // ✅ 酷我源直接跳过网易歌词，只有非酷我才执行网易歌词拉取
+                    if(!isKuwoSource && !lrcText){
+                        let lyricid = "";
+                        const match = url.match(/id=([^&]+)/);
+                        lyricid = match ? match[1] : resData.data.id;
+                        log("lyricid:" + lyricid);
+                        if(lyricid){
+                            try{
+                                const resp = request("http://music.163.com/api/song/media?id="+lyricid);
+                                const obj = JSON.parse(resp);
+                                if(obj && obj.code===200 && obj.lyric){
+                                    lrcText = obj.lyric;
+                                }
+                            }catch(e){
+                                log("获取网易歌词失败:" + e.message);
+                            }
+                        }
+                    }
                 }
-                if (!url.startsWith("http")) {
+
+                if (url && !url.startsWith("http")) {
                     url = "https:" + url;
                 }
-                log(url)
-                // 返回对象
+                log("playUrl:" + url);
+
                 resolve({
                     videoUrl: url,
                     coverSrc: coverSrc,
                     lrc: lrcText
                 });
             } catch (err) {
+                log("fetchSource异常："+err.message);
                 resolve({ videoUrl: "", coverSrc: "", lrc: "" });
             }
         })
     })
 }
+
+
 
 
 // 单源批量拉取N条
