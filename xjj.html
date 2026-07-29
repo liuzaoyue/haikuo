@@ -1894,26 +1894,32 @@ async function fetchSourceWithCallback() {
                     lrcTexts = "";
                     isKuwoSource = /randomkuwo/.test(reqApiUrl);
 
-                    if (/randomkuwo/.test(reqApiUrl)){
-                        try{
-                            let name =  resData.data.name || ""; 
-                            let searchUrl = "https://apione.apibyte.cn/kwmusic?key=Shanhai-0P3tUKBwQ3B8be3LQ9u2m83A5H7wbvgvCON1MSDw3yux1PRr&action=search&keyword=" + encodeURIComponent(name);                         
-                            let searchResp = JSON.parse(request(searchUrl));
-                            if(!searchResp?.data || !searchResp.data[0]){
-                                log("酷我搜索无结果");
-                            }else{
-                                let rid = searchResp.data[0].rid;                     
-                                let playResp = JSON.parse(request("https://apione.apibyte.cn/kwmusic?key=Shanhai-0P3tUKBwQ3B8be3LQ9u2m83A5H7wbvgvCON1MSDw3yux1PRr&action=music_url&music_id=" + rid));
-                                url = playResp?.data?.url || "";
-
-                                let lrcResp = JSON.parse(request("https://apione.apibyte.cn/kwmusic?key=Shanhai-0P3tUKBwQ3B8be3LQ9u2m83A5H7wbvgvCON1MSDw3yux1PRr&action=lyric&music_id=" + rid));
-                                lrcTexts = lrcResp?.data?.lyric_text || "";
-                                log("酷我歌词:"+lrcTexts)
-                            }
-                        }catch(e){
-                            log("randomkuwo接口异常:"+e.message);
-                        }
-                    }
+                 if (/randomkuwo/.test(reqApiUrl)){
+     try{
+         let name =  resData.data.name || ""; 
+         let searchUrl = "http://search.kuwo.cn/r.s?all=" +encodeURIComponent(name)+ "&ft=music&%20itemset=web_2013&client=kt&pn=0&rn=2&rformat=json&encoding=utf8" ;                         
+         let rawSearch = request(searchUrl) || "";
+         let searchResp = rawSearch.match(/MP3RID':'MP3_(.*?)'/);
+         //log("########"+searchResp)
+         if(!searchResp){
+             log("酷我搜索无结果");
+         }else{
+             let rid = searchResp[1];
+             // 防护JSON解析异常
+             let rawPlay = request("https://apione.apibyte.cn/kwmusic?key=Shanhai-0P3tUKBwQ3B8be3LQ9u2m83A5H7wbvgvCON1MSDw3yux1PRr&action=music_url&music_id=" + rid);
+             let playResp = null;
+             try { playResp = JSON.parse(rawPlay); } catch(err) { log("酷我播放地址解析失败"); }
+             url = playResp?.data?.url || "";
+             let rawLrc = request("https://apione.apibyte.cn/kwmusic?key=Shanhai-0P3tUKBwQ3B8be3LQ9u2m83A5H7wbvgvCON1MSDw3yux1PRr&action=lyric&music_id=" + rid);
+             let lrcResp = null;
+             try { lrcResp = JSON.parse(rawLrc); } catch(err) { log("酷我歌词解析失败"); }
+             lrcTexts = lrcResp?.data?.lyric_text || "";
+             //log("酷我歌词:"+lrcTexts)
+         }
+     }catch(e){
+         log("randomkuwo接口异常:"+e.message);
+     }
+ }
 
                     if (/wyy_random/.test(reqApiUrl)){
                         url = "https://meting.mikus.ink/api?server=netease&type=url&id="+resData.data.id;
@@ -2009,12 +2015,12 @@ async function loadSingleSourceBatch(count = 3) {
      lyricData = [];
      lrcContent.innerHTML = "";
      if(lrcRaw) {
-         log("原始完整歌词文本：" + lrcRaw);
+        // log("原始完整歌词文本：" + lrcRaw);
          lyricData = parseLrc(lrcRaw);
          log("解析后歌词数量：" + lyricData.length, lyricData);
          lrcBox.style.display = "block";
          // 渲染歌词
-         log("执行渲染歌词");
+         //log("执行渲染歌词");
          renderLyric(0);
      }else{
          lrcBox.style.display = "none";
