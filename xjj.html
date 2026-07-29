@@ -600,8 +600,16 @@ function renderSourceOptions() {
  ]; 
  
    listUrl.forEach((url, idx) => {
+       let name;
+    if(idx < 7){
+        // 0~6 不变，原来两位数字
+        name = String(idx).padStart(2, '0');
+    }else{
+        // idx>=7：前缀“音”，序号从 idx+1
+        name = "音" + String(idx);
+    }
     sourceOptionList.push({
-        name: String(idx).padStart(2, '0'),
+        name,
         url
     })
 })
