@@ -948,6 +948,16 @@ async function renderCachePlay(index) {
 
 // 【html缓存列表点击专用】onclick="playCacheVideo('${item.url}')" 调用这个
  function playCacheVideo(index) {
+     $("#kuwoSearchBox").css("display", "none");
+     const lrcBox = document.querySelector('.lrc-box');
+     const lrcContent = document.querySelector('.lrc-content');
+     lyricData = [];
+     forceContain528 = false;
+//myVideo.style.objectFit = "";
+     myVideo.poster = "http://123.56.105.145/weisyr/img/Loading1.gif"
+     if(lrcBox) lrcBox.style.display = "none";
+     if(lrcContent) lrcContent.innerHTML = "";
+     
     log("【playCacheVideo】开始执行，index="+ index+ " 当前isLocalCachePlay="+ isLocalCachePlay);
     closeCachePopup(true);
     // 校验全局缓存列表是否存在
@@ -1149,7 +1159,8 @@ function closeCachePopup(skipBack = false) {
 /**
  * 统一处理视频url：读取本地blob缓存、释放旧blob、赋值播放器
  */
-async function preCacheOnly(sourceUrl, coverImg="") {
+async function preCacheOnly(sourceUrl, coverImg="") {    
+     
       const localBlob = await VideoDB.get(sourceUrl);
       if (localBlob) {
           return true;
