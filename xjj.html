@@ -557,7 +557,6 @@ const MAX_WATCH_BLACK = 200;
 let forceContain528 = false;
 let isVideoLoadingBusy = false;
 let appExitGuardPushed = false;
-let currentMusicSource = "randomkuwo";
 // 全局渲染源列表函数
 function renderSourceOptions() {
     const sourceOptionList = [
@@ -1886,105 +1885,172 @@ async function load591Source(isInitLoad = false) {
     }
 }
 
- async function playKuwoByName(name, apiCover){
-    if(!name) return;
-    log("酷我搜索播放，歌名：" + name);
-    let keyword = encodeURIComponent(name);
-let searchUrl = "http://search.kuwo.cn/r.s?all="+keyword
-+"&ft=music&itemset=web_2013&client=kt&pn=0&rn=1&rformat=json&encoding=utf8";
+// 通用fetch回调封装
+async function fetchSourceWithCallback() {
+    return new Promise(resolve => {
+        $.get(reqApiUrl, async (resData) => {
+            try {
+                let url = resData;
+                let coverSrc = "";
+                let lrcText = "";
 
-log("searchUrl长度="+searchUrl.length);
-     log("搜索链接"+searchUrl)
+                // 只处理视频源
+                if (/ScSp|wp\.qinggongju|apihz|tucdn/.test(reqApiUrl)) {
+                    $("#kuwoSearchBox").css("display", "none");
+                    url = resData.video || resData.视频 || resData.data || resData.mp4 || resData.mp3url;
+                    coverSrc = resData.picurl || "";
+                    lrcText = resData.lyric || "";
+                }else{
+                    //音乐、其他源直接返回空，交给外层调用 handleMusicSource
+                    $("#kuwoSearchBox").css("display", "none");
+                    resolve({
+                        videoUrl: "",
+                        coverSrc: "",
+                        lrc: ""
+                    });
+                    return;
+                }
+
+                if (url && !url.startsWith("http")) {
+                    url = "https:" + url;
+                }
+                log("playUrl:" + url);
+
+                resolve({
+                    videoUrl: url,
+                    coverSrc: coverSrc,
+                    lrc: lrcText
+                });
+            } catch (err) {
+                log("fetchSource异常：" + err.message);
+                resolve({ videoUrl: "", coverSrc: "", lrc: "" });
+            }
+        })
+    })
+}
+
+// 单源批量拉取N条
+async function loadSingleSourceBatch(count = 3) {
+    if (isSourceLoading) return;
+    isSourceLoading = true;
+
+    try {
+        let successNum = 0;
+        const maxLoop = 30;
+        let loopCount = 0;
+
+        while (successNum < count && loopCount < maxLoop) {
+            loopCount++;
+            let originVideoUrl = "";
+            let coverSrc = "";
+            const apiRule = /t=0|yujn|NewSp|jkapi/;
+
+            if (apiRule.test(reqApiUrl)) {
+                originVideoUrl = reqApiUrl;
+                coverSrc = "";
+            } else {
+                const res = await fetchSourceWithCallback();
+                originVideoUrl = res.videoUrl;
+                coverSrc = res.coverSrc;
+            }
+
+            if (!originVideoUrl) continue;
+
+            const realPlayUrl = await getFinalRedirectUrl(originVideoUrl);
+            if (!realPlayUrl) continue;
+            if (isVideoUrlRepeat(realPlayUrl)) continue;
+
+            videoPlayList.push(realPlayUrl);
+            if (coverSrc) {
+                window.videoCoverMap.set(realPlayUrl, coverSrc);
+            }
+            successNum++;
+        }
+    } catch (err) {
+        log("单源批量加载失败：" + err);
+    } finally {
+        isSourceLoading = false;
+    }
+}
+
+async function playKuwoByName(name){
+    if(!name) return null;
+    log("酷我搜索获取播放地址，歌名：" + name);
+    let keyword = encodeURIComponent(name);
+    let searchUrl = "http://search.kuwo.cn/r.s?all="+keyword
+    +"&ft=music&itemset=web_2013&client=kt&pn=0&rn=1&rformat=json&encoding=utf8";
+
     let rawSearch = "";
     try {
-        const res = await fetch(searchUrl, {
-    method:"GET",
-    credentials:"omit",
-    headers:{
-        "User-Agent":"Mozilla/5.0 (Linux; Android 16; PLD110 Build/BP2A.250605.015) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/138.0.7204.179 Mobile Safari/537.36"
-    }
-});
+        const res = await fetch(searchUrl)
         rawSearch = await res.text();
     } catch (e) {
         log("酷我搜索fetch失败:" + e.message);
         showTip("搜索网络异常");
-        return;
+        return null;
     }
     try{
-     rawSearch= rawSearch.replace(/'/g,'"')
-     rawSearch= JSON.parse(rawSearch);
+        rawSearch= rawSearch.replace(/'/g,'"')
+        rawSearch= JSON.parse(rawSearch);
     }catch(err){
         log("酷我搜索结果解析异常："+err.message);
         showTip("搜索解析出错");
-        return;
+        return null;
     }
     if(!rawSearch?.abslist || rawSearch.abslist.length===0){
         log("酷我搜索无结果 abslist空");
         showTip("酷我未搜到该歌曲");
-        return;
+        return null;
     }
-    let picMatch = rawSearch.abslist[0].web_albumpic_short
-    let searchCover = "";
-    if(picMatch){
-        searchCover = "https://img4.kuwo.cn/star/albumcover/"+ picMatch;
-    }
-    searchCover=searchCover.replace(/\/120\// ,'/500/')
-    let searchResp = rawSearch.abslist[0].MP3RID
+    let item = rawSearch.abslist[0];
+    let searchResp = item.MP3RID
     if(!searchResp){
-        log("酷我搜索无结果");
+        log("酷我搜索无MP3RID");
         showTip("酷我未搜到该歌曲");
-        return;
+        return null;
     }
     let rid = searchResp.split('_')[1];
 
-    // ✅优先级：randomkuwo接口传入的海报优先；没有就用搜索页正则抓的海报
-    let coverImg = apiCover || searchCover;
-    log("最终酷我封面：" + coverImg);
-    log("&&&&&&"+rid);
+    // 搜索拿到封面
+    let picMatch = item.web_albumpic_short;
+    let searchCover = picMatch ? ("https://img4.kuwo.cn/star/albumcover/"+picMatch).replace(/\/120\//,"/500/"):"";
 
-    // 获取播放地址
-    let rawPlay = "";
     const playUrl = "https://apione.apibyte.cn/kwmusic?key=Shanhai-0P3tUKBwQ3B8be3LQ9u2m83A5H7wbvgvCON1MSDw3yux1PRr&action=music_url&music_id=" + rid;
+    let rawPlay = "";
     try {
         const res = await fetch(playUrl, { method:"GET", credentials:"omit" });
         rawPlay = await res.text();
     } catch(e){
         log("酷我播放地址fetch失败:" + e.message);
         showTip("获取播放链接网络异常");
-        return;
+        return null;
     }
-    log(rawPlay);
-
     let playResp = null;
-    try { playResp = JSON.parse(rawPlay); } catch(err) { log("酷我播放地址解析失败"); return; }
+    try { playResp = JSON.parse(rawPlay); } catch(err) { log("酷我播放地址解析失败"); return null; }
     let url = playResp?.data?.url || "";
     if(!url){
         showTip("获取播放链接失败");
-        return;
+        return null;
     }
 
-    // 获取歌词
-    let rawLrc = "";
-    const lrcUrl = "https://jk.lllt.top/api/kuwo/?rid=" + rid + "&type=json&level=lossless&lrc=true";
-    try {
-        const res = await fetch(lrcUrl, { method:"GET", credentials:"omit" });
-        rawLrc = await res.text();
-    } catch(e){
-        log("酷我歌词fetch失败:" + e.message);
+    // 拿搜索rid对应的歌词
+    let searchLrc = "";
+    try{
+        let lrcApi = "https://jk.lllt.top/api/kuwo/?rid=" + rid + "&type=json&level=lossless&lrc=true";
+        let lrcJson = await (await fetch(lrcApi)).json();
+        searchLrc = lrcJson?.data?.lrc || "";
+    }catch(e){
+        log("酷我歌词获取异常:"+e.message);
     }
 
-    let lrcResp = null;
-    try { lrcResp = JSON.parse(rawLrc); } catch(err) { log("酷我歌词解析失败"); }
-    let lrcTexts = lrcResp?.data?.lrc || "";
-
-    playMusicWithLrc(url, coverImg, lrcTexts);
+    // 返回三样：音频、搜索封面、搜索歌词
+    return {
+        audioUrl:url,
+        searchCover:searchCover,
+        searchLrc:searchLrc
+    };
 }
 
-/**
- * meting网易云搜索
- * @param {string} name 歌名
- * @returns {Promise<Object|null>}
- */
 async function neteaseSearch(name) {
     if (!name) return null;
     const url = "https://meting.mikus.ink/api?server=netease&type=search&id=" + encodeURIComponent(name);
@@ -2012,82 +2078,6 @@ async function fetchLrc(lrcUrl){
     }
 }
 
-// 通用fetch回调封装
-async function fetchSourceWithCallback() {
-    return new Promise(resolve => {
-        $.get(reqApiUrl, async (resData) => {
-            try {
-                let url = resData;
-                let coverSrc = "";
-                let lrcText = "";
-
-                // 视频类源 → 隐藏搜索框
-                if (/ScSp|wp\.qinggongju|apihz|tucdn/.test(reqApiUrl)) {
-                    $("#kuwoSearchBox").css("display", "none");
-                    url = resData.video || resData.视频 || resData.data || resData.mp4 || resData.mp3url;
-                    coverSrc = resData.picurl || "";
-                    lrcText = resData.lyric || "";
-                }
-                // 音乐源：528sq|randmusic|randomkuwo|dj_music|wyy_random → 显示搜索框
-                else if (/(528sq|randmusic|randomkuwo|dj_music|wyy_random)/.test(reqApiUrl)) {
-    $("#kuwoSearchBox").css("display", "flex");
-
-    // =====新增自动识别源 start=====
-    if(/528sq/.test(reqApiUrl)) currentMusicSource = "528sq";
-    else if(/randmusic/.test(reqApiUrl)) currentMusicSource = "randmusic";
-    else if(/randomkuwo/.test(reqApiUrl)) currentMusicSource = "randomkuwo";
-    else if(/dj_music/.test(reqApiUrl)) currentMusicSource = "dj_music";
-    else if(/wyy_random/.test(reqApiUrl)) currentMusicSource = "wyy_random";
-    // =====新增自动识别源 end=====
-
-    const musicRet = handleMusicSource(resData);
-    url = musicRet.url;
-    coverSrc = musicRet.coverSrc;
-    lrcText = musicRet.lrcText;
-    const isHitKuwo = musicRet.isHitKuwo;
-
-    if (isHitKuwo) {
-        try {
-            let name = resData.data.name || "";
-            let apiCover = resData.data.image || "";
-            log("randomkuwo使用接口封面：" + apiCover);
-            playKuwoByName(name, apiCover);
-        } catch (e) {
-            log("randomkuwo接口异常:" + e.message);
-        }
-        resolve({
-            videoUrl: "__KUWO_SKIP__",
-            coverSrc: "",
-            lrc: ""
-        });
-        return;
-    }
-}else{
-    // 其它未知源，隐藏搜索框
-    $("#kuwoSearchBox").css("display", "none");
-    currentMusicSource = ""; //视频/非音乐源清空标记
-}
-
-
-                if (url && !url.startsWith("http")) {
-                    url = "https:" + url;
-                }
-                log("playUrl:" + url);
-
-                resolve({
-                    videoUrl: url,
-                    coverSrc: coverSrc,
-                    lrc: lrcText
-                });
-            } catch (err) {
-                log("fetchSource异常：" + err.message);
-                resolve({ videoUrl: "", coverSrc: "", lrc: "" });
-            }
-        })
-    })
-}
-
-
 function onSearchSubmit(inputName) {
     const name = (inputName || "").trim();
     if (!name) {
@@ -2095,13 +2085,16 @@ function onSearchSubmit(inputName) {
         return;
     }
     log(`搜索提交｜输入：${name}｜reqApiUrl=${reqApiUrl}`);
-
-    // 直接拿真实接口地址判断，不靠内存变量
     const isKuwoSearchSource = /randomkuwo|dj_music/.test(reqApiUrl);
 
     if (isKuwoSearchSource) {
-        log("分支：酷我搜索");
-        playKuwoByName(name, "");
+        log("分支：酷我手动搜索");
+        (async ()=>{
+            const res = await playKuwoByName(name);
+            if(!res) return;
+            //手动搜索，直接全套使用搜索结果
+            playMusicWithLrc(res.audioUrl, res.searchCover, res.searchLrc);
+        })();
     } else {
         log("分支：meting网易搜索");
         (async () => {
@@ -2115,140 +2108,98 @@ function onSearchSubmit(inputName) {
                 return;
             }
             const lrcTxt = await fetchLrc(song.lrc);
-            log("meting搜索结果：" + song.title + " - " + song.author);
             playMusicWithLrc(song.url, song.pic, lrcTxt);
         })();
     }
 }
 
-function handleMusicSource(resData) {
-    const url = reqApiUrl;
-
-    // 标记是否为528sq，单独拿顶层数据
-    const is528 = /528sq/.test(url);
-    // 普通音乐源取data，528sq直接用根对象
-    const data = is528 ? resData : resData.data;
-
-    let mediaUrl = data.url || data.original_link || data.mp3url || "";
-    let lrcTexts = "";
-    let isHitKuwo = /randomkuwo/.test(url);
-    let coverSrc = data.img || data.picurl || data.image || DEFAULT_COVER;
-    let lrcText = data.lrc || data.lyric || "";
-
-    log("调试 id=" + data.id + " 链接:" + url);
-
-    if (/wyy_random/.test(url)) {
-        mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + data.id;
+//自动音乐源处理【528sq / randmusic / randomkuwo / dj_music / wyy_random】
+async function handleMusicSource() {
+     const url = reqApiUrl;
+     let resp = await fetch(url);
+     let resData = await resp.json();
+     const is528 = /528sq/.test(url);
+     const data = is528 ? resData : resData.data;
+     // ========= randomkuwo特殊分支：只取歌名，交给playKuwoByName重新搜索rid播放，避开30秒试听 =========
+   if(/randomkuwo/.test(url)){
+    const songName = data.name || "";
+    if(!songName){
+        log("randomkuwo获取歌名为空");
+        showTip("酷我随机获取歌名失败");
+        return;
     }
-    if (/randmusic/.test(url)) {
-        const m = mediaUrl.match(/id=([^&]+)/);
-        if (m) {
-            mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + m[1];
-        }
-    }
-    // 528sq 专属逻辑
-    if (is528) {
-        log("528sq 单独解析", data);
-        mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + data.id;
-        coverSrc = data.picurl || "";
-        lrcText = data.lyric || "";
+    log("randomkuwo自动播放，原始歌名：" + songName);
+
+    //随机源自带资源，作为兜底
+    const srcCover = data.pic || data.album_pic || data.img || "";
+    const srcLrc = data.lrc || data.lyric || "";
+
+    const res = await playKuwoByName(songName);
+    if(!res){
+        log("randomkuwo搜索音频失败，无法播放");
+        return;
     }
 
-    if (/randomkuwo/.test(url) && lrcTexts) {
-        lrcText = lrcTexts;
-    }
+    //优先搜索出来的；搜索为空，降级用随机源自带
+    const finalCover = res.searchCover ? res.searchCover : srcCover;
+    const finalLrc = res.searchLrc ? res.searchLrc : srcLrc;
 
-    if (!isHitKuwo && !lrcText) {
-        let lyricid = "";
-        const match = mediaUrl.match(/id=([^&]+)/);
-        lyricid = match ? match[1] : data.id;
-        
-        if (lyricid) {
-            try {
-                const resp = request("http://music.163.com/api/song/media?id=" + lyricid);
-                const obj = JSON.parse(resp);
-                if (obj && obj.code === 200 && obj.lyric) {
-                    lrcText = obj.lyric;
-                }
-            } catch (e) {
-                log("获取网易歌词失败:" + e.message);
-            }
-        }
-    }
+    log("randomkuwo cover来源：" + (res.searchCover?"搜索结果":"随机源兜底"));
+    log("randomkuwo lrc来源：" + (res.searchLrc?"搜索结果":"随机源兜底"));
 
-    return { url: mediaUrl, coverSrc, lrcText, isHitKuwo };
+    playMusicWithLrc(res.audioUrl, finalCover, finalLrc);
+    return;
 }
 
-// 单源批量拉取N条
-async function loadSingleSourceBatch(count = 3) {
-    let isMusicSource = /(528sq|randmusic|randomkuwo|dj_music|wyy_random)/.test(reqApiUrl)
+     // ----下面是其余4个音乐源正常逻辑----
+     let mediaUrl = data.url || data.original_link || data.mp3url || "";
+     let coverSrc = data.img || data.picurl || data.image || DEFAULT_COVER;
+     let lrcText = data.lrc || data.lyric || "";
+     log("调试 id=" + data.id + " 链接:" + url);
+     if (/wyy_random/.test(url)) {
+         mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + data.id;
+     }
+     if (/randmusic/.test(url)) {
+         const m = mediaUrl.match(/id=([^&]+)/);
+         if (m) {
+             mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + m[1];
+         }
+     }
+     if (is528) {
+         log("528sq 单独解析", data);
+         mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + data.id;
+         coverSrc = data.picurl || "";
+         lrcText = data.lyric || "";
+     }
+     if (!lrcText) {
+         let lyricid = "";
+         const match = mediaUrl.match(/id=([^&]+)/);
+         lyricid = match ? match[1] : data.id;
+         if (lyricid) {
+             try {
+                 const respLyric = request("http://music.163.com/api/song/media?id=" + lyricid);
+                 const obj = JSON.parse(respLyric);
+                 if (obj && obj.code === 200 && obj.lyric) {
+                     lrcText = obj.lyric;
+                 }
+             } catch (e) {
+                 log("获取网易歌词失败:" + e.message);
+             }
+         }
+     }
+     if (!mediaUrl) {
+         log("音乐源解析没有播放链接");
+         showTip("音乐获取失败");
+         return;
+     }
+     playMusicWithLrc(mediaUrl, coverSrc, lrcText);
+ }
 
-    if(!/randomkuwo/.test(reqApiUrl)){
-        $("#kuwoSearchBox").hide();
-    }
-    if(!isMusicSource){
-        if (isSourceLoading) return;
-        isSourceLoading = true;
-    }
-    try {
-        let successNum = 0;
-        const maxLoop = 30;
-        let loopCount = 0;
-
-        while (successNum < count && loopCount < maxLoop) {
-            loopCount++;
-            let originVideoUrl = "";
-            let coverSrc = "";
-            const apiRule = /t=0|yujn|NewSp|jkapi/;
-            if (apiRule.test(reqApiUrl)) {
-                originVideoUrl = reqApiUrl;
-                coverSrc = "";
-            } else {
-                const res = await fetchSourceWithCallback();
-                // ✅ 如果是酷我特殊标记，直接跳出while循环，不再跑循环！！解决卡死
-                if(res.videoUrl === "__KUWO_SKIP__"){
-                    break;
-                }
-                originVideoUrl = res.videoUrl;
-                coverSrc = res.coverSrc;
-                const lrcRaw = res.lrc||"";
-                if (/528sq|randmusic|dj_music|wyy_random/.test(reqApiUrl)) {
-                    forceContain528 = true;
-                    playMusicWithLrc(originVideoUrl, coverSrc, lrcRaw);
-                    return;
-                }
-            }
-
-            if (!originVideoUrl) continue;
-            const realPlayUrl = await getFinalRedirectUrl(originVideoUrl);
-            if (!realPlayUrl) continue;
-            if (isVideoUrlRepeat(realPlayUrl)) {
-                continue;
-            }
-            videoPlayList.push(realPlayUrl);
-            if (coverSrc) {
-                window.videoCoverMap.set(realPlayUrl, coverSrc);
-            }
-            successNum++;
-        }
-    } catch (err) {
-        log("单源批量加载失败" + err);
-    } finally {
-        if(!isMusicSource){
-            isSourceLoading = false;
-        }
-    }
-}
-
-// 音乐源统一播放+歌词渲染入口
 function playMusicWithLrc(playUrl, coverUrl, lrcRaw){
-    
     forceContain528 = true;
     myVideo.poster = coverUrl || "";
     myVideo.src = playUrl;
     myVideo.style.objectFit = "contain";
-    // =====删掉！！！音乐源不要操作isSourceLoading锁，之前卡死根源=====
-    // isSourceLoading = false;
 
     const lrcBox = document.querySelector('.lrc-box');
     const lrcContent = document.querySelector('.lrc-content');
@@ -2265,29 +2216,36 @@ function playMusicWithLrc(playUrl, coverUrl, lrcRaw){
          renderLyric(0);
     }else{
          lrcBox.style.display = "none";
-         log("解析完无有效歌词，隐藏弹窗");
-         showTip("暂无歌词，谢谢欣赏");
+         log("解析完无有效歌词");
     }
 }
 
 
 // 统一加载全部源
 async function loadAllSource() {
+    let isMusicSource = /(528sq|randmusic|randomkuwo|dj_music|wyy_random)/.test(reqApiUrl);
+    $("#kuwoSearchBox").css("display","none");
     if (/wulishe/.test(reqApiUrl)) {
         await loadWuLiSheSource();
     } else if (/txqq|doumei|coop/.test(reqApiUrl)) {
         await loadJsonListSource();
     } else if (/591/.test(reqApiUrl)) {
-         await load591Source(true);
+        await load591Source(true);
     } else if (/kuaiyuhudong/.test(reqApiUrl)) {
         await loadDjSource();
-    } else  {
+    } else if (isMusicSource) {
+        $("#kuwoSearchBox").css("display","flex");
+        await handleMusicSource();
+    } else {
         await loadSingleSourceBatch(3);
     }
-    if (!/(528sq|randmusic|randomkuwo|dj_music|wyy_random)/.test(reqApiUrl)) {
-            await loadVideoFromList();
+
+    // 音乐源不执行视频列表加载
+    if (!isMusicSource) {
+        await loadVideoFromList();
     }
 }
+
 
 
 // ====================== 页面初始化 ======================
