@@ -918,7 +918,7 @@ document.body.onclick = function(e) {
   const optBox = document.getElementById('options');
   if(optBox.style.display !== 'flex') return;
   if(!e.target.classList.contains('option')){
-    closeSourceList();
+    closeSourceMenu()
   }
 }
 // 【滑动专用】仅按下标数字播放缓存，内部调用，不用于html点击
@@ -1899,9 +1899,19 @@ log("searchUrl长度="+searchUrl.length);
         showTip("搜索网络异常");
         return;
     }
+    try{
      rawSearch= rawSearch.replace(/'/g,'"')
      rawSearch= JSON.parse(rawSearch);
-    // 从搜索返回文本正则抓取专辑图片片段
+    }catch(err){
+        log("酷我搜索结果解析异常："+err.message);
+        showTip("搜索解析出错");
+        return;
+    }
+    if(!rawSearch?.abslist || rawSearch.abslist.length===0){
+        log("酷我搜索无结果 abslist空");
+        showTip("酷我未搜到该歌曲");
+        return;
+    }
     let picMatch = rawSearch.abslist[0].web_albumpic_short
     let searchCover = "";
     if(picMatch){
@@ -1959,6 +1969,37 @@ log("searchUrl长度="+searchUrl.length);
     playMusicWithLrc(url, coverImg, lrcTexts);
 }
 
+/**
+ * meting网易云搜索
+ * @param {string} name 歌名
+ * @returns {Promise<Object|null>}
+ */
+async function neteaseSearch(name) {
+    if (!name) return null;
+    const url = "https://meting.mikus.ink/api?server=netease&type=search&id=" + encodeURIComponent(name);
+    try {
+        const res = await fetch(url, { method: "GET", credentials: "omit" });
+        const list = await res.json();
+        if (!Array.isArray(list) || list.length === 0) {
+            log("neteaseSearch：搜索结果为空");
+            return null;
+        }
+        return list[0];
+    } catch (err) {
+        log("neteaseSearch 请求异常：" + err.message);
+        return null;
+    }
+}
+
+async function fetchLrc(lrcUrl){
+    try{
+        const r = await fetch(lrcUrl,{method:"GET",credentials:"omit"});
+        return await r.text();
+    }catch(e){
+        log("获取网易歌词失败："+e.message);
+        return "";
+    }
+}
 
 // 通用fetch回调封装
 async function fetchSourceWithCallback() {
@@ -2037,16 +2078,38 @@ async function fetchSourceWithCallback() {
 
 
 function onSearchSubmit(inputName) {
-     const name = (inputName || "").trim();
-     if (!name) {
-         showTip("请输入歌名");
-         return;
-     }
-     log(`搜索提交｜输入：${name}｜当前音乐源标记：${currentMusicSource}`);
-     // 全部复用酷我搜索
-     playKuwoByName(name, "");
- }
- 
+    const name = (inputName || "").trim();
+    if (!name) {
+        showTip("请输入歌名");
+        return;
+    }
+    log(`搜索提交｜输入：${name}｜reqApiUrl=${reqApiUrl}`);
+
+    // 直接拿真实接口地址判断，不靠内存变量
+    const isKuwoSearchSource = /randomkuwo|dj_music/.test(reqApiUrl);
+
+    if (isKuwoSearchSource) {
+        log("分支：酷我搜索");
+        playKuwoByName(name, "");
+    } else {
+        log("分支：meting网易搜索");
+        (async () => {
+            const song = await neteaseSearch(name);
+            if (!song) {
+                showTip("未搜到歌曲");
+                return;
+            }
+            if (!song.url) {
+                showTip("该歌曲无播放链接");
+                return;
+            }
+            const lrcTxt = await fetchLrc(song.lrc);
+            log("meting搜索结果：" + song.title + " - " + song.author);
+            playMusicWithLrc(song.url, song.pic, lrcTxt);
+        })();
+    }
+}
+
 function handleMusicSource(resData) {
     const url = reqApiUrl;
 
@@ -2196,6 +2259,7 @@ function playMusicWithLrc(playUrl, coverUrl, lrcRaw){
     }
 }
 
+
 // 统一加载全部源
 async function loadAllSource() {
     if (/wulishe/.test(reqApiUrl)) {
@@ -2309,14 +2373,16 @@ document.addEventListener('visibilitychange',async function(){
 $("#kuwoSearchBtn").on("click",function(){
     let val = $.trim($("#kuwoInput").val());
     if(!val){
-        showTip("输入为空，恢复酷我随机播放");
+        showTip("输入为空，恢复随机播放");
         $("#kuwoInput").val("");
-        log("酷我恢复随机，reqApiUrl=" + reqApiUrl);
+        log("恢复随机，reqApiUrl=" + reqApiUrl);
         loadSingleSourceBatch(1);
         return;
     }
-    playKuwoByName(val);
+    // ✅交给onSearchSubmit，内部根据reqApiUrl自动判断走酷我 / meting网易
+    onSearchSubmit(val);
 });
+
 
 $("#kuwoInput").on("keydown",function(e){
     if(e.keyCode === 13){
@@ -2625,12 +2691,6 @@ dragSliderDom.addEventListener("change", () => {
     }
 });
 
-videoPlayerDom.addEventListener('loadedmetadata', () => {
-    totalTimeStr = formatTime(videoPlayerDom.duration);
-    timeTotalDom.textContent = totalTimeStr;
-    dragSliderDom.max = 100;
-    dragTotalTimeDom.innerText = totalTimeStr;
-})
 
 
 
