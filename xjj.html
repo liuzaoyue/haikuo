@@ -670,7 +670,7 @@ $(".option").off("click").on("click", function(e) {
     localStorage.setItem('jjurl', newApiUrl);
     localStorage.setItem('xjjname', selectName);
     $("#yuan").text(selectName);     
-    videoPlayList = [];
+    videoPlayList.length = 0;
     videoHistoryList.length = 0
     currentHistoryIndex = 0
     listIndex = 0;
