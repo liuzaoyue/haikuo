@@ -1574,7 +1574,7 @@ async function loadVideoFromList() {
             log('❎文件损坏');
             clearTimeout(safeUnlockTimer);
             isVideoLoadingBusy = false;
-            setTimeout(()=>loadVideoFromList(), 50);
+            loadVideoFromList();
             return;
         }
         
@@ -1887,43 +1887,33 @@ async function load591Source(isInitLoad = false) {
 
 // 通用fetch回调封装
 async function fetchSourceWithCallback() {
-    return new Promise(resolve => {
+    return new Promise(resolve => {      
+    log("通用reqApiUrl："+reqApiUrl)  
         $.get(reqApiUrl, async (resData) => {
             try {
-                let url = resData;
-                let coverSrc = "";
-                let lrcText = "";
-
+                let url = resData;                     
+                let coverSrc = "";          
                 // 只处理视频源
                 if (/ScSp|wp\.qinggongju|apihz|tucdn/.test(reqApiUrl)) {
-                    $("#kuwoSearchBox").css("display", "none");
-                    url = resData.video || resData.视频 || resData.data || resData.mp4 || resData.mp3url;
-                    coverSrc = resData.picurl || "";
-                    lrcText = resData.lyric || "";
-                }else{
-                    //音乐、其他源直接返回空，交给外层调用 handleMusicSource
-                    $("#kuwoSearchBox").css("display", "none");
-                    resolve({
-                        videoUrl: "",
-                        coverSrc: "",
-                        lrc: ""
-                    });
-                    return;
-                }
-
+                    url = resData.video || resData.视频 || resData.data || resData.mp4;
+                    coverSrc = resData.picurl || "";                  
+                    }   
+                if (/4qb/.test(reqApiUrl)) {
+                    url = resData.data.url;
+                    coverSrc = resData.data.img || ""; 
+                }                                                             
                 if (url && !url.startsWith("http")) {
                     url = "https:" + url;
-                }
-                log("playUrl:" + url);
-
+                }      
+                log("通用源："+url)                    
                 resolve({
                     videoUrl: url,
                     coverSrc: coverSrc,
-                    lrc: lrcText
+                   
                 });
             } catch (err) {
                 log("fetchSource异常：" + err.message);
-                resolve({ videoUrl: "", coverSrc: "", lrc: "" });
+                resolve({ videoUrl: "", coverSrc: "" });
             }
         })
     })
@@ -1948,10 +1938,10 @@ async function loadSingleSourceBatch(count = 3) {
             if (apiRule.test(reqApiUrl)) {
                 originVideoUrl = reqApiUrl;
                 coverSrc = "";
-            } else {
+            } else {                
                 const res = await fetchSourceWithCallback();
                 originVideoUrl = res.videoUrl;
-                coverSrc = res.coverSrc;
+                coverSrc = res.coverSrc;             
             }
 
             if (!originVideoUrl) continue;
@@ -2237,7 +2227,7 @@ async function loadAllSource() {
         $("#kuwoSearchBox").css("display","flex");
         await handleMusicSource();
     } else {
-        await loadSingleSourceBatch(3);
+        await loadSingleSourceBatch(5);
     }
 
     // 音乐源不执行视频列表加载
@@ -2344,8 +2334,7 @@ $("#kuwoSearchBtn").on("click",function(){
     if(!val){
         showTip("输入为空，恢复随机播放");
         $("#kuwoInput").val("");
-        log("恢复随机，reqApiUrl=" + reqApiUrl);
-        loadSingleSourceBatch(1);
+        handleMusicSource();
         return;
     }
     // ✅交给onSearchSubmit，内部根据reqApiUrl自动判断走酷我 / meting网易
@@ -2535,7 +2524,7 @@ videoPlayerDom.addEventListener("timeupdate", async() => {
     singleTriggeredSet.add(listIndex);
     singlePreloading = true;
     try {
-        await loadSingleSourceBatch(3);
+        await loadSingleSourceBatch(5);
     } catch (err) {
         log("单批量源预加载异常"+err);
     } finally {
