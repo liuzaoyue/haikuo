@@ -274,7 +274,7 @@
         <div class="play-icons" id="playIcons"></div>
         <video id="myVideo" preload="auto" autoplay="autoplay" poster="http://123.56.105.145/weisyr/img/Loading1.gif" src=""></video>		
         <div id="kuwoSearchBox" style="position:absolute;top:80px;left:10px;right:10px;z-index:9999;display:none;gap:6px;">
-     <input id="kuwoInput" placeholder="输入歌名手动搜索播放" style="flex:1;padding:8px;font-size:14px;border-radius:4px;border:none;"/>
+     <input id="kuwoInput" placeholder="输入歌名，网易云歌单链接(ID)" style="flex:1;padding:8px;font-size:14px;border-radius:4px;border:none;"/>
      <button id="kuwoSearchBtn" style="padding:8px 12px;border-radius:4px;border:none;">搜索</button>
 </div>
         <!-- 新增LRC歌词区域 -->
@@ -312,7 +312,7 @@ ontouchmove="event.stopPropagation();">
 <div id="cachePopup" onclick="closeCachePopup();event.stopPropagation()">     
         <h4 id="cacheTitle">本地缓存（共0个）</h4>
         <!-- 整行：全选框 + 两个批量按钮 -->
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;margin-left:10px;margin-right:10px;">
+        <div id="cacheTopBar" style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;margin-left:10px;margin-right:10px;">
             <div style="display:flex;align-items:center;color:#fff;gap:6px;">
                                <input type="checkbox" id="selectAllCache" style="width:24px;height:24px;margin:0;" onclick="event.stopPropagation()" onchange="toggleAllSelect()">
                 <span>全选</span>
@@ -468,6 +468,7 @@ let pauseIconDom = null;
 //let playIconDom = null;
 let totalTimeStr = "00:00";
 
+
 // 列表与历史
 let videoPlayList = [];
 let videoHistoryList = [];
@@ -557,6 +558,13 @@ const MAX_WATCH_BLACK = 200;
 let forceContain528 = false;
 let isVideoLoadingBusy = false;
 let appExitGuardPushed = false;
+let currentPopupMode = "none";
+
+//网易搜索列表播放
+let tempNeteaseResultList = [];
+let useNeteaseListPlay = false;
+let neteaseListIndex = 0;
+
 // 全局渲染源列表函数
 function renderSourceOptions() {
     const sourceOptionList = [
@@ -635,7 +643,7 @@ function renderSourceOptions() {
     optDom.onclick = function(e){
         e.stopPropagation();
     }
-$(".option").off("click").on("click", function(e) {
+$(".option").off("click").on("click", function(e) {   
     e.stopPropagation();
     const lrcBox = document.querySelector('.lrc-box');
      const lrcContent = document.querySelector('.lrc-content');
@@ -663,6 +671,8 @@ $(".option").off("click").on("click", function(e) {
     localStorage.setItem('xjjname', selectName);
     $("#yuan").text(selectName);     
     videoPlayList = [];
+    videoHistoryList.length = 0
+    currentHistoryIndex = 0
     listIndex = 0;
     closeSourceMenu();
     isLocalCachePlay = false;
@@ -674,7 +684,6 @@ $(".option").off("click").on("click", function(e) {
         loadAllSource();
     }, 200);
 });
-
 }
 
 function openSourceMenuPopup() {    
@@ -1131,7 +1140,7 @@ function closeCachePopup(skipBack = false) {
     // 上锁判断：正在关闭直接退出
     if (isClosingCache) return;
     isClosingCache = true;
-
+$("#cacheTopBar").css("display","flex");
     const popup = document.getElementById("cachePopup");
     popup.style.display = "none";
     popupOpen = false;
@@ -1440,8 +1449,8 @@ function runLimitCache(urlArr, maxParallel = 3) {
 
 // ====================== 上滑看下一条视频（核心函数，已修复缓存逻辑） ======================
 async function loadNextSource() {
-    // 缓存模式优先拦截
-    if (isLocalCachePlay) {
+        // 缓存模式优先拦截
+        if (isLocalCachePlay) {
             
          // 没到缓存最后一条，下标+1播放缓存
          if (nowCacheIndex < allCacheList.length - 1) {
@@ -1456,6 +1465,31 @@ async function loadNextSource() {
          // 直接调用统一回退方法，内部自动处理锁、循环、最大次数限制
          rollbackCacheHistory();
      }
+    if(useNeteaseListPlay&&!isLocalCachePlay){
+         neteaseListIndex++;
+         // 往后找可用歌曲，跳过url为空VIP灰色条目
+         while(neteaseListIndex < tempNeteaseResultList.length){
+             const nextSong = tempNeteaseResultList[neteaseListIndex];
+             if(nextSong && nextSong.url){
+                 log("网易列表顺序播放下一首："+ nextSong.title);
+                 const lrcTxt = await fetchLrc(nextSong.lrc);
+                 playMusicWithLrc(nextSong.url, nextSong.pic, lrcTxt);
+                 return; // 命中网易列表，直接return，不走后面缓存/历史/随机逻辑
+             }
+             neteaseListIndex++;
+         }
+         // 循环跑完，列表全部播完或者剩下全部无播放链接，关闭顺序模式
+         showTip("列表播放完毕，随机播放");
+         log("网易歌单列表播放完毕，退出顺序模式");
+         useNeteaseListPlay = false;
+         neteaseListIndex = 0;
+         tempNeteaseResultList = [];
+        
+     }
+
+    // =========下面全部保留你原来全部代码，不动=========
+
+    
 
     // 滑到历史最后一条，退出历史切播放列表
     if (currentHistoryIndex >= videoHistoryList.length - 1) {              
@@ -1500,6 +1534,16 @@ async function loadPrevSource() {
         renderCachePlay(nowCacheIndex);
         return;
     }
+     if(useNeteaseListPlay&&!isLocalCachePlay){
+         if(neteaseListIndex <= 0){
+             showTip("已经是第一首，没有上一曲");
+             return;
+         }
+         neteaseListIndex--;
+         playSelectedNetease(neteaseListIndex);
+         return;
+     }
+    
 
     //log("历史列表总长度：" + videoHistoryList.length + " 当前历史下标：" + currentHistoryIndex);
     if (historyVideoErrorCount >= 3) {
@@ -2042,21 +2086,35 @@ async function playKuwoByName(name){
 }
 
 async function neteaseSearch(name) {
-    if (!name) return null;
-    const url = "https://meting.mikus.ink/api?server=netease&type=search&id=" + encodeURIComponent(name);
-    try {
-        const res = await fetch(url, { method: "GET", credentials: "omit" });
-        const list = await res.json();
-        if (!Array.isArray(list) || list.length === 0) {
-            log("neteaseSearch：搜索结果为空");
-            return null;
-        }
-        return list[0];
-    } catch (err) {
-        log("neteaseSearch 请求异常：" + err.message);
-        return null;
-    }
-}
+     if (!name) return null;
+     let url;
+     if (/id=/.test(name)) {
+         let id = name.replace(/.*?id=(\d+)/ ,'$1');
+         url = "https://meting.mikus.ink/api?server=netease&type=playlist&id="+ encodeURIComponent(id);
+         log("歌单链接提取id："+id);
+     } else if (/^\d+$/.test(name.trim())) {
+         // 直接输入纯数字歌单ID
+         let id = name.trim();
+         url = "https://meting.mikus.ink/api?server=netease&type=playlist&id="+ encodeURIComponent(id);
+         log("纯数字歌单id："+id);
+     } else {
+         url = "https://meting.mikus.ink/api?server=netease&type=search&id=" + encodeURIComponent(name);
+         log("普通关键词搜索");
+     }
+     try {
+         const res = await fetch(url, { method: "GET", credentials: "omit" });
+         const list = await res.json();
+         if (!Array.isArray(list) || list.length === 0) {
+             log("neteaseSearch：搜索结果为空");
+             return null;
+         }
+         // 返回全部列表，不再直接return list[0]
+         return list;
+     } catch (err) {
+         log("neteaseSearch 请求异常：" + err.message);
+         return null;
+     }
+ }
 
 async function fetchLrc(lrcUrl){
     try{
@@ -2087,19 +2145,16 @@ function onSearchSubmit(inputName) {
         })();
     } else {
         log("分支：meting网易搜索");
-        (async () => {
-            const song = await neteaseSearch(name);
-            if (!song) {
-                showTip("未搜到歌曲");
-                return;
-            }
-            if (!song.url) {
-                showTip("该歌曲无播放链接");
-                return;
-            }
-            const lrcTxt = await fetchLrc(song.lrc);
-            playMusicWithLrc(song.url, song.pic, lrcTxt);
-        })();
+    (async () => {
+             const songList = await neteaseSearch(name);
+             if (!songList) {
+                 showTip("未搜到歌曲");
+                 return;
+             }
+             tempNeteaseResultList = songList;
+             // 只打开弹窗，不再自动播放第一首
+             openNeteaseSearchPopup(songList);
+     })();
     }
 }
 
@@ -2209,11 +2264,74 @@ function playMusicWithLrc(playUrl, coverUrl, lrcRaw){
          log("解析完无有效歌词");
     }
 }
+//音乐搜索弹窗
+async function openNeteaseSearchPopup(songList) {
+    const popup = document.getElementById("cachePopup");
+    const listBox = document.getElementById("cacheListBox");
+    const titleDom = document.getElementById("cacheTitle");
 
+    // 隐藏全选+批量按钮栏
+    $("#cacheTopBar").css("display","none");
+
+    popup.style.display = "block";
+    popupOpen = true;
+    currentPopupMode = "neteaseSearch";
+    history.pushState({type:"cachePopup"}, "", null);
+
+    titleDom.textContent = `网易搜索结果（共${songList.length}条）`;
+    listBox.innerHTML = "";
+
+    songList.forEach((item, idx) => {
+        const name = item.title || "未知曲目";
+        const artist = item.author || "未知歌手";
+        const coverUrl = item.pic || DEFAULT_COVER;
+
+        listBox.innerHTML += `
+<div class="cache-item" 
+data-search-idx="${idx}"
+onclick="closeCachePopup();setTimeout(()=>playSelectedNetease(${idx}),150);event.stopPropagation()"
+style="display:flex;align-items:center;gap:10px;padding:10px 12px;">
+    <img 
+        src="${coverUrl}" 
+        loading="lazy"
+        referrerpolicy="no‑referrer"
+        style="width:48px;height:48px;border-radius:6px;object‑fit:cover;flex‑shrink:0;"
+        onerror="this.src='${DEFAULT_COVER}';this.onerror=null;">
+    <div class="cache-item-text" style="flex:1;min‑width:0;">
+        <span class="num">${idx+1}.</span>
+        <div class="url-text">${name}</div>
+        <div class="time-text">${artist}</div>
+    </div>
+</div>
+`;
+    });
+}
+
+ // 点击列表项播放
+ async function playSelectedNetease(idx){
+     const song = tempNeteaseResultList[idx];
+     if(!song || !song.url){
+         showTip("该歌曲无播放链接");
+         return;
+     }
+     // 开启网易列表顺序播放模式，记录当前下标
+     useNeteaseListPlay = true;
+     neteaseListIndex = idx;
+
+     const lrcTxt = await fetchLrc(song.lrc);  
+     // title‑author拼接成歌名传给播放函数
+     playMusicWithLrc(song.url, song.pic, lrcTxt);
+ }
 
 // 统一加载全部源
 async function loadAllSource() {
     let isMusicSource = /(528sq|randmusic|randomkuwo|dj_music|wyy_random)/.test(reqApiUrl);
+    
+    if(!isMusicSource){
+    useNeteaseListPlay = false;
+    neteaseListIndex = 0;
+    tempNeteaseResultList.length = 0;
+}
     $("#kuwoSearchBox").css("display","none");
     if (/wulishe/.test(reqApiUrl)) {
         await loadWuLiSheSource();
@@ -2224,7 +2342,13 @@ async function loadAllSource() {
     } else if (/kuaiyuhudong/.test(reqApiUrl)) {
         await loadDjSource();
     } else if (isMusicSource) {
-        $("#kuwoSearchBox").css("display","flex");
+        if (/randomkuwo|dj_music/.test(reqApiUrl)){
+    $("#kuwoInput").attr("placeholder","输入歌名搜索");
+} else {
+    //切回网易/其他源，恢复带歌单提示
+    $("#kuwoInput").attr("placeholder","输入歌名搜索；可粘贴网易云歌单链接/ID");
+}
+        $("#kuwoSearchBox").css("display","flex");        
         await handleMusicSource();
     } else {
         await loadSingleSourceBatch(5);
@@ -2247,10 +2371,10 @@ const JQ_LOCAL_PATH = "hiker://files/yuan/jquery.min.js";
  const JQ_MIN_SIZE = 80000;
  function loadJquery() {
      let jqCode = request(JQ_LOCAL_PATH);
-     log("读取本地jQuery，长度：" + (jqCode?.length||0));
+    // log("读取本地jQuery，长度：" + (jqCode?.length||0));
      // 本地无效：为空 或者 文件残缺过小 → 去网络下载修复缓存
      if (!jqCode || jqCode.length < JQ_MIN_SIZE) {
-         log("本地jQuery无效，从CDN下载修复缓存");
+        // log("本地jQuery无效，从CDN下载修复缓存");
          jqCode = request(JQ_CDN);
          // 网络下载成功：写入沙盒，后面就一直用本地这份
          if (jqCode && jqCode.length >= JQ_MIN_SIZE) {
@@ -2265,7 +2389,7 @@ const JQ_LOCAL_PATH = "hiker://files/yuan/jquery.min.js";
      const script = document.createElement("script");
      script.textContent = jqCode;
      document.head.appendChild(script);
-     log("jQuery注入完毕，使用" + ((!jqCode||jqCode.length<JQ_MIN_SIZE)?"网络":"本地") + "版本");
+     //log("jQuery注入完毕，使用" + ((!jqCode||jqCode.length<JQ_MIN_SIZE)?"网络":"本地") + "版本");
      return true;
  }
 
@@ -2287,7 +2411,7 @@ async function waitJqueryReady() {
 async function startApp() {    
     try {
         await waitJqueryReady();
-        log("✅ jQuery就绪，开始初始化页面");
+     //   log("✅ jQuery就绪，开始初始化页面");
         // ==============================================
  // ====================== 页面初始化 ======================
 $(document).ready(async function() {
@@ -2360,19 +2484,19 @@ window.addEventListener('popstate', async function(e) {
          setTimeout(()=>{
              history.pushState({appExitGuard:true}, "", window.location.href);
              appExitGuardPushed = true;
-             log("返回键关闭弹窗，补压保护历史");
+             //log("返回键关闭弹窗，补压保护历史");
          },0);
      }
      return;
  }
  if(sourceMenuOpen){
-     log("关闭换源弹窗【物理返回键关闭弹窗】");         
+   // log("关闭换源弹窗【物理返回键关闭弹窗】");         
      closeSourceMenu();
      if(!appExitGuardPushed){
          setTimeout(()=>{
              history.pushState({appExitGuard:true}, "", window.location.href);
              appExitGuardPushed = true;
-             log("返回键关闭换源弹窗，补压保护历史");
+         //    log("返回键关闭换源弹窗，补压保护历史");
          },0);
      }         
      return;
