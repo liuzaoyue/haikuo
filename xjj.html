@@ -570,6 +570,8 @@ let lastSearchKeyword = "";
 let lastQQPlaylistId = "";
 
 let playingCacheUrl = ""; //存正在播放缓存的url
+
+let currentPlayKuwoRid = "";
 // 全局渲染源列表函数
 function renderSourceOptions() {
     const sourceOptionList = [
@@ -2101,6 +2103,7 @@ async function playKuwoByName(name, isManualSearch = false){
     }catch(e){
         log("酷我歌词获取异常:"+e.message);
     }    
+    currentPlayKuwoRid = rid;
     return {
         audioUrl:url,
         searchCover:searchCover,
@@ -2274,9 +2277,14 @@ if (isPlaylist) {
                 let searchCover = item.web_albumpic_short 
                     ? ("https://img4.kuwo.cn/star/albumcover/"+ item.web_albumpic_short).replace(/\/120\//,"/500/") 
                     : "";
+                  let rid = item.MP3RID.split('_')[1];
+    // 如果当前渲染这首歌就是正在播放的，加上active‑play
+    const activeClass = (rid === currentPlayKuwoRid) ? "active-play" : "";  
                 html += `
- <div class="cache-item" 
- data-search-idx="${idx}"
+                
+ <div class="cache-item kuwo-search-item ${activeClass}" 
+  data-search-idx="${idx}"
+  data-rid="${rid}"
  style="display:flex;align-items:center;gap:10px;padding:10px 12px;">
      <img 
          src="${searchCover}" 
@@ -2303,16 +2311,22 @@ if (isPlaylist) {
             currentPopupMode = "kuwoSearch";
             //压历史栈，按返回键可以关闭弹窗
             history.pushState({type:"cachePopup"}, "", null);
-            //绑定点击事件
+            
+            // ==========已经替换成完整版点击绑定==========
             $("#cacheListBox .cache-item").off("click").on("click",async function(){
                 const i = Number($(this).data("search-idx"));
+                
+                const rid = $(this).attr("data-rid");
+log("点击拿到rid="+rid);
+currentPlayKuwoRid = rid;
+
                 const item = list[i];
-                //关闭弹窗
                 closeCachePopup();
                 const playInfo = await getKuwoSongByItem(item);
                 if(!playInfo) return;
                 playMusicWithLrc(playInfo.audioUrl, playInfo.searchCover, playInfo.searchLrc);
             })
+            // ============================================
         })();
         
     } else {
@@ -2337,6 +2351,7 @@ if (isPlaylist) {
         })();
     }
 }
+
 
 //自动音乐源处理【528sq / randmusic / randomkuwo / dj_music / wyy_random】
 async function handleMusicSource() {
@@ -2629,7 +2644,7 @@ $("#kuwoInput").on("keydown",function(e){
     if(e.keyCode === 13){
         $("#kuwoSearchBtn").click();
     }
-});
+})
 
 
 window.addEventListener('popstate', async function(e) {
