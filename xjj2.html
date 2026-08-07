@@ -2,302 +2,568 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>精品小姐姐视频_by缘分</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
     <style>
-        *{
-            margin:0px; 
-            padding:0px;
-            touch-action: pan-y;
-            text-align: center;
-            box-sizing: border-box;
-            overscroll-behavior: none;
-        }
-        html,body{
-            width:100%;
-            height:100%;
-            overflow:hidden;
-            background:#000;
-            overscroll-behavior: none;
-            -webkit-overflow-scrolling: touch;
-            
-        }
-
-        .video-scroll-wrap{
-            width:100%;
-            height:100vh;
-            overflow:hidden;
+        html,body {
             position: relative;
-            pointer-events: auto !important;
+            height: 100%;
+            margin:0;
+            padding:0;
         }
-        .video-scroll-wrap::-webkit-scrollbar{
-            display:none;
+        body {
+            background: #000;
+            margin: 0;
         }
-      .video-page {
-   width: 100%;
-   height: 100%;
-   position: absolute;
-   top: 0;
-   left: 0;
-   /* 仅新增这一行，控制弹动阻尼，消除抖动 */
-   transition: transform 0.24s cubic-bezier(0.2, 0, 0.2, 1);
- }
-        #currentPage {
-           z-index: 2;
-         }
-        #nextPage {
-           z-index: 1;
-         }
-        video {
-           width: 100%;
-           height: 100%;
-           object-fit: cover;
-           /* 修复核心：取消全局pointer-events:none，否则所有点击失效 */
-           pointer-events: auto;
-           playsinline;
-           muted;
-           background: #000 !important;
-           object-view-box: inset(0);
-         }
-        
-        #myVideo, #nextVideo{
+        .swiper {
             width: 100%;
             height: 100%;
-            object-fit: contain
-            touch-action: none;
-            position:absolute;
-            top:0;
-            left:0;
-            
-            playsinline;
-            muted;
-            preload: auto; /*【修复】强制预加载视频首帧，减少黑屏 */
         }
-       video::-webkit-media-controls,
-        video::-webkit-media-controls-enclosure,
-        video::-webkit-media-controls-panel,
-        video::-webkit-media-controls-play-button,
-        video::-webkit-media-controls-start-playback-button, video::-webkit-media-controls-toggle-closed-captions-button,
-        video::-webkit-media-controls-volume-slider,
-        video::-webkit-media-controls-timeline,
-        video::-webkit-media-controls-fullscreen-button {
-             display:none !important;
-             opacity: 0 !important;
-             visibility: hidden !important;
-             width: 0 !important;
-             height: 0 !important;
-        } 
-video::-webkit-media-controls-overlay-play-button {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
+        .swiper-slide {
+            background: #000;
+        }
+        .swiper-slide video {
+            width:100%;
+            height:100%;
+            object-fit:cover;
+        }
+        #options {
+    position: fixed;
+    top: 130px;
+    right: 8px;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.28);
+    color: #fff;
+    max-height: 52vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 70px;
+    border-radius: 8px;
+    padding: 8px 6px;
+    display: none;
+
+    box-sizing: border-box;
 }
-        .play-icon, .play-icons{
-            display: none !important;
-            width:0;
-            height:0;
-            opacity: 0 !important;
-            pointer-events: none;
-        }
-       /* 拖拽进度条外层容器 居中缩短 */
+
+.option {
+    padding: 7px 5px;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.option:active {
+    background: #444;
+}
 #dragProgressBox{
-    position: absolute;
-    left: 50%;
-    bottom: 5px;
-    width: 90%; /* 控制长度，和截图匹配 */
-    transform: translateX(-50%);
-    z-index: 10;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
+    position:absolute;
+    bottom:30px;
+    width:90%;
+    left:5%;
+    opacity: 1;
+    z-index: 1000;
 }
-
-/* 滑块轨道 */
 #dragSlider{
-    width: 100%;
-    height: 5px;
-    background: transparent;
-    outline: none;
-    -webkit-appearance: none;
+    width:100%;
 }
-/* 轨道底色 */
-#dragSlider::-webkit-slider-runnable-track{
-    height: 5px;
-    background: rgba(255,255,255,0.35);
-    border-radius: 999px;
-}
-/* 蓝色圆点滑块，和截图样式一致 */
-#dragSlider::-webkit-slider-thumb{
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #388bff;
-    margin-top: -5px;
-}
-/* 时间文字左右分开 */
 .drag-time-text{
-    display: flex;
-    justify-content: space-between;
+    display:flex;
+    justify-content:space-between;
     color:#fff;
-    font-size: 12px;
-    margin-top: 8px;
+    font-size:12px;
 }
-
-
-        .progress, #buttons, #options, .modal{
+.progress {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #ddd;
+            z-index: 110;
+        }
+        .progress-bar {
             position: absolute;
-            z-index: 99;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background-color: #4CAF50;
+            z-index: 120;
         }
-        /* 提升按钮最高层级，不会被视频遮挡 */
-        #buttons{
-            position:absolute;
-            bottom:150px;
-            right:0px;
-            opacity:0;
-            z-index: 9999 !important;
-            pointer-events: auto !important;
-        }
-        #options{
+        .progress-times {
+            position: absolute;
+            right: 85%;
+            bottom: 2px;
+            z-index: 130;
+            font-size: 12px;
+            color: #fff;
+        }  
+        .progress-time {
+            position: absolute;
+            right: 20px;
+            bottom: 2px;
+            z-index: 130;
+            font-size: 12px;
+            color: #fff;
+        }  
+       .swiper.mySwiper {
+    position: relative;
+    overflow: hidden;
+}
+     .play-icons {
+     position: absolute;
+     top: 0;
+     left: 0;
+     width: 100%;
+     height: 100%;
+     z-index: 999;
+     opacity: 0;
+     pointer-events: none; /* 图标不拦截点击，屏幕照样能触发暂停 */
+     background: url("https://s21.ax1x.com/2024/03/26/pF5claF.png") no-repeat center;
+     background-size: 100px 100px;
+     transition: opacity 0.3s;
+ }
+      .modal {
+    position: fixed;   
+    top: 40%;
+    left: 0;
     width: 100%;
     height: 100%;
-    top:0;
-    left:0;
-    background: rgba(0,0,0,0.8);
+    background-color: rgba(0, 0, 0, 0);
     display: none;
-    flex-wrap: wrap;
-    padding: 20px;
-    gap: 12px;
-    justify-content: space-between;
-    align-content: flex-start;
-    /* 修改：整体允许点击，只有内部按钮可交互 */
-    pointer-events: auto;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    z-index: 9999; /* 重点1：拉高层级，避免被视频遮挡 */
 }
-/* 按钮恢复点击，否则源按钮点不动 */
-.option{
-    width: 22%;
-    padding: 10px;
-    background: #222;
-    border-radius: 6px;
-    color:#fff;
+.modal-content {
+    opacity: 0.95; /* 原0.7太透，调高对比度更清晰 */
+    background-color: #fff;
+    padding: 12px 18px;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); /* 原阴影透明，加阴影区分背景 */
+}
+#tipMessage {
+    color: #111; /* 重点2：明确深色文字，避免浅色文字和白底融为一体 */
+    font-size: 15px;
+    margin: 0;
+}
+.modal-footer {
+    margin-top: 20px;
+}
+#cachePopup {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 99999;
+    padding: 1px;
+    box-sizing: border-box;
+    touch-action: pan-y !important;
+    pointer-events: all;
+}
+#cachePopup .popup-box {
+    width: calc(100% - 10px);
+    height: 95%;
+    margin: 0 auto;
+    border-radius: 12px;
+    padding: 6px 1px;
+    overflow-y: auto;
+    touch-action: pan-y;
     pointer-events: auto;
+    background: rgba(17,17,17,0.5);
+}
+#cachePopup h4 {
+    color: #fff;
+    margin: 0 0 15px;
+    text-align: center;
 }
 
+#dragProgressBox {
+    touch-action: manipulation;
+}
 
-        .modal-content{
-            background: #222;
-            padding:12px 24px;
-            border-radius: 8px;
-            color:#fff;
-            z-index: 99999
-        }
+/* 滚动列表item 横向布局【核心】 */
+#cacheListBox .cache-item {
+    padding: 12px 2px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;  /* 垂直居中 */
+    gap: 6px;
+    position: relative;
+}
+.cache-item-cover {
+    width: 82px;
+    height: 52px;
+    
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #222;    
+    /* margin-top: -3px; 这一行注释/删除！ */
+}
+
+.cache-item-cover.empty-cover {
+    background: #2a2a2a;
+}
+.cache-item-text {
+    flex: 1;
+    overflow: hidden;
+}
+#cacheListBox .num {
+    display: inline-block;
+    font-size: 13px;
+    color: #fff;
+    margin-right:6px;
+    vertical-align: middle;
+}
+#cacheListBox .url-text {
+    color: #6cf;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+}
+#cacheListBox .time-text {
+    color: #aaa;
+    font-size: 12px;
+    margin-top: 6px;
+}
+ .lrc-box {
+     position: absolute;
+     left: 0;
+     right: 0;
+     bottom: 65px;
+     max-height: 160px;
+     overflow: hidden;
+     pointer-events: none;
+     z-index: 99;
+ }
+ .lrc-content {
+     transition: transform 0.3s ease;
+ }
+ .lrc-line {
+    line-height: 32px;
+    font-size: 18px;
+    color: #aaa;
+    text-align: center;
+}
+.lrc-line.active {
+    color: #ffd22e !important;
+    font-size: 22px !important;
+    font-weight: bold !important;
+}
+
     </style>
-    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script> 
 </head>
 <body>
-    <div class="video-scroll-wrap" id="scrollWrap">
-       <div class="video-page" id="currentPage">
-         <video id="myVideo" preload="auto" autoplay poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3Crect width='1' height='1' fill='black'/%3E%3C/svg%3E" src="" ></video>
-         <div class="drag-progress-wrap" id="dragProgressBox">
-             <input type="range" id="dragSlider" min="0" max="100" value="0">
-             <div class="drag-time-text">
-                 <span id="dragCurTime">00:00</span>
-                 <span id="dragTotalTime">00:00</span>
-             </div>
-         </div>
-     </div>
-     <div class="video-page" id="nextPage">
-         <video id="nextVideo"  muted autoplay playsinline poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3Crect width='1' height='1' fill='black'/%3E%3C/svg%3E"   preload="auto" ></video>
-     </div>
- </div>
+ <!-- 缓存弹窗容器 -->
+<div id="cachePopup" onclick="closeCachePopup();event.stopPropagation()">     
+        <h4 id="cacheTitle">本地缓存（共0个）</h4>
+        <!-- 整行：全选框 + 两个批量按钮 -->
+        <div id="cacheTopBar" style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;margin-left:10px;margin-right:10px;">
+            <div style="display:flex;align-items:center;color:#fff;gap:6px;">
+                               <input type="checkbox" id="selectAllCache" style="width:24px;height:24px;margin:0;" onclick="event.stopPropagation()" onchange="toggleAllSelect()">
+                <span>全选</span>
+            </div>
+            
+        </div>
+         <div class="popup-box" onclick="event.stopPropagation()">
+        <div id="cacheListBox"></div>      
+    </div>
+</div>
 
-    <div class="progress">
+<div class="swiper mySwiper">
+<div id="kuwoSearchBox" style="position:absolute;top:80px;left:10px;right:10px;z-index:9999;display:none;flex-direction:row;gap:6px;">
+     <input id="kuwoInput" placeholder="输入歌名，网易云歌单链接(ID)" style="flex:1;padding:8px;font-size:14px;border-radius:4px;border:none;"/>
+     <button id="kuwoSearchBtn" style="padding:8px 12px;border-radius:4px;border:none;">搜索</button>
+</div>
+    <!-- 清空静态slide，JS动态生成 -->
+     <!-- 歌词外层容器 -->
+<div class="lrc-box">
+  <div class="lrc-content" id="lrcContent">
+    <!-- JS动态生成每一行 .lrc-line -->
+  </div>
+</div>
+    <div class="play-icons" id="playIcons"></div>
+   
+    <button id="btn" style="position:absolute;top:400px;right:12px;border-radius:20px;width:35px;height:25px;opacity:1;z-index:1000;margin:0;padding:0;border:none;">连播</button>
+        <button id="ping" style="position:absolute;top:480px;right:12px;border-radius:20px;width:35px;height:25px;opacity:1;z-index:1000;margin:0;padding:0;border:none;">原始</button>
+    <button id="yuan" style="position:absolute;top:560px;right:12px;border-radius:20px;width:35px;height:25px;opacity:1;z-index:1000;margin:0;padding:0;border:none;">换源</button>
+   
+    <div class="swiper-wrapper" id="swiperWrapper"></div>
+      
+</div>
+ <div class="drag-progress-wrap" id="dragProgressBox">
+                <input type="range" id="dragSlider" min="0" max="100" value="0">
+                <div class="drag-time-text">
+                    <span id="dragCurTime">00:00</span>
+                    <span id="dragTotalTime">00:00</span>
+                </div>
+            </div>
+            <div class="progress">
         <div id="progress-bar" class="progress-bar"></div>
         <div class="progress-times" id="time-divs">0:00</div>
         <div class="progress-time" id="time-div">0:00</div>			
     </div>
-    <div id="buttons" style="position:absolute;bottom:150px;right:0px;opacity:0;">
-        <button id="bth" style="border-radius:20px;width:35px;height:25px;opacity:1;">连播</button>
-        <br /><br /><br />
-        <button id="ping" style="border-radius:20px;width:35px;height:25px;opacity:1;">原始</button>
-        <br /><br /><br />
-        <button id="yuan" style="border-radius:20px;width:35px;height:25px;opacity:1;">换源</button>
-    </div>	
-    <div id="options">
-        <div class="option">源01<span class="url" data-url=""></span></div>
-        <div class="option">源02<span class="url" data-url=""></span></div>
-    </div>
-    <div class="modal" id="myModal">
+<div id="options"> </div>
+ <div class="modal" id="myModal">
         <div class="modal-content">
             <p id="tipMessage"></p>
         </div>
     </div>
-
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 <script>
-// ====================== 全局变量统一归集 ======================
+document.getElementById("kuwoSearchBox").style.display = "flex";
+try {
+eval(fy_bridge_app.getInternalJs());
+} catch (e) {}
+    window.request = window.request00 || window.request;  
+    
+const wrapperDom = document.getElementById("swiperWrapper");
+const dragProgressWrapDom = document.getElementById("dragProgressBox");
+const pauseIconDom = document.querySelector(".play-icons");
+
+
 let playAutoMode = true;
-let videoPlayerDom = null;
-let nextVideoDom = null;
-let ctrlButtonsDom = null;
-let totalTimeStr = "00:00";
-let scrollWrap = null;
-const currentPage = document.getElementById('currentPage');
-const nextPage = document.getElementById('nextPage');
+// 全局比例变量：默认满屏裁剪 cover
+let globalFitMode = "cover";
+const btnPlayMode = document.querySelector("#btn");
+const btnFitMode = document.querySelector("#ping");
+//======音乐相关变量========
 
+//专属音乐播放器video
+ let lastQQPlaylistId = "";
+ let tempNeteaseResultList = [];
+ let lastSearchKeyword = "";
+ let useNeteaseListPlay = false;
+ let neteaseListIndex = 0;
+ let currentPlayKuwoRid = "";
+ let popupOpen = false;
+ let currentPopupMode = "";
+ let forceContain528 = false;
+ let lyricData = [];
+ // 默认封面兜底常量，按你项目原有值填写
+ const DEFAULT_COVER = "你的默认封面地址";
+ let lrcContent;
+ let autoCloseCachePopup = false
+ let lastRenderList = null; // 缓存上一次传给initVideoList的数组
+
+let swiper;
 let videoPlayList = [];
-let videoHistoryList = [];
-let currentHistoryIndex = -1;
 let listIndex = 0;
-
-let globalApiUrl = localStorage.getItem('jjurl') || 'https://v.nrzj.vip/video.php?_t=' + Math.random();
+let reqApiUrl = localStorage.getItem('cur_src_url') || "https://v.nrzj.vip/video.php?_t="+Math.random();
+let nowPages = 1;
+let nextPages = null;
 let dragProgressHideTimer = null;
-let sourceMenuOpen = false;
-let longTouchTimer = null;
+// 1. 核心：初始化Swiper
+// 全局存放当前绑定的视频与事件句柄，用于解绑旧监听
+// 全局存放当前绑定的视频与事件句柄，用于解绑旧监听
+let activeVideoEl = null;
+let timeUpdateHandler = null;
+let handlerPlay, handlerPause, handlerClick;
+const dragSlider = document.getElementById('dragSlider');
+ if(dragSlider){
+     // input：拖动过程实时改进度
+     dragSlider.addEventListener('input', function(){
+         if(!activeVideoEl || !activeVideoEl.duration) return;
+         const percent = Number(this.value) / 100;
+         activeVideoEl.currentTime = activeVideoEl.duration * percent;
+     });
+     // change：松手后自动播放
+     dragSlider.addEventListener('change', function(){
+         if(activeVideoEl && activeVideoEl.paused){
+             activeVideoEl.play().catch(e=>console.log(e));
+         }
+     });
+ }
+ 
+ // 获取当前swiper激活滑块里的video元素
+function getCurrentVideo() {
+    const activeSlide = swiper.slides[swiper.activeIndex];
+    return activeSlide.querySelector("video");
+}
+ // 【全局只定义这一次，预加载不动】
+handlerPause = function () { 
+    const currentSlide = swiper.slides[swiper.activeIndex];
+    // 首条下标0跳过contains校验，其余正常校验
+    if (swiper.activeIndex !== 0 && !currentSlide.contains(this)) return;
+    pauseIconDom.style.opacity = 1;
+    clearTimeout(dragProgressHideTimer);
+    dragProgressWrapDom.style.opacity = 1;
+    document.getElementById("yuan").style.display = "block";
+    btnFitMode.style.display = "block";
+    btnPlayMode.style.display = "block";
+    
+};
 
-let videoLoadErrorCount = 0;
-let historyVideoErrorCount = 0;
-let retryCount = 0;
-const maxRetry = 3;
-let isSourceLoading = false;
-const maxRedirectRetry = 5;
-let globalRetryCount = 0;
+handlerPlay = function () {
+    const currentSlide = swiper.slides[swiper.activeIndex];
+    if (swiper.activeIndex !== 0 && !currentSlide.contains(this)) return;
+    pauseIconDom.style.opacity = 0;
+    clearTimeout(dragProgressHideTimer);
+    dragProgressHideTimer = setTimeout(() => {
+        dragProgressWrapDom.style.opacity = 0;
+        document.getElementById("yuan").style.display = "none";
+    btnFitMode.style.display = "none";
+    btnPlayMode.style.display = "none";
+    }, 3000);
+    
+};
 
-let preloadNextUrl = null;
-let isBackgroundPreloading = false;
-let preloadFailCount = 0;
-const maxPreloadFail = 5;
-let stopPreload = false;
+timeUpdateHandler = function () {
+    if (this.paused) return;
+     // 缓冲未就绪时跳过更新，杜绝缓冲阶段乱跳读秒
+     if (this.readyState < 3) return;
+     // 只允许当前激活视频刷新进度，闲置视频不执行渲染
+     if (this !== activeVideoEl) return;
+    const durDom = document.getElementById('time-div');
+    const curDom = document.getElementById('time-divs');
+    const barDom = document.getElementById('progress-bar');
+    const dragCurTime = document.getElementById('dragCurTime');
+    const dragTotalTime = document.getElementById('dragTotalTime');
+    const dragSliderEl = document.getElementById('dragSlider');
 
-let scrollStartY = 0;
-let isScrolling = false;
-let scrollDelayTimer = null;
-const slideThreshold = 80;
-let slidePreviewLoading = false;
-let isPreviewPlaying = false;
-const slideHalfScreenRatio = window.innerHeight * 0.2;
-let lastPreviewUrl = "";
-let touchSnapIndex = -1; // 手指按下瞬间锁定当前历史下标
-// ====================== 公共工具函数 ======================
+    const cur = this.currentTime;
+    const dur = this.duration || 0;
+
+    if (curDom && durDom) {
+        curDom.innerText = formatTime(cur);
+        durDom.innerText = formatTime(dur);
+        if (barDom && dur > 0) {
+            const percent = (cur / dur) * 100;
+            barDom.style.width = percent + "%";
+        }
+    }
+    if (dragCurTime && dragTotalTime && dragSliderEl && dur > 0) {
+        dragCurTime.innerText = formatTime(cur);
+        dragTotalTime.innerText = formatTime(dur);
+        dragSliderEl.value = (cur / dur) * 100;
+    }
+};
+
+// 记得全局提前声明这两个变量：let , dragProgressHideTimer, dragProgressWrapDom, ;
+swiper = new Swiper(".mySwiper", {
+    direction: "vertical",
+    loop: false,
+    on: {        
+        click: function () {            
+            if (!activeVideoEl) return;
+            if (activeVideoEl.paused) {
+                activeVideoEl.play().catch(err => console.log('播放失败', err));
+            } else {
+                activeVideoEl.pause();
+            }
+        },
+        slideChange: function () {
+    listIndex = this.activeIndex;
+    const currIndex = this.activeIndex;
+
+    document.querySelectorAll(".swiper-slide video").forEach(video => {
+        video.muted = true;
+        video.pause();
+        video.currentTime = 0;
+    });
+
+    const currVideo = this.slides[currIndex]?.querySelector("video");
+
+    if (activeVideoEl) {
+        activeVideoEl.removeEventListener("play", handlerPlay);
+        activeVideoEl.removeEventListener("pause", handlerPause);
+        activeVideoEl.removeEventListener("timeupdate", timeUpdateHandler);
+    }
+
+    if (currVideo) {
+        currVideo.muted = false;
+        currVideo.currentTime = 0;
+        currVideo.style.objectFit = globalFitMode;
+        currVideo.addEventListener("play", handlerPlay);
+        currVideo.addEventListener("pause", handlerPause);
+        currVideo.addEventListener("timeupdate", timeUpdateHandler);
+        activeVideoEl = currVideo;
+
+        currVideo.play().catch(e => {
+            console.log("播放异常：", e);
+            if (e.name === "AbortError") {
+                log("渲染追加导致播放中断，非视频损坏，不跳转：" + e);
+                return;
+            }
+            log("当前视频损坏，自动跳转下一条：" + e);
+            if (currIndex < this.slides.length - 1) {
+                this.slideNext();
+            }
+        });
+
+     /*   const nextIndex = currIndex + 1;
+        if (nextIndex < this.slides.length) {
+            const nextVideo = this.slides[nextIndex].querySelector("video");
+            const nextVideoUrl = nextVideo?.src;
+            if (nextVideo && nextVideoUrl && !nextVideo.buffered.length) {
+                nextVideo.muted = true;
+                nextVideo.preload = "auto";
+                //nextVideo.autoplay = "autoplay";
+                nextVideo.load();              
+            }
+        }*/
+    }
+
+    const total = this.slides.length;
+    if (currIndex >= total - 3) {
+        log("临近列表末尾，加载更多视频");
+        document.querySelectorAll('video').forEach(v => {
+            v.currentTime = 0;
+        });
+        loadAllSource(false);
+    }
+
+    // ==========新增：滑动同步neteaseListIndex + 更新歌词（放在末尾）==========
+    // 1.同步全局播放下标
+    neteaseListIndex = currIndex;
+log("slideChange同步下标：" + neteaseListIndex);
+
+// 随机列表模式：翻页就按页码下标绑定对应slide内播放器的监听
+if (useNeteaseListPlay) {
+  const currentSong = tempNeteaseResultList?.[currIndex];
+  if (currentSong?.lrcText) {
+    renderLyric(currentSong.lrcText, currIndex);
+  } else {
+    clearLyric();
+    // 清空该页播放器监听
+    const video = document.querySelector(`.swiper-slide video[data-index="${currIndex}"]`);
+    if(video) video.ontimeupdate = null;
+  }
+}
+// 搜索模式 useNeteaseListPlay=false：不干预，沿用【点击条目时 renderLyric(下标)】原有逻辑
+
+    // 2.读取当前下标对应的歌曲、拉取歌词渲染
+    if(tempNeteaseResultList && tempNeteaseResultList[currIndex]){
+        const currentSong = tempNeteaseResultList[currIndex];
+        fetchLrc(currentSong.lrc).then(lrcTxt=>{
+            if(lrcTxt){
+                renderLyric(lrcTxt, neteaseListIndex);
+            }else{
+              //  clearLyric();
+            }
+        });
+    }else{
+        clearLyric();
+    }
+
+
+
+
+      }
+    }
+});
+
 function log(msg){
     if(typeof fba !== 'undefined' && fba.log) fba.log(msg);
     console.log(msg);
-}
-
-function getFinalRedirectUrl(url) {
-    return fetch(url, { redirect: 'follow' })
-    .then(function(r) {
-        var finalUrl = r.url;                    
-        log('真实地址:'+finalUrl)
-        return finalUrl
-    })
-    .catch(e=>{log('跳转失败',e);return ''})
-}
-
-function formatTime(seconds) {
-    if (isNaN(seconds)) return "00:00";
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
 function showTip(text) {
@@ -307,1014 +573,1535 @@ function showTip(text) {
         document.getElementById("myModal").style.display = "none";
     }, 3000);
 }
+//校验MP4
+function checkVideoUsable(videoUrl) {
+    return new Promise((resolve) => {
+        const tempVideo = document.createElement('video');
+        tempVideo.style.display = 'none';
+        document.body.appendChild(tempVideo);
 
-function hideControlPanel() {
-    setTimeout(() => {
-        if(ctrlButtonsDom) ctrlButtonsDom.style.opacity = 0;
-    }, 3000)
+        let timer = setTimeout(() => {
+            tempVideo.remove();
+            resolve(false);
+        }, 3000);
+
+        tempVideo.addEventListener('canplay', () => {
+            clearTimeout(timer);
+            tempVideo.remove();
+            resolve(true);
+        }, { once: true });
+
+        tempVideo.addEventListener('error', () => {
+            clearTimeout(timer);
+            tempVideo.remove();
+            resolve(false);
+        }, { once: true });
+        tempVideo.preload = "metadata";
+        tempVideo.src = videoUrl;
+        tempVideo.load();
+    });
+}
+//分批校验MP4
+async function batchFilter(rawList, batchSize = 6) {
+  const res = [];
+  for (let i = 0; i < rawList.length; i += batchSize) {
+    const slice = rawList.slice(i, i + batchSize);
+    const tasks = slice.map(it => checkVideoUsable(it.videoUrl));
+    const states = await Promise.all(tasks);
+    slice.forEach((item, idx) => {
+      if (states[idx]) res.push(item);
+    })
+  }
+  return res;
 }
 
-function isVideoUrlRepeat(checkUrl) {
-    const fixedUrl = checkUrl.replace(/^http:/, "https:");
-    return videoHistoryList.some(item => item.replace(/^http:/, "https:") === fixedUrl);
+function formatTime(s) {
+    if (isNaN(s) || !isFinite(s)) return "00:00";
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return String(m).padStart(2, '0') + ":" + String(sec).padStart(2, '0');
 }
 
-function saveVideoToHistory(videoSrc) {
-    videoHistoryList.push(videoSrc);
-    currentHistoryIndex = videoHistoryList.length-1 ;
-    log("存入历史，当前下标："+currentHistoryIndex);
+function renderSourceOptions() {
+    const sourceOptionList = [
+        {name:'源5',url:'https://www.hhlqilongzhu.cn/api/MP4_xiaojiejie.php?_t='+Math.random()},
+        {name:'源6',url:'https://jkapi.com/api/xjj_video?apiKey=69b159635b2789ee4e3a807985090777'},
+        {name:'源08',url:'https://v.nrzj.vip/video.php?_t='+Math.random()},
+        {name:'快9',url:'https://openapi.dwo.cc/api/ksvideo?_t='+Math.random()},
+        {name:'源10',url:'https://www.wudada.online/Api/NewSp'},
+        {name:'源11',url:'https://openapi.dwo.cc/api/v?_t='+Math.random()},
+        {name:'源15',url:'http://www.wudada.online/Api/ScSp'},
+        {name:'源16',url:'http://api.yujn.cn/api/zzxjj.php?type=video'},
+        {name:'源17',url:'http://api.yujn.cn/api/xjj.php'},
+        {name:'女大',url:'http://api.yujn.cn/api/nvda.php'},
+        {name:'黑丝',url:'http://api.yujn.cn/api/heisis.php'},
+        {name:'汉服',url:'http://api.yujn.cn/api/hanfu.php'},
+        {name:'源21',url:'https://api.kuleu.com/api/MP4_xiaojiejie?_t='+Math.random()},
+        {name:'源22',url:'https://api.7645.cn/video/?_t='+Math.random()},
+        {name:'抖抖',url:'http://dou.plus/get/get1.php'},
+        {name:'极致',url:'https://p.txqq.pro/api/girls?limit=20'},
+        {name:'新',url:'http://api.yujn.cn/api/xjj.php'},
+        {name:'TikTok',url:'https://diskgirl.com/get/get1.php'},
+        {name:'新2',url:'https://diskgirl.com/get/get2.php'},
+        {name:'新3',url:'https://diskgirl.com/get/get3.php'},
+        {name:'新4',url:'https://xjj.ciyer.com/video.php?lx=video&_t='+Math.random()},
+        {name:'新5',url:'https://www.cunshao.com/666666/api/web.php?_t='+Math.random()},
+        {name:'新6',url:'https://188sp.711888.xyz/188/video.php?_t='+Math.random()},
+        {name:'新7',url:'https://28apk.com/mm/video.php?_t='+Math.random()},
+        {name:'新8',url:'https://www.xiaolufx.net/suiji/video.php?_t='+Math.random()},
+        {name:'新13',url:'https://api.suyanw.cn/api/xjj/api.php?_t='+Math.random()},
+        {name:'美女',url:'https://openapi.dwo.cc/api/4qb_sp?msg=%E7%83%AD%E8%88%9E'},
+        {name:'新15',url:'https://openapi.dwo.cc/api/viodes?_t='+Math.random()},
+        {name:'新17',url:'https://api.xudu.org/vos/vc?_t='+Math.random()},
+        {name:'18',url:'https://api.yujn.cn/api/zzxjj.php?_t='+Math.random()},
+        {name:'抖一抖',url:'https://www.douyidou.com/get/get1.php'},
+        {name:'精品',url:'https://api.wwgz.cn:520/dsp/get/get1.php'},
+        {name:'屋里社',url:'http://wulishe.site/wp-json/b2/v1/getTopicList'},
+        {name:'抖妹',url:'https://www.doumei.cc/api/v1/recommend'},
+        {name:'抖美女',url:'https://wp.qinggongju.com/wp-content/themes/onenavsub/tool/douyin_proxy.php'},
+        {name:'甜美',url:'https://cn.apihz.cn/api/fun/girl.php?id=10008308&key=7e3e249519990e557cd9c79458f2b084'},
+        {name:'快美女',url:'https://qinggongju.com/xiaojie/video.php?_t='+Math.random()},
+        {name:'横屏',url:'https://www.cunshao.com/666666/api/pc.php?_t='+Math.random()},
+        {name:'抖艺术',url:'https://random-api.czl.net/video/dy-art?_t='+Math.random()},
+        {name:'热舞',url:'http://api.4qb.cn/api/suiji-sp?msg=热舞&type=json'},
+        {name:'明星',url:'http://api.4qb.cn/api/suiji-sp?msg=明星&type=json'},
+        {name:'动漫',url:'http://api.4qb.cn/api/suiji-sp?msg=动漫&type=json'},
+        {name:'游戏',url:'http://api.4qb.cn/api/suiji-sp?msg=游戏&type=json'},
+        {name:'风景',url:'http://api.4qb.cn/api/suiji-sp?msg=风景&type=json'},
+        {name:'抖1',url:'https://www.douyidou.com/get/get2.php'},
+        {name:'抖2',url:'https://www.douyidou.com/get/get18.php'},
+        {name:'pf1',url:'https://pf129.com/xjj/get/get1.php'},
+        {name:'DJ秀',url:'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php'},
+        {name:'美女1',url:'https://v1.21lhz.cn/API/Video/api.php?_t='+Math.random()},
+        {name:'591',url:'https://v.591meta.com/ks.txt'},
+        {name:'六间房',url:'https://v.6.cn/coop/mobile/index.php?padapi=minivideo-getMiniVideoList.php&av=3.0&encpass=&logiuid=&act=recommend&pagesize=20&page='},
+    ];
+    let listUrl = [
+        'https://api.yuafeng.cn/API/ly/sjxl.php?_t=0',
+        'https://api.xzdx.top/xjj',
+        'http://xjj2.716888.xyz/fenlei/djxjj/dj1.php?_t=0',
+        'https://tucdn.wpon.cn/api-girl/index.php?wpon=json',
+        "https://api.xunjinlu.fun/api/sjspks/ksvideo.php?_t=0"+Math.random(),
+        "https://img.8845.top/xjj?_t="+Math.random(),
+        "https://api3.mhimg.cn/api/girls_video?_t="+Math.random(),
+        "https://jk.lllt.top/api/mp4/MP4_xiaojiejie.php?_t="+Math.random(),
+        "https://api.528sq.cn/api/neran.php?type=url",
+        "https://api.qqsuu.cn/api/dm-randmusic?format=json",
+        "https://v2.xxapi.cn/api/randomkuwo",
+        "https://api3.mhimg.cn/api/dj_music",
+        "https://free.wqwlkj.cn/wqwlapi/wyy_random.php?type=json"
+    ];
+
+    listUrl.forEach((url, idx) => {
+        let name;
+        if(idx < 8){
+            name = String(idx).padStart(2, '0');
+        }else{
+            name = "音" + String(idx);
+        }
+        sourceOptionList.push({
+            name,
+            url
+        })
+    })
+
+     sourceOptionList.forEach(item=>{
+         item._showName = item.name;
+     })
+     const saveSourceName = localStorage.getItem('xjjname') || '源08';
+     const activeItem = sourceOptionList.find(item => item.name === saveSourceName);
+     if(activeItem){
+         reqApiUrl = activeItem.url;
+     }else{
+         const fallBack = sourceOptionList.find(s=>s.name === "源08");
+         reqApiUrl = fallBack.url;
+     }
+     const activeIndex = sourceOptionList.findIndex(item => item.name === saveSourceName);
+     if (activeIndex > -1) {
+         sourceOptionList[activeIndex]._showName = `<span style="color:red">${sourceOptionList[activeIndex].name}</span>`;
+     }
+     let htmlStr = "";
+     sourceOptionList.forEach(item => {
+         htmlStr += `<div class='option' data-url='${item.url}'>${item._showName}</div>`;
+     });
+     const optDom = document.getElementById("options");
+     optDom.innerHTML = htmlStr;
+     optDom.onclick = function(e){
+         e.stopPropagation();
+         const divOpt = e.target.closest(".option");
+         if(!divOpt) return;
+         const url = divOpt.dataset.url;
+         if(!url) return;
+         const clickItem = sourceOptionList.find(i=>i.url === url);
+         if(clickItem){
+             localStorage.setItem('xjjname', clickItem.name);
+         }
+         localStorage.setItem('cur_src_url', url);
+         optDom.style.display = "none";
+         reqApiUrl = url;
+         listIndex = 0;
+         videoPlayList = [];
+         swiper.slideTo(0,0);         
+         loadAllSource(true)
+         
+     }
+ }
+ async function getFinalRedirectUrl(url) {
+    if (!url) return "";
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 5000);
+    if (url.includes("wulishe.") || url.includes("file.wifou.") || /t=0|yujn|NewSp|jkapi/.test(url)) {
+        try {
+            const resp = await fetch(url, {
+                redirect: "follow",
+                signal: ctrl.signal
+            });            
+            return resp.url;
+        } catch (e) {
+            return url;
+        }
+    }  
+    return url;
+}
+// 2. 实现缺失的 initVideoList：把视频列表渲染成slide
+/**
+ * @param {Array} list 视频数据数组
+ * @param {boolean} isAppend false=全量初始化(默认)，true=增量追加
+ */
+function initVideoList(list, isAppend = false){    
+    const existUrls = new Set();
+    // 增量模式：先读取页面已存在视频地址，用于新旧数据去重
+    if(isAppend){
+        Array.from(wrapperDom.querySelectorAll("video")).forEach(v => {
+            existUrls.add(v.src);
+        });
+    }
+    // 本次传入数据内部去重
+    const urlSet = new Set();
+    const uniqueList = list.filter(item => {
+        // 增量模式：过滤页面里已有的视频
+        if(isAppend && existUrls.has(item.videoUrl)) return false;
+        // 过滤本次批次重复视频
+        if(urlSet.has(item.videoUrl)) return false;
+        urlSet.add(item.videoUrl);
+        return true;
+    });
+    if(uniqueList.length === 0) return;
+
+    // 【核心分支】全量模式清空容器；追加模式保留原有DOM
+    if(!isAppend){
+     wrapperDom.innerHTML = "";
+ }
+ // 计算全局起始下标：当前页面已有的slide数量就是新批次起始编号
+ const startGlobalIndex = wrapperDom.querySelectorAll('.swiper-slide').length;
+ uniqueList.forEach((item, localIdx)=>{
+     const globalIdx = startGlobalIndex + localIdx; // 全局真实下标
+     const slide = document.createElement("div");
+     slide.className = "swiper-slide";
+     const muteAttr = isAppend ? "muted" : "";
+     slide.innerHTML = `
+         <video 
+             src="${item.videoUrl}"               
+             preload="metadata"
+             playsinline
+             webkit-playsinline
+             poster="${item.realPoster || ''}"
+             ${muteAttr}
+             data-index="${globalIdx}"
+         ></video>
+     `;
+     wrapperDom.appendChild(slide);
+ })
+ // 循环结束后刷新swiper
+    swiper.update();
+    const videoNodes = wrapperDom.querySelectorAll(".swiper-slide video");
+    const targetVideos = isAppend 
+        ? Array.from(videoNodes).slice(-uniqueList.length) 
+        : Array.from(videoNodes);
+
+    targetVideos.forEach((vid, idx) => {
+        // 全量模式：仅第一条有声；追加模式所有新增视频默认静音
+        if(!isAppend){
+            vid.muted = idx !== 0;
+        }else{
+            //vid.muted = true;
+        }
+        vid.onended = null;
+vid.onended = function () {
+    const activeVideo = swiper.slides[swiper.activeIndex].querySelector("video");
+    if (this !== activeVideo) return;
+
+    if (playAutoMode) {
+        // 连播模式：沿用原本翻页+界面隐藏逻辑
+        if (swiper.activeIndex < swiper.slides.length - 1) {
+            swiper.slideNext();
+            pauseIconDom.style.opacity = 0;
+            dragProgressWrapDom.style.opacity = 0;
+            document.getElementById("yuan").style.display = "none";
+            btnFitMode.style.display = "none";
+            btnPlayMode.style.display = "none";
+        }
+    } else {
+        // 单曲循环：本条重播，不翻页、不改动界面
+        this.currentTime = 0;
+        this.play().catch(err => console.log("单曲重播异常：", err));
+    }
 }
 
-function toggleDragProgressBar() {
-    clearTimeout(dragProgressHideTimer);
-    const progressWrap = document.getElementById("dragProgressBox");
-    progressWrap.style.display = "block";
-    progressWrap.style.opacity = 1;
-    progressWrap.style.pointerEvents = "auto";
-    dragProgressHideTimer = setTimeout(() => {
-        progressWrap.style.opacity = 0;
-        progressWrap.style.pointerEvents = "none";
-    }, 3000);
+    });
+
+    // 仅全量初始化时才主动播放首条
+    if(!isAppend && listIndex === 0){
+        targetVideos[0]?.play().catch(e => log("首条播放异常："+e));
+    }
 }
 
-async function preloadNextVideo() {
-    log("当前listIndex=" + listIndex + "，预加载下标=" + (listIndex+1));
-    //【修复】滑动时禁止预加载覆盖预览视频
-    if (stopPreload) return;
-    if (isBackgroundPreloading || stopPreload || preloadNextUrl) return;
-    if (preloadFailCount >= maxPreloadFail) {
-        log(`预加载连续${maxPreloadFail}次失败，临时停止预加载`);
-        preloadFailCount = 0;
-        return;
-    }   
-    isBackgroundPreloading = true;
-    preloadNextUrl = null;
-    let tempRawUrl = "";
+
+//3. 拉取视频源
+async function loadJsonListSource(isInitLoad) {       
+    if(nextPages !== null){
+        nowPages = nextPages;
+        nextPages = null;
+    }
+    let fetchUrl = reqApiUrl;
+    const isNeedRandomPage = fetchUrl.includes("coop");
+    if(isNeedRandomPage){
+        fetchUrl = fetchUrl + nowPages;
+    }
     try {
-        if (listIndex + 1 < videoPlayList.length) {
-            const rawUrl = videoPlayList[listIndex + 1];
-            log('第'+(listIndex + 1)+'个****' + videoPlayList.length)
-            if (rawUrl && !isVideoUrlRepeat(rawUrl)) {
-                preloadNextUrl = rawUrl;
-                preloadFailCount = 0;
-                log("预加载列表下一条成功：" + preloadNextUrl);
-            }
-        } else {
-            const reqApiUrl = localStorage.getItem('jjurl') || 'https://v.nrzj.vip/video.php?_t=' + Math.random();
-            if (/wulishe/.test(reqApiUrl)) {
-                const res = await fetch(reqApiUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: "paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0"
-                });
-                if (!res.ok) throw new Error("屋里社接口请求失败");
-                const resData = await res.json();
-                const arr = resData.data || [];
-                if (arr.length > 0) {
-                    const randomItem = arr[0];
-                    tempRawUrl = randomItem.attachment.video[0].link;
-                    tempRawUrl = tempRawUrl.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");
-                }
-            } else if (/t=0|yujn|NewSp|jkapi/.test(reqApiUrl)) {
-                tempRawUrl = reqApiUrl
-            } else if (/pf129/.test(reqApiUrl)) {
-                const fetchRes = await fetch(reqApiUrl);
-                if (!fetchRes.ok) throw new Error("pf129接口请求失败");
-                const resText = await fetchRes.text();
-                const mp4Match = resText.match(/https:\/\/[^\s"]+\.mp4[^\s"]*/);
-                if (mp4Match) tempRawUrl = mp4Match[0].trim();
-            } else if (/kuaiyuhudong/.test(reqApiUrl)) {
-                const fetchRes = await fetch(reqApiUrl);
-                if (!fetchRes.ok) throw new Error("kuaiyuhudong接口1请求失败");
-                const htmlText = await fetchRes.text();
-                const pathMatch = htmlText.match(/data-url="(.*?)"/);
-                if (!pathMatch) throw new Error("kuaiyuhudong未匹配到详情路径");
-                const detailUrl = reqApiUrl + pathMatch[1];
-                const fetchRess = await fetch(detailUrl);
-                if (!fetchRess.ok) throw new Error("kuaiyuhudong接口2请求失败");
-                const htmlTexts = await fetchRess.text();
-                const srcMatch = htmlTexts.match(/audiodiv" src="(.*?)"/);
-                if (!srcMatch) throw new Error("kuaiyuhudong未匹配视频地址");
-                tempRawUrl = srcMatch[1];
-            } else if (/txqq|doumei/.test(reqApiUrl)) {
-                const fetchRes = await fetch(reqApiUrl);
-                if (!fetchRes.ok) throw new Error("txqq/doumei接口请求失败");
-                const resData = await fetchRes.json();
-                const videoDataArr = resData.list || resData.data || [];
-                if (videoDataArr.length > 0) {
-                    tempRawUrl = videoDataArr[0].video_url || videoDataArr[0].content;
-                }
+        const fetchRes = await fetch(fetchUrl);
+        const resData = await fetchRes.json();
+        if(isNeedRandomPage){
+            const totalPage = resData.content?.totalPage;        
+            if (totalPage && typeof totalPage === "number" && totalPage > 0) {
+                let randomPage;
+                do {
+                    randomPage = Math.floor(Math.random() * totalPage) + 1;
+                } while (randomPage === nowPages);
+                nextPages = randomPage;
             } else {
-                const fetchRes = await fetch(reqApiUrl);
-                if (!fetchRes.ok) throw new Error("通用接口请求失败");
-                const resData = await fetchRes.json();
-                tempRawUrl = resData.video || resData.视频 || resData.data;
-                if (/4qb/.test(reqApiUrl)) {
-                    tempRawUrl = resData.data.url;
-                }
+                log("coop源无法获取有效totalPage，暂不更新nextPage");
             }
+        }
+        let videoDataArr = resData.list || resData.data || [];
+        if (isNeedRandomPage) {
+            videoDataArr = resData.content?.list || []
+        }         
+       
+        const batchNewList=[];
+        for(let item of videoDataArr){            
+             const sourceUrl = item.video_url || item.content || item.playurl;
+             if(!sourceUrl) continue;
+             const tempItem={
+                 videoUrl: sourceUrl,
+                 cover: item.cover || "",
+                 title: item.title || ""
+             };
+             batchNewList.push(tempItem);
+        }
 
-            let realUrl = tempRawUrl;
-            const wulisheDomain = /file\.wifou\.com\/d\/139\/list\/wulishe/;
-            const isNormalVideo = /(?:\.mp4|\.m3u8|\.flv)(\?|#|_|$)/.test(tempRawUrl);
-            const needRedirect = !isNormalVideo || wulisheDomain.test(tempRawUrl);
-            if (tempRawUrl && needRedirect) {
-                realUrl = await getFinalRedirectUrl(tempRawUrl);
+        // 仅在当前函数内部判断：doumei直接放行，其余源走批量校验
+        let finalList;
+        if (/doumei/.test(reqApiUrl)) {
+            finalList = batchNewList;
+        } else {
+            finalList = await batchFilter(batchNewList);
+        }
+
+        // 首次全局洗牌裁剪
+        if (isInitLoad && finalList.length >= 90) {
+            log(`数据量${finalList.length}过大，随机抽取20条`);
+            const tempArr = [...finalList];
+            for (let i = tempArr.length - 1; i > 0; i--) {
+                const r = Math.floor(Math.random() * (i + 1));
+                [tempArr[i], tempArr[r]] = [tempArr[r], tempArr[i]];
             }
-            if (realUrl && !isVideoUrlRepeat(realUrl)) {
-                preloadNextUrl = realUrl;
-                preloadFailCount = 0;
-                log("预加载新接口视频成功：" + preloadNextUrl);
-            }
+            finalList.splice(20);
+        }
+        // 增量单次条数限额
+        const oneBatchMax=20;
+        if(!isInitLoad && finalList.length>oneBatchMax) finalList.length=oneBatchMax;
+
+        // 合并分支：入库+渲染同处一个if/else
+        if(isInitLoad){
+            videoPlayList = finalList;
+            initVideoList(videoPlayList,false);
+        }else{
+            videoPlayList.push(...finalList);
+            initVideoList(finalList,true);
+        }
+        log("有效视频总数：" + videoPlayList.length);
+    } catch (error) {
+        showTip("列表接口加载失败");
+        log("loadJsonList异常：" + error);
+    }
+}
+
+
+
+
+async function load591Source(isInitLoad) {  
+    try {
+        const fetchRes = await fetch(reqApiUrl);
+        const resData = await fetchRes.text();              
+        let matchArr = resData.match(/https?:\/\/[^\s"'<>]+/g) || [];
+        matchArr = matchArr.filter(url => /\.(mp4|m3u8|mov|flv)(\?|#|$)/.test(url));
+        const uniqueSet = new Set(matchArr);
+        matchArr = Array.from(uniqueSet);
+        
+        const temp = [...matchArr];
+        for(let i = temp.length - 1; i > 0; i--){
+            const r = Math.floor(Math.random() * (i + 1));
+            [temp[i], temp[r]] = [temp[r], temp[i]];
+        }
+        const random100Arr = temp.slice(0, 20);
+        
+        // 组装本轮原始批次数据
+        const parsedList = [];
+        for (const url of random100Arr) {
+            let cover = "";          
+            parsedList.push({
+                videoUrl: url,
+                cover: cover,
+                title: ""
+            });           
+        }
+
+        // 新增：批量可用性校验
+        const validList = await batchFilter(parsedList);
+
+        // 合并判断：数组操作 + 渲染收拢在同一分支
+        if(isInitLoad){
+            videoPlayList = validList;
+            initVideoList(videoPlayList, false);
+        }else{
+            videoPlayList.push(...validList);
+            initVideoList(validList, true);
         }
     } catch (err) {
-        preloadFailCount++;
-        log("预加载失败：" + err);
-    } finally {
-        isBackgroundPreloading = false;
-        // 预加载完成赋值给预览播放器，提前缓存画面
-        if(preloadNextUrl) {
-            nextVideoDom.src = preloadNextUrl;
-            nextVideoDom.load();
-        }
-    }
+        log('请求591接口失败' + err);
+    } 
 }
 
-async function loadNextSource() {
-    if (currentHistoryIndex >= videoHistoryList.length - 1) {
-        if (/txqq|doumei|kuaiyuhudong/.test(globalApiUrl)) {
-            listIndex++;
-            await loadVideoFromList();
-            setTimeout(()=> preloadNextVideo(), 200);
-            showTip('切换下一个');
-            return;
-        }     
-        showTip("无更多历史视频，加载新资源");
-        await loadVideoFromList() ;     
-        setTimeout(()=> preloadNextVideo(), 200);  
-        return;
-    }
-    currentHistoryIndex++;
-    const realPlayUrl = videoHistoryList[currentHistoryIndex];
-    videoPlayerDom.src = realPlayUrl; 
-    showTip('切换下一个');
-    setTimeout(()=>{
-        currentPage.style.transform = 'translateY(0)';
-        nextPage.style.transform = 'translateY(100vh)';
-    },50);
-}
 
-async function loadPrevSource() {
-    if (historyVideoErrorCount >= 3) {
-        showTip("多条历史视频失效，无法回看");
-        historyVideoErrorCount = 0;
-        return;
-    }
-    if (currentHistoryIndex <= 0) {
-        showTip("已经是第一个视频，无法切换上一个");
-        return;
-    }
-    log('ccccccc'+currentHistoryIndex)
-   // currentHistoryIndex--;
-    const realPlayUrl = videoHistoryList[currentHistoryIndex];
-    if(isVideoUrlRepeat(realPlayUrl)){
-        showTip("历史视频重复，自动加载新视频");
-        await loadAllSource();
-        return;
-    }
-    videoPlayerDom.src = realPlayUrl;
-    videoPlayerDom.muted = false;
-    videoPlayerDom.play().catch(()=>{});
-    showTip('切换上一个');
-    historyVideoErrorCount = 0;
-    preloadNextUrl = null;
-    setTimeout(()=>{
-        currentPage.style.transform = 'translateY(0)';
-    },50);
-}
+async function loadDjSource(isInitLoad) {   
+    try {
+        const fetchRes = await fetch(reqApiUrl);
+        if (!fetchRes.ok) throw new Error("接口请求失败");
+        const htmlText = await fetchRes.text();
 
-async function loadVideoFromList() {
-    if(preloadNextUrl){
-        const cacheUrl = preloadNextUrl;
-        preloadNextUrl = null;
-        nextVideoDom.src = "";
-       nextVideoDom.load();
-        videoPlayerDom.src = cacheUrl;
-        saveVideoToHistory(cacheUrl);
-        setTimeout(()=> preloadNextVideo(), 100);
-        return;
-    }
-    if (listIndex >= videoPlayList.length) {
-        showTip('视频列表播放完毕，重新加载新视频');
-        await loadAllSource();
-        listIndex = 0;
-        return;
-    }
-    const sourceUrl = videoPlayList[listIndex];
-    if (isVideoUrlRepeat(sourceUrl)) {
-        listIndex++;
-        await loadVideoFromList();
-        return;
-    }
-    videoPlayerDom.src = sourceUrl;
-    saveVideoToHistory(sourceUrl);
-}
+        const parser = new DOMParser();
+        const listDoc = parser.parseFromString(htmlText, "text/html");
+        const liItems = listDoc.querySelectorAll('li.qui_list__item');
+        
+        const taskList = [];
+        for (const li of liItems) {
+            const path = li.getAttribute("data-url");
+            if (!path) continue;
+            const detailUrl = new URL(path, reqApiUrl).href;
+            const imgDom = li.querySelector('img.qui_list__img');
+            const coverSrc = imgDom?.getAttribute('src') || "";
 
-async function loadAllSource() {
-    videoPlayList = [];
-    listIndex = 0;
-    const reqApiUrl = localStorage.getItem('jjurl') || 'https://v.nrzj.vip/video.php?_t=' + Math.random();
-
-    async function loadWuLiSheSource() {
-        if (isSourceLoading) return;
-        isSourceLoading = true;
-        let hasPlayStart = false;
-        try {
-            const res = await fetch(reqApiUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: "paged=1&circle_id=2&type=all&order_by=random&role=all&file=video&status=&author=0"
-            });
-            const resData = await res.json();
-            const videoDataArr = resData.data || [];
-            if (!Array.isArray(videoDataArr) || videoDataArr.length === 0) {
-                throw new Error("接口无视频数据");
-            }
-            for (let i = 0; i < videoDataArr.length; i++) {        
-                const item = videoDataArr[i];        
-                let tempPlayUrl = item.attachment.video[0].link;
-                tempPlayUrl = tempPlayUrl.replace(/http:\/\/wulishe\.site\/wp-content\/uploads/, "https://file.wifou.com/d/139/list/wulishe");        
-                const realUrl = await getFinalRedirectUrl(tempPlayUrl);
-                if (!realUrl) {
-                    log(`第${i+1}条视频跳转解析失败，跳过本条`);
-                    continue;
-                }
-                tempPlayUrl = realUrl;
-                if (isVideoUrlRepeat(tempPlayUrl)) {
-                    log(`第${i+1}条视频历史重复，跳过本条`);
-                    continue;
-                }
-                videoPlayList.push(tempPlayUrl);
-                globalRetryCount = 0;
-                if (videoPlayList.length === 1 && !hasPlayStart) {
-                    hasPlayStart = true;
-                    (async () => {
-                        listIndex = 0;
-                        await loadVideoFromList();
-                    })();
-                }
-            }
-            if (videoPlayList.length === 0) {
-                showTip("未获取到可用视频资源");
-                isSourceLoading = false;
-                return;
-            }
-        } catch (error) {
-            log("屋里社加载异常：" + error);
-            showTip("屋里社接口失败，切换其他源");
-            globalRetryCount++;
-            if (globalRetryCount >= maxRetry) {
-                showTip("多次加载失败，请手动切换源");
-                globalRetryCount = 0;
-                isSourceLoading = false;
-                return;
-            }
-            isSourceLoading = false;
-            await loadAllSource();
-            return;
-        }
-        isSourceLoading = false;
-    }
-
-    async function loadDjSource() {
-        try {
-            const fetchRes = await fetch(reqApiUrl);
-            if (!fetchRes.ok) throw new Error("接口请求失败");
-            const htmlText = await fetchRes.text();
-            const matchArr = htmlText.match(/data-url="(.*?)"/g) || [];
-            if (matchArr.length === 0) {
-                showTip("DJ接口未获取视频");
-                return;
-            }
-            const taskList = [];
-            for (let i = 0; i < matchArr.length; i++) {
-                const path = matchArr[i].split('"')[1];
-                const detailUrl = reqApiUrl + path;
-                taskList.push(new Promise(resolve => {
-                    $.get(detailUrl, data => {
-                        const match = data.match(/audiodiv" src="(.*?)"/);
-                        if (match?.[1]) videoPlayList.push(match[1]);
-                        resolve();
-                    })
-                }))
-            }
-            await Promise.all(taskList);
-            if (videoPlayList.length === 0) {
-                showTip("未解析到DJ视频地址");
-                return;
-            }
-            await loadVideoFromList();
-            setTimeout(()=> preloadNextVideo(), 200);
-        } catch (error) {
-            showTip("DJ接口加载失败，2秒重试");
-            setTimeout(loadDjSource, 2000);
-            console.error(error);
-        }
-    }
-
-    async function loadJsonListSource() {
-        try {
-            const fetchRes = await fetch(reqApiUrl);
-            const resData = await fetchRes.json();
-            const videoDataArr = resData.list || resData.data || [];
-            for (let i = 0; i < videoDataArr.length; i++) {
-                const sourceUrl = videoDataArr[i].video_url || videoDataArr[i].content;
-                if (sourceUrl) videoPlayList.push(sourceUrl);
-            }
-            await loadVideoFromList();
-            setTimeout(()=> preloadNextVideo(), 200);
-        } catch (error) {
-            showTip("列表接口加载失败");
-            log("loadJsonList异常：" + error);
-        }
-    }
-
-    async function fetchSourceWithCallback(callback) {
-        return new Promise((resolve) => {
-            $.get(reqApiUrl, async (data, status) => {
+            const task = async () => {
                 try {
-                    let sourceUrl = "";
-                    if (/ScSp|wp\.qinggongju|apihz/.test(reqApiUrl)) {
-                        sourceUrl = data.video || data.视频 || data.data;
-                    }
-                    if (/4qb/.test(reqApiUrl)) {
-                        sourceUrl = data.data.url;
-                    }
-                    if (/pf129|diskgirl|douyidou|wwgz/.test(reqApiUrl)) {
-                        sourceUrl = data;
-                    }
-                    if (!sourceUrl.startsWith("http")) {
-                        sourceUrl = 'https:' + sourceUrl;
-                    }
-                    if (isVideoUrlRepeat(sourceUrl)) {
-                        showTip("视频重复，自动跳过");
-                        await loadAllSource();
-                        resolve();
-                        return;
-                    }
-                    callback(sourceUrl);
-                    saveVideoToHistory(sourceUrl);
-                    setTimeout(()=> preloadNextVideo(), 200);
-                } catch (error) {
-                    log("fetchSourceWithCallback异常：" + error)
-                } finally {
-                    resolve();
-                }
-            });
-        });
-    }
+                    const detailResp = await fetch(detailUrl);
+                    const detailHtml = await detailResp.text();
+                    const detailDoc = parser.parseFromString(detailHtml, "text/html");
+                    const videoDom = detailDoc.querySelector('#audiodiv');
+                    const realVideoUrl = videoDom?.getAttribute('src');
+                    if (!realVideoUrl) return null;
 
-    if (/wulishe/.test(reqApiUrl)) {
-        await loadWuLiSheSource();
-    } else if (/txqq|doumei/.test(reqApiUrl)) {
-        await loadJsonListSource();
-    } else if (/kuaiyuhudong/.test(reqApiUrl)) {
-        loadDjSource();
-    } else if (/t=0|yujn|NewSp|jkapi/.test(reqApiUrl)) {
-        const tempPlayUrl = await getFinalRedirectUrl(reqApiUrl);      
-        if (isVideoUrlRepeat(tempPlayUrl)) {
-            showTip("该视频已播放过，重新加载新视频");
-            await loadAllSource();
-            return;
+                    const exists = videoPlayList.some(item => item.videoUrl === realVideoUrl);
+                    if(exists) return null;
+
+                    let finalCover = "";                    
+                    if(!finalCover && coverSrc){
+                        finalCover = coverSrc;
+                    }
+
+                    return {
+                        videoUrl: realVideoUrl,
+                        cover: finalCover,
+                        title: ""
+                    };
+                } catch (err) {
+                    log("DJ详情页解析失败 " + detailUrl + " " + err.message);
+                    return null;
+                }
+            };
+            taskList.push(task());
         }
-        videoPlayerDom.src = tempPlayUrl;
-        saveVideoToHistory(tempPlayUrl);
-        setTimeout(()=> preloadNextVideo(), 200);
-    } else {
-        await fetchSourceWithCallback((sourceUrl) => {
-            videoPlayerDom.src = sourceUrl;
-        });
+        const results = await Promise.all(taskList);
+ // 第一步：过滤解析成功、去重后的原始条目
+ const parsedItems = results.filter(x => x !== null);
+ // 第二步：批量可用性校验，生成最终合格条目
+ const newItems = await batchFilter(parsedItems);
+ // 全局数组合并
+ if(isInitLoad){
+    videoPlayList = newItems;
+    initVideoList(videoPlayList, false);
+}else{
+    videoPlayList.push(...newItems);
+    initVideoList(newItems, true);
+}
+    } catch (error) {
+        showTip("DJ接口加载失败，2秒重试");
+        log("DJ加载异常：" + error);
+        if (!isSourceLoading) setTimeout(()=>loadDjSource(isInitLoad), 2000);
+    } 
+}
+
+
+async function fetchSourceWithCallback() {
+    try {        
+        const resp = await fetch(reqApiUrl);
+        if (!resp.ok) {
+            return { videoUrl: "", finalCover: "" };
+        }
+        
+        const raw = await resp.text();
+let resData;
+try {
+    resData = JSON.parse(raw);
+} catch (err) {
+    resData = raw;
+}
+                
+        let url = resData;
+        
+        let coverSrc = "";
+
+        if (/ScSp|wp\.qinggongju|apihz|tucdn/.test(reqApiUrl)) {
+            url = resData.video || resData.视频 || resData.data || resData.mp4;
+            coverSrc = resData.picurl || "";
+        }
+        if (/4qb/.test(reqApiUrl)) {
+            url = resData.data.url;
+            coverSrc = resData.data.img || "";
+        }
+
+        if (url && !url.startsWith("http")) {
+            url = "https:" + url;
+        }
+
+        if(!url){
+            return { videoUrl:"", finalCover:"" };
+        }
+
+        let finalCover = "";        
+        if(!finalCover && coverSrc){
+            finalCover = coverSrc;
+        }
+
+        return {
+            videoUrl: url,
+            finalCover: finalCover
+        };
+
+    } catch (err) {
+        log("fetchSource异常：" + err.message);
+        return { videoUrl: "", finalCover: "" };
     }
 }
 
-$(document).ready(async function() {
-    scrollWrap = document.getElementById("scrollWrap");
-    videoPlayerDom = document.getElementById("myVideo");
-    nextVideoDom = document.getElementById("nextVideo");
-    ctrlButtonsDom = document.querySelector("#buttons");
-    const progressBarDom = document.getElementById('progress-bar');
-    const timeTotalDom = document.getElementById('time-div');
-    const timeCurDom = document.getElementById('time-divs');
-    const dragSliderDom = document.getElementById("dragSlider");
-    const dragCurTimeDom = document.getElementById("dragCurTime");
-    const dragTotalTimeDom = document.getElementById("dragTotalTime");
-    const dragProgressWrapDom = document.getElementById("dragProgressBox");
+async function loadSingleSourceBatch(count = 3, isInitLoad) {
+    try {
+        let successNum = 0;
+        const maxLoop = 30;
+        let loopCount = 0;
+        const apiRule = /t=0|yujn|NewSp|jkapi/;
+        const batchNewList = []; // 仅存放本次拉取的新数据
 
-    playAutoMode = true;
+        while (successNum < count && loopCount < maxLoop) {
+            loopCount++;
+            let realPlayUrl = "";
+            let finalCover = "";
 
-    // 初始化页面位置
-    nextPage.style.transform = 'translateY(100%)';
-    nextPage.style.transition = 'none';
-    currentPage.style.transform = 'translateY(0)';
-    currentPage.style.transition = 'none';
+            if (apiRule.test(reqApiUrl)) {
+                const originVideoUrl = reqApiUrl;
+                realPlayUrl = await getFinalRedirectUrl(originVideoUrl);
+            } else {
+                const res = await fetchSourceWithCallback();
+                realPlayUrl = res.videoUrl;
+                finalCover = res.finalCover;
+            }
 
-    // 先加载资源，再绑定事件
-    await loadAllSource();
+            if (!realPlayUrl) continue;
 
-    // 打印历史下标，调试预览
-    log("页面初始化历史下标："+currentHistoryIndex);
+            const exists = videoPlayList.some(item => item.videoUrl === realPlayUrl);
+            if (exists) continue;
 
-    videoPlayerDom.addEventListener('loadedmetadata', () => {
-        totalTimeStr = formatTime(videoPlayerDom.duration);
-        timeTotalDom.textContent = totalTimeStr;
-        dragSliderDom.max = 100;
-        dragTotalTimeDom.innerText = totalTimeStr;
-    })
+            const newItem = {
+                videoUrl: realPlayUrl,
+                cover: finalCover,
+                title: ""
+            };
+            // 批次、全局数组同步写入
+            batchNewList.push(newItem);
+            videoPlayList.push(newItem);
+
+            successNum++;
+        }
+
+        // 分支渲染：首次全量、追加仅批次
+        let renderList;
+if (isInitLoad) {
+    // 全量：校验首期原始 videoPlayList
+    renderList = await batchFilter(videoPlayList);
+    // 校验合格结果回写全局数组，后续逻辑统一使用纯净数据
+    videoPlayList = renderList;
+    initVideoList(renderList, false);
+} else {
+    // 增量：只校验本次新增 batchNewList，不碰历史旧数据
+    renderList = await batchFilter(batchNewList);
+    // 合格增量并入全局播放列表
+    videoPlayList.push(...renderList);
+    initVideoList(renderList, true);
+}
+    } catch (err) {
+        log("单源批量加载失败：" + err);
+    }
+}
+//−−−−−−−−−−−−音乐相关−−−−−−−−−−−−
+
+async function getKuwoSongByItem(item){
+    if(!item?.MP3RID) return null;
+    let rid = item.MP3RID.split('_')[1];
+
+    //封面
+    let picMatch = item.web_albumpic_short;
+    let searchCover = picMatch ? ("https://img4.kuwo.cn/star/albumcover/"+picMatch).replace(/\/120\//,"/500/"):"";
+
+    //拿播放链接
+    const playUrl = "https://apione.apibyte.cn/kwmusic?key=Shanhai-0P3tUKBwQ3B8be3LQ9u2m83A5H7wbvgvCON1MSDw3yux1PRr&action=music_url&music_id=" + rid;
+    let rawPlay = "";
+    try {
+        const res = await fetch(playUrl, { method:"GET", credentials:"omit" });
+        rawPlay = await res.text();
+    } catch(e){
+        log("酷我播放地址fetch失败:" + e.message);
+        showTip("获取播放链接网络异常");
+        return null;
+    }
+    let playResp = null;
+    try { playResp = JSON.parse(rawPlay); } catch(err) { 
+    log("酷我播放地址解析失败"); 
+    return null; 
+    }
+    let url = playResp?.data?.url || "";
+    if(!url){
+        showTip("获取播放链接失败");
+        return null;
+    }
+
+    //拿歌词
+    let searchLrc = "";
+    try{
+        let lrcApi = "https://jk.lllt.top/api/kuwo/?rid=" + rid + "&type=json&level=lossless&lrc=true";
+        let lrcJson = await (await fetch(lrcApi)).json();
+        searchLrc = lrcJson?.data?.lrc || "";
+    }catch(e){
+        log("酷我歌词获取异常:"+e.message);
+    }
+
+    return {
+        audioUrl:url,
+        searchCover:searchCover,
+        searchLrc:searchLrc
+    }
+}
+
+// isManualSearch：true=手动搜索弹窗；false=随机自动切歌（默认false兼容老调用）
+async function playKuwoByName(name, isManualSearch = false){
+    if(!name) return null;
+    let keyword = encodeURIComponent(name);
+    //手动搜索拿20条；随机切歌只拿1条
+    let rn = isManualSearch ? 20 : 1;
+    let searchUrl = "http://search.kuwo.cn/r.s?all="+keyword
+    +"&ft=music&itemset=web_2013&client=kt&pn=0&rn="+rn+"&rformat=json&encoding=utf8";
+
+    let rawSearch = "";
+    try {
+        const res = await fetch(searchUrl)
+        rawSearch = await res.text();
+    } catch (e) {
+        log("酷我搜索fetch失败:" + e.message);
+        showTip("搜索网络异常");
+        return null;
+    }
+    try{
+        rawSearch= rawSearch.replace(/'/g,'"')
+        rawSearch= JSON.parse(rawSearch);
+    }catch(err){
+        log("酷我搜索结果解析异常："+err.message);
+        showTip("搜索解析出错");
+        return null;
+    }
+    if(!rawSearch?.abslist || rawSearch.abslist.length===0){
+        showTip("酷我未搜到该歌曲");
+        return null;
+    }
+    if(isManualSearch){
+        return { abslist: rawSearch.abslist };
+    }
+    let item = rawSearch.abslist[0];
+    let searchResp = item.MP3RID
+    if(!searchResp){
+        showTip("酷我未搜到该歌曲");
+        return null;
+    }
+    let rid = searchResp.split('_')[1];
+    let picMatch = item.web_albumpic_short;
+    let searchCover = picMatch ? ("https://img4.kuwo.cn/star/albumcover/"+picMatch).replace(/\/120\//,"/500/"):"";
+
+    const playUrl = "https://apione.apibyte.cn/kwmusic?key=Shanhai-0P3tUKBwQ3B8be3LQ9u2m83A5H7wbvgvCON1MSDw3yux1PRr&action=music_url&music_id=" + rid;
+    let rawPlay = "";
+    try {
+        const res = await fetch(playUrl, { method:"GET", credentials:"omit" });
+        rawPlay = await res.text();
+    } catch(e){
+        log("酷我播放地址fetch失败:" + e.message);
+        showTip("获取播放链接网络异常");
+        return null;
+    }
+    let playResp = null;
+    try { playResp = JSON.parse(rawPlay); } catch(err) { 
+    log("酷我播放地址解析失败"); 
+    return null; 
+    }
+    let url = playResp?.data?.url || "";
+    if(!url){
+        showTip("获取播放链接失败");
+        return null;
+    }
+
+    let searchLrc = "";
+    try{
+        let lrcApi = "https://jk.lllt.top/api/kuwo/?rid=" + rid + "&type=json&level=lossless&lrc=true";
+        let lrcJson = await (await fetch(lrcApi)).json();
+        searchLrc = lrcJson?.data?.lrc || "";
+    }catch(e){
+        log("酷我歌词获取异常:"+e.message);
+    }    
+    currentPlayKuwoRid = rid;
+    return {
+        audioUrl:url,
+        searchCover:searchCover,
+        searchLrc:searchLrc
+    };
+}
+
+async function neteaseSearch(name) {
+    if (!name) return null;
+
+    let isPlaylistMode = false;
+    let idVal = "";
+
+    if (/id=/.test(name)) {
+        idVal = name.replace(/.*?id=(\d+)/ ,'$1');
+        isPlaylistMode = true;
+    } else if (/^\d+$/.test(name.trim())) {
+        idVal = name.trim();
+        isPlaylistMode = true;
+    }
+
+    if(isPlaylistMode){
+        // 主接口、备用接口分开写参数
+        const playlistTryList = [
+            {
+                url:"https://meting.mikus.ink/api?server=netease&type=playlist&id="+encodeURIComponent(idVal)
+            },
+            {
+                url:"https://api.injahow.cn/meting/?type=playlist&id="+encodeURIComponent(idVal)
+            }
+        ];
+
+        for(let i=0; i<playlistTryList.length; i++){
+            const tryUrl = playlistTryList[i].url;
+            try {
+                const res = await fetch(tryUrl, { method: "GET", credentials: "omit" });
+                if(!res.ok) throw new Error("http status "+res.status);
+                const list = await res.json();
+                if (Array.isArray(list) && list.length > 0) {
+                    return list;
+                }
+            } catch (err) {
+                log("neteaseSearch歌单 接口异常：" + err.message);
+            }
+        }
+        log("neteaseSearch歌单：全部接口失败");
+        return null;
+    }else{
+        // 歌名关键词搜索，只使用主接口，备用不支持search
+        const url = "https://meting.mikus.ink/api?server=netease&type=search&id=" + encodeURIComponent(name);
+        try {
+            const res = await fetch(url, { method: "GET", credentials: "omit" });
+            const list = await res.json();
+            if (!Array.isArray(list) || list.length === 0) {
+                return null;
+            }
+            return list;
+        } catch (err) {
+            log("neteaseSearch歌名搜索 请求异常：" + err.message);
+            return null;
+        }
+    }
+}
+
+
+async function fetchLrc(lrcUrl){
+    try{
+        const r = await fetch(lrcUrl,{method:"GET",credentials:"omit"});
+        return await r.text();
+    }catch(e){
+        log("获取网易歌词失败："+e.message);
+        return "";
+    }
+}
+
+function onSearchSubmit(inputName) {
+    const name = (inputName || "").trim();
+    if (!name) {
+        showTip("请输入歌名");
+        return;
+    }
+    let isPlaylist = false;
+    let apiUrl = "";
+    let key = ""; // ✅提升到最外层
+
+    if (/id=/.test(name) || /^\d+$/.test(name.trim())) {
+        let m = name.match(/id=(\d+)/);
+        key = "";
+        if (m) {
+            key = m[1];
+        } else if (/^\d+$/.test(name.trim())) {
+            key = name.trim();
+        }
+
+        if (key) {
+            if (/\.qq\.com/.test(name) || /^\d+$/.test(name.trim())) {
+                apiUrl = "https://meting.mikus.ink/api?server=tencent&type=playlist&id=" + encodeURIComponent(key);
+                isPlaylist = true;
+            }
+        }
+    }
+
+    if (isPlaylist) {
+        (async () => {
+            //====缓存：拿解析出来的key（歌单数字ID）做比对，不再拿原始name====
+            const currentPlaylistId = key;
+            if (currentPlaylistId === lastQQPlaylistId && Array.isArray(tempNeteaseResultList) && tempNeteaseResultList.length > 0) {
+                openNeteaseSearchPopup(tempNeteaseResultList);
+                return;
+            }
+            //============================================================
+
+            const playlistTryList = [
+                {
+                    url: "https://meting.mikus.ink/api?server=tencent&type=playlist&id=" + encodeURIComponent(key)
+                },
+                {
+                    url: "https://api.injahow.cn/meting/?type=playlist&id=" + encodeURIComponent(key)
+                }
+            ];
+            let res = null;
+            let ok = false;
+
+            for (let i = 0; i < playlistTryList.length; i++) {
+                const tryUrl = playlistTryList[i].url;
+                try {
+                    const resp = await fetch(tryUrl);
+                    if (!resp.ok) throw new Error("http状态异常");
+                    res = await resp.json();
+                    if (Array.isArray(res)) {
+                        ok = true;
+                        break;
+                    }
+                } catch (err) {
+                    log("QQ歌单接口失败，尝试下一个" + err);
+                }
+            }
+            if (!ok || !res) {
+                showTip("歌单读取全部接口失败");
+                return;
+            }
+            for (let i = 0; i < res.length; i++) {
+                const item = res[i];
+                if (!item.id && item.songmid) {
+                    item.id = item.songmid;
+                }
+            }
+            useNeteaseListPlay = false;
+            neteaseListIndex = 0;
+            tempNeteaseResultList = res;
+            lastQQPlaylistId = currentPlaylistId; // ✅存解析后的数字歌单ID
+            lastSearchKeyword = "";
+            openNeteaseSearchPopup(res);
+        })();
+        return;
+
+    }
+    const isKuwoSearchSource = /randomkuwo|dj_music/.test(reqApiUrl);
+
+    if (isKuwoSearchSource) {
+        (async () => {
+            const res = await playKuwoByName(name, true);
+            if (!res || !res.abslist) {
+                return;
+            }
+            const list = res.abslist;
+
+            // ✅挂载全局，onclick可调用；闭包绑定当前批次list，不再读取window.kuwoSearchList
+            log("准备挂载酷我点击函数，列表长度：" + list.length);
+            window.kuwoSearchItemClick = async (idx) => {
+    log("✅新版点击函数被触发，idx=" + idx + " 列表总长：" + list.length);
+    if(idx < 0 || idx >= list.length){
+        log("下标越界");
+        closeCachePopup();
+        return;
+    }
+    const item = list[idx];
+    log("item内容：" + item);
+    if (!item) {
+        closeCachePopup();
+        return;
+    }
+    const rid = item.MP3RID.split('_')[1];
+    log("点击拿到rid=" + rid);
+    currentPlayKuwoRid = rid;
+    const playInfo = await getKuwoSongByItem(item);
     
-    videoPlayerDom.addEventListener("timeupdate", async () => {
-        const curSec = videoPlayerDom.currentTime;
-        const totalSec = videoPlayerDom.duration;
-        if (isNaN(totalSec)) return;
-        const percent = (curSec / totalSec * 100);
-        progressBarDom.style.width = percent + "%";
-        timeCurDom.textContent = formatTime(curSec);
-        timeTotalDom.textContent = totalTimeStr;
-        dragSliderDom.value = percent;
-        dragCurTimeDom.innerText = formatTime(curSec);
-        if(percent > 80 && !preloadNextUrl && !isBackgroundPreloading){
-            log("播放到80%，开始执行预加载");
-            preloadNextVideo();
+    if (!playInfo) {
+        closeCachePopup();
+        return;
+    }
+    // 封面优先list内图片，为空兜底接口封面
+    const coverUrl = item.web_albumpic_short
+        ? ("https://img4.kuwo.cn/star/albumcover/" + item.web_albumpic_short).replace(/\/120\//, "/500/")
+        : playInfo.searchCover;
+    const sendList = [
+        {
+            videoUrl: playInfo.audioUrl,
+            realPoster: coverUrl
         }
-    });
+    ];
 
-    dragSliderDom.addEventListener("input", () => {
-        const val = dragSliderDom.value;
-        videoPlayerDom.currentTime = (val / 100) * videoPlayerDom.duration;
-        clearTimeout(dragProgressHideTimer);
-        dragProgressHideTimer = setTimeout(() => {
-            dragProgressWrapDom.style.opacity = 0;
-            dragProgressWrapDom.style.pointerEvents = "none";
-        }, 3000);
-    })
-    dragProgressWrapDom.addEventListener("click", e => e.stopPropagation());  
-
-    $("#bth").on("click", function() {
-        playAutoMode = !playAutoMode;
-        this.innerText = (playAutoMode ? '连播' : '循环');
-        showTip(playAutoMode ? '已开启连续播放' : '已开启单曲循环');
-        hideControlPanel();
-        videoPlayerDom.play()
-    });
-
-    $("#ping").on("click", function() {
-        this.innerText = (this.innerText == '原始' ? '满屏' : '原始');
-        if (this.innerText == '满屏') {
-            videoPlayerDom.style.objectFit = "cover";
-        } else {
-            videoPlayerDom.style.objectFit = "contain";
+    if(JSON.stringify(sendList) === JSON.stringify(lastRenderList)){
+        log("队列一致，跳过initVideoList，刷新swiper后滑动");
+        const activeSlide = swiper.slides[neteaseListIndex];
+        
+        const slideVideo = activeSlide.querySelector("video");
+        // 音频分支不读取空置的videoPlayList，直接使用本次sendList第一条资源
+        const currMedia = sendList[0];
+        if(slideVideo && currMedia){
+            slideVideo.poster = currMedia.realPoster || "";
+            slideVideo.src = currMedia.videoUrl;
+            slideVideo.load();
         }
-        hideControlPanel();
-        videoPlayerDom.play()
-    })
-
-    $("#myVideo").on("error", async function() {
-        videoLoadErrorCount++;
-        if (videoLoadErrorCount > 2) {
-            showTip("视频加载多次失败，停止重试");
-            videoLoadErrorCount = 0;
-            return;
+        // 歌词固定从 playInfo 读取
+        if(playInfo.searchLrc){
+            renderLyric(playInfo.searchLrc, neteaseListIndex);
+        }else{
+            clearLyric();
         }
-        if (videoHistoryList.length > 0) {
-            videoHistoryList.pop();
-            currentHistoryIndex = videoHistoryList.length - 1;
-        }
-        setTimeout(() => {
-            loadAllSource();
-            videoLoadErrorCount = 0;
-        }, 500)
-    });
+        swiper.update();
+        swiper.slideTo(neteaseListIndex, 0);
+        closeCachePopup();
+        return;
+    }
+  document.querySelectorAll('video').forEach(videoEl => {
+            videoEl.src = '';
+            videoEl.remove();
+        });
+    initVideoList(sendList, false);
+    lastRenderList = sendList;
+    // 新歌歌词取自playInfo
+    if(playInfo.searchLrc){
+        
+        renderLyric(playInfo.searchLrc, neteaseListIndex);
+    }else{
+        clearLyric();
+    }
+    swiper.update();
+    swiper.slideTo(neteaseListIndex, 0);
+    closeCachePopup();
+};
 
-    videoPlayerDom.addEventListener('ended', async function() {
-    if (!playAutoMode) {
-        // 单曲循环直接重播
-        videoPlayerDom.currentTime = 0;
-        videoPlayerDom.play().catch(e=>log("单曲循环播放失败："+e));
+
+
+            let html = "";
+            list.forEach((item, idx) => {
+                let searchCover = item.web_albumpic_short
+                    ? ("https://img4.kuwo.cn/star/albumcover/" + item.web_albumpic_short).replace(/\/120\//, "/500/")
+                    : "";
+                let rid = item.MP3RID.split('_')[1];
+                const activeClass = (rid === currentPlayKuwoRid) ? "active-play" : "";
+                html += `
+  <div class="cache-item kuwo-search-item ${activeClass}" 
+   data-search-idx="${idx}"
+   data-rid="${rid}"
+   onclick="kuwoSearchItemClick(${idx})"
+  style="display:flex;align-items:center;gap:10px;padding:10px 12px;">
+      <img 
+          src="${searchCover}" 
+          loading="lazy"
+          referrerpolicy="no-referrer"
+          style="width:48px;height:48px;border-radius:6px;object-fit:cover;flex-shrink:0;"
+          onerror="this.src='${DEFAULT_COVER}';this.onerror=null;">
+      <div class="cache-item-text" style="flex:1;min-width:0;">
+          <span class="num">${idx+1}.</span>
+          <div class="url-text">${item.NAME||"未知"}</div>
+          <div class="time-text">${item.ARTIST||"未知歌手"}</div>
+      </div>
+  </div>`;
+            });
+            const popup = document.getElementById("cachePopup");
+            const listBox = document.getElementById("cacheListBox");
+            const titleDom = document.getElementById("cacheTitle");
+            document.getElementById("cacheTopBar").style.display = "none";
+            titleDom.textContent = `酷我搜索结果（共${list.length}条）`;
+            listBox.innerHTML = html;
+            popup.style.display = "block";
+            popupOpen = true;
+            currentPopupMode = "kuwoSearch";
+        })();
+
+    } else {
+        (async () => {
+            // =========新增网易搜索缓存判断=========
+            if (name === lastSearchKeyword && tempNeteaseResultList.length > 0) {
+                openNeteaseSearchPopup(tempNeteaseResultList);
+                return;
+            }
+
+            const songList = await neteaseSearch(name);
+            if (!songList) {
+                showTip("未搜到歌曲");
+                return;
+            }
+            tempNeteaseResultList = songList;
+            lastSearchKeyword = name;
+            useNeteaseListPlay = false;
+            neteaseListIndex = 0;
+            openNeteaseSearchPopup(songList);
+        })();
+    }
+}
+
+
+//自动音乐源处理
+async function handleMusicSource(isInitLoad) {
+     const url = reqApiUrl;
+     let resp = await fetch(url);
+     let resData = await resp.json();
+     const is528 = /528sq/.test(url);
+     const data = is528 ? resData : resData.data;handleMusicSource() 
+   if(/randomkuwo/.test(url)){
+    const songName = data.name || "";
+    if(!songName){
+        showTip("酷我随机获取歌名失败");
         return;
     }
 
-    // 定义动画参数，和手动滑动保持一致
-    const smoothAnim = "transform 0.24s cubic-bezier(0.2, 0, 0.2, 1)";
-    stopPreload = true;
-    const threshold = window.innerHeight * 0.2;
-    let playUrl = preloadNextUrl;
+    //随机源自带资源，作为兜底
+    const srcCover = data.pic || data.album_pic || data.img || "";
+    const srcLrc = data.lrc || data.lyric || "";
 
-    // 兜底取列表下一条
-    if (!playUrl) {
-        if (listIndex + 1 < videoPlayList.length) {
-            playUrl = videoPlayList[listIndex + 1];
-        } else {
-            // 无更多视频，直接加载新资源，无滑动动画
-            await loadNextSource();
-            stopPreload = false;
-            return;
-        }
+    const res = await playKuwoByName(songName);
+    if(!res){
+        log("randomkuwo搜索音频失败，无法播放");
+        return;
     }
 
-    // 开启平滑翻页动画
-    currentPage.style.transition = smoothAnim;
-    nextPage.style.transition = smoothAnim;
-    currentPage.style.transform = 'translateY(-100%)';
-    nextPage.style.transform = 'translateY(0)';
-
-    // 等待动画结束再切换视频
-    setTimeout(async () => {
-        listIndex++
-        saveVideoToHistory(playUrl)
-        nextVideoDom.pause();
-        nextVideoDom.src = "";
-        nextVideoDom.load();
-
-        // 核心修复1：修改src后强制load加载资源
-        videoPlayerDom.src = playUrl;
-        videoPlayerDom.load();
-
-        // 核心修复2：等视频加载完再播放，避免拦截
-        videoPlayerDom.onloadeddata = () => {
-            videoPlayerDom.muted = false;
-            videoPlayerDom.play().catch(err => {
-                log("自动翻页播放失败："+err);
-                // 兜底重试
-                setTimeout(()=>videoPlayerDom.play(), 300);
-            });
-            videoPlayerDom.onloadeddata = null;
-        }
-
-        resetPagePos();
-        preloadNextUrl = null;
-        stopPreload = false;
-        // 延迟预加载，等当前视频稳定
-        setTimeout(()=> preloadNextVideo(), 500);
-    }, 240);
-}, false);
-
-
-    $("#myVideo").on("dblclick", function() {
-        if (videoPlayerDom.requestFullscreen) videoPlayerDom.requestFullscreen();
-        else if (videoPlayerDom.webkitRequestFullscreen) videoPlayerDom.webkitRequestFullscreen();
-        else if (videoPlayerDom.mozRequestFullScreen) videoPlayerDom.mozRequestFullScreen();
-        hideControlPanel();
-        videoPlayerDom.play()
-    });
-
-    // 点击视频显示/隐藏右侧按钮
-    $("#myVideo").on("click", function(e) {
-        // 阻止冒泡，不穿透到下层
-        e.stopPropagation();
-        if (sourceMenuOpen) return;
-        let btnOpacity = parseFloat(ctrlButtonsDom.style.opacity);
-        if (isNaN(btnOpacity)) btnOpacity = 0;
-
-        if (btnOpacity === 1) {
-            ctrlButtonsDom.style.opacity = 0;
-            videoPlayerDom.pause();
-        } else {
-            ctrlButtonsDom.style.opacity = 1;
-            videoPlayerDom.play();
-            hideControlPanel();
-            toggleDragProgressBar();
-        }
-    });
-
-    // 换源逻辑不变
-    $(document).on("click", "#yuan", function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        if (sourceMenuOpen) {
-            $("#options").hide();
-            sourceMenuOpen = false;
-            return;
-        }
-        const sourceOptionList = [{
-            name: '源5',
-            url: 'https://www.hhlqilongzhu.cn/api/MP4_xiaojiejie.php?_t=0' + Math.random()
-        }, {
-            name: '源6',
-            url: 'https://jkapi.com/api/xjj_video?apiKey=69b159635b2789ee4e3a807985090777'
-        }, {
-            name: "源08",
-            url: "https://v.nrzj.vip/video.php?_t=0" + Math.random(),
-        }, {
-            name: '快9',
-            url: 'https://openapi.dwo.cc/api/ksvideo?_t=0' + Math.random()
-        }, {
-            name: '源10',
-            url: 'https://www.wudada.online/Api/NewSp'
-        }, {
-            name: '源11',
-            url: 'https://openapi.dwo.cc/api/v?_t=0' + Math.random()
-        }, {
-            name: '源12',
-            url: 'https://openapi.dwo.cc/api/fh_mvsp?_t=0' + Math.random()
-        }, {
-            name: '源15',
-            url: 'http://wudada.online/Api/ScSp'
-        }, {
-            name: '源16',
-            url: 'http://api.yujn.cn/api/zzxjj.php?type=video',
-        }, {
-            name: '源17',
-            url: 'http://api.yujn.cn/api/xjj.php',
-        }, {
-            name: '女大',
-            url: 'http://api.yujn.cn/api/nvda.php',
-        }, {
-            name: '黑丝',
-            url: 'http://api.yujn.cn/api/heisis.php',
-        }, {
-            name: '汉服',
-            url: 'http://api.yujn.cn/api/hanfu.php',
-        }, {
-            name: '源21',
-            url: 'https://api.kuleu.com/api/MP4_xiaojiejie?_t=0' + Math.random()
-        }, {
-            name: '源22',
-            url: 'https://api.7645.cn/video/?_t=0' + Math.random()
-        }, {
-            name: "抖抖",
-            url: "http://dou.plus/get/get1.php",
-        }, {
-            name: "极致",
-            url: "https://p.txqq.pro/api/girls?limit=20",
-        }, {
-            name: "新",
-            url: "http://api.yujn.cn/api/xjj.php",
-        }, {
-            name: "TikTok",
-            url: "https://diskgirl.com/get/get1.php",
-        }, {
-            name: "新2",
-            url: "https://diskgirl.com/get/get2.php",
-        }, {
-            name: "新3",
-            url: "https://diskgirl.com/get/get3.php",
-        }, {
-            name: '新4',
-            url: 'https://xjj.ciyer.com/video.php?lx=video&_t=0' + Math.random()
-        }, {
-            name: '新5',
-            url: 'https://www.cunshao.com/666666/api/web.php?_t=0' + Math.random()
-        }, {
-            name: '新6',
-            url: 'https://188sp.711888.xyz/188/video.php?_t=0' + Math.random()
-        }, {
-            name: '新7',
-            url: 'https://28apk.com/mm/video.php?_t=0' + Math.random()
-        }, {
-            name: '新8',
-            url: 'https://xiaolufx.net/suiji/video.php?_t=0' + Math.random()
-        }, {
-            name: '新13',
-            url: 'https://api.suyanw.cn/api/xjj/api.php?_t=0' + Math.random()
-        }, {
-            name: '新14',
-            url: 'https://openapi.dwo.cc/api/4qb_sp?msg=%E7%83%AD%E8%88%9E'
-        }, {
-            name: '新15',
-            url: 'https://openapi.dwo.cc/api/viodes?_t=0' + Math.random()
-        }, {
-            name: '新16',
-            url: 'https://openapi.dwo.cc/api/xjj?_t=0' + Math.random()
-        }, {
-            name: '新17',
-            url: 'https://api.xudu.org/vos/vc?_t=' + Math.random()
-        }, {
-            name: '18',
-            url: 'https://api.yujn.cn/api/zzxjj.php?_t=' + Math.random()
-        }, {
-            name: '抖一抖',
-            url: 'https://www.douyidou.com/get/get1.php'
-        }, {
-            name: '精品',
-            url: 'https://api.wwgz.cn:520/dsp/get/get1.php'
-        }, {
-            name: '屋里社',
-            url: 'http://wulishe.site/wp-json/b2/v1/getTopicList'
-        }, {
-            name: '抖妹',
-            url: 'https://www.doumei.cc/api/v1/recommend'
-        }, {
-            name: '抖美女',
-            url: 'https://wp.qinggongju.com/wp-content/themes/onenavsub/tool/douyin_proxy.php'
-        }, {
-            name: '甜美',
-            url: 'https://cn.apihz.cn/api/fun/girl.php?id=10008308&key=7e3e249519990e557cd9c79458f2b084'
-        }, {
-            name: '快美女',
-            url: 'https://qinggongju.com/xiaojie/video.php?_t=0' + Math.random()
-        }, {
-            name: '横屏',
-            url: 'https://cunshao.com/666666/api/pc.php?_t=0' + Math.random()
-        }, {
-            name: '抖艺术',
-            url: 'https://random-api.czl.net/video/dy-art?_t=0' + Math.random()
-        }, {
-            name: '热舞',
-            url: 'http://api.4qb.cn/api/suiji-sp?msg=%E7%83%AD%E8%88%9E&type=json'
-        }];
-        sourceOptionList.push({ name: 'pf1', url: 'https://pf129.com/xjj/get/get1.php' });
-        sourceOptionList.push({ name: 'DJ秀', url: 'http://djshare.kuaiyuhudong.cn/api/web/share/djvideo.php' });
-        sourceOptionList.push({ name: '美女', url: 'https://v1.21lhz.cn/API/Video/api.php?_t=0' + Math.random() });           
-
-        const saveSourceName = localStorage.getItem('xjjname') || '源08';
-        const activeIndex = sourceOptionList.findIndex(item => item.name === saveSourceName);
-        if (activeIndex > -1) {
-            sourceOptionList[activeIndex].name = `<span style="color:red">${sourceOptionList[activeIndex].name}</span>`;
-        }
-        
-        let htmlStr = "";
-        sourceOptionList.forEach(item => {
-            htmlStr += `<div class='option'>${item.name}<span class='url' data-url='${item.url}'></span></div>`;
-        });
-
-        const optDom = document.getElementById("options");
-        optDom.innerHTML = htmlStr;
-        sourceMenuOpen = true;
-        optDom.style.display = "flex";
-        
-        $(".option").off("click").on("click", function(e) {
-            e.stopPropagation();
-            const selectName = $(this).text();
-            const newApiUrl = $(this).find(".url").attr("data-url");
-            
-            localStorage.setItem('jjurl', newApiUrl);
-            localStorage.setItem('xjjname', selectName);
-            $("#yuan").text(selectName);
-            globalApiUrl = newApiUrl;
-            videoPlayList = [];
-            listIndex = 0;
-            optDom.style.display = "none";
-            sourceMenuOpen = false;
-            preloadNextUrl = null;
-            nextVideoDom.src = "";
-            nextVideoDom.load();
-            isBackgroundPreloading = false;
-            preloadFailCount = 0;
-            loadAllSource();
-        });
-    });
-
-    // 点击页面任意空白关闭换源菜单
-// 点击空白关闭换源弹窗
-$(document).on("click", function(event) {
-    const target = $(event.target);
-    // 点击源按钮、换源按钮，不关闭弹窗
-    if(target.is("#yuan") || target.closest(".option").length) return;
-
-    // 弹窗处于打开状态，点击任意其他区域直接关闭
-    if(sourceMenuOpen){
-        $("#options").hide();
-        sourceMenuOpen = false;
-        videoPlayerDom.play();
-    }
-});
-
-
-let touchStartY = 0;
-let touchMoveY = 0;
-let isDragging = false;
-let longPressTimer = null;
-
-scrollWrap.addEventListener('touchstart', (e) => {
-    if (sourceMenuOpen) return;
-    touchStartY = e.touches[0].clientY;
-    touchMoveY = 0;
-    isDragging = true;
-    stopPreload = true; // 滑动全程禁止预加载，杜绝新视频覆盖画面
-    slidePreviewLoading = false;
-    isPreviewPlaying = false;
-    touchSnapIndex = currentHistoryIndex; // 锁定按下时的下标，全程不变
-    currentPage.style.transition = 'none';
-    nextPage.style.transition = 'none';
-
-    longPressTimer = setTimeout(() => {
-        videoPlayerDom.playbackRate = 2;
-        log("长按2倍速");
-    }, 200);
-}, { passive: true });
-
-
-scrollWrap.addEventListener('touchmove', (e) => {
-    if (sourceMenuOpen || !isDragging) return;
-    // 删掉阻止滑动代码，修复手势失效
-    touchMoveY = e.touches[0].clientY - touchStartY;
-    // 最大拖拽距离改为0.9，几乎全屏滑动不卡顿
-    const maxMove = window.innerHeight * 0.9;
-    touchMoveY = Math.max(-maxMove, Math.min(maxMove, touchMoveY));
-
-    if(touchMoveY < 0){
-        currentPage.style.transform = `translateY(${touchMoveY}px)`;
-        nextPage.style.transform = `translateY(calc(100vh + ${touchMoveY}px))`;
-    }else{
-        currentPage.style.transform = `translateY(${touchMoveY}px)`;
-        nextPage.style.transform = `translateY(calc(-100vh + ${touchMoveY}px))`;
-    }
-
-    const moveAbs = Math.abs(touchMoveY);
-    const isOverHalf = moveAbs >= slideHalfScreenRatio;
-    let targetPreviewUrl = "";
-
-    // 上滑预览下一条
-  // 上滑：无预加载直接读取列表下一条
-if (touchMoveY < -10) {
-    if(preloadNextUrl){
-        targetPreviewUrl = preloadNextUrl;
-    }else if(listIndex + 1 < videoPlayList.length){
-        // 没有预加载，直接拿列表下一条作为预览
-        targetPreviewUrl = videoPlayList[listIndex + 1];
-    }
+    //优先搜索出来的；搜索为空，降级用随机源自带
+    const finalCover = res.searchCover ? res.searchCover : srcCover;
+    const finalLrc = res.searchLrc ? res.searchLrc : srcLrc;
+    const sendList = [
+  {
+    videoUrl: res.audioUrl,
+    realPoster: res.searchCover ? res.searchCover : srcCover
+  }
+];
+if (isInitLoad) {
+      // 初始化：全量模式，清空旧列表
+      initVideoList(sendList, false);
+  } else {
+      // 后续追加模式：保留原有列表，新增两条
+      initVideoList(sendList, true);
+  }
+    
+    return;
 }
 
-    // 下滑预览历史上一条
-    else if (touchMoveY > 10) {
-        if(touchSnapIndex > 0){
-            targetPreviewUrl = videoHistoryList[touchSnapIndex - 1];
-        }
+     // ----下面是其余4个音乐源正常逻辑----
+     let mediaUrl = data.url || data.original_link || data.mp3url || "";
+     let coverSrc = data.img || data.picurl || data.image || DEFAULT_COVER;
+     let lrcText = data.lrc || data.lyric || "";
+     if (/wyy_random/.test(url)) {
+         mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + data.id;
+     }
+     if (/randmusic/.test(url)) {
+         const m = mediaUrl.match(/id=([^&]+)/);
+         if (m) {
+             mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + m[1];
+         }
+     }
+     if (is528) {
+         mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + data.id;
+         coverSrc = data.picurl || "";
+         lrcText = data.lyric || "";
+     }
+     if (!lrcText) {
+         let lyricid = "";
+         const match = mediaUrl.match(/id=([^&]+)/);
+         lyricid = match ? match[1] : data.id;
+         if (lyricid) {
+             try {
+                 const respLyric = request("http://music.163.com/api/song/media?id=" + lyricid);
+                 const obj = JSON.parse(respLyric);
+                 if (obj && obj.code === 200 && obj.lyric) {
+                     lrcText = obj.lyric;
+                 }
+             } catch (e) {
+                 log("获取网易歌词失败:" + e.message);
+             }
+         }
+     }
+     if (!mediaUrl) {
+         showTip("音乐获取失败");
+         return;
+     }
+     const sendList = [
+  {
+    videoUrl: mediaUrl,
+    realPoster: coverSrc,
+    lrcText: lrcText // 仅存储歌词，不渲染
+  }
+];
+if (isInitLoad) {
+    // 音乐全量初始化：覆盖音乐专属数组，和全量渲染匹配
+    tempNeteaseResultList = [...sendList];
+    initVideoList(sendList, false);
+    useNeteaseListPlay = true;
+} else {
+    // 音乐追加模式：向音乐数组末尾新增曲目
+    tempNeteaseResultList.push(...sendList);
+    initVideoList(sendList, true);
+    useNeteaseListPlay = true;
+}
+ }
+
+function playMusicWithLrc(playUrl, coverUrl, lrcRaw){
+    forceContain528 = true;
+    myVideo.poster = coverUrl || "";
+    myVideo.src = playUrl;
+    myVideo.style.objectFit = "contain";
+
+    const lrcBox = document.querySelector('.lrc-box');
+     lrcContent = document.querySelector('.lrc-content');
+    if (!lrcBox) return;
+
+    lrcBox.style.display = "none";
+    lyricData = [];
+    lrcContent.innerHTML = "";
+
+    if(lrcRaw) {
+         lyricData = parseLrc(lrcRaw);
+         lrcBox.style.display = "block";
+         renderLyric(0);
+    }else{
+         lrcBox.style.display = "none";
     }
+}
+//音乐搜索弹窗
+async function openNeteaseSearchPopup(songList) {
+    const popup = document.getElementById("cachePopup");
+    const listBox = document.getElementById("cacheListBox");
+    const titleDom = document.getElementById("cacheTitle");
 
-    if(targetPreviewUrl && targetPreviewUrl !== lastPreviewUrl){
-        lastPreviewUrl = targetPreviewUrl;
-        nextVideoDom.src = targetPreviewUrl;
-        nextVideoDom.load();
+    // 隐藏全选+批量按钮栏
+   document.getElementById("cacheTopBar").style.display = "none";
+
+    popup.style.display = "block";
+    popupOpen = true;
+    currentPopupMode = "neteaseSearch";
+    //history.pushState({type:"cachePopup"}, "", null);
+
+    titleDom.textContent = `网易搜索结果（共${songList.length}条）`;
+    listBox.innerHTML = "";
+    songList.forEach((item, idx) => {
+        const name = item.title || item.name || "未知曲目";
+        const artist = item.author || item.artist || "未知歌手";
+        const coverUrl = item.pic || DEFAULT_COVER;
+        // 新增：判断是否是当前正在播放的条目
+        const activeClass = (useNeteaseListPlay === true && idx === neteaseListIndex) ? "active-play" : "";
+        listBox.innerHTML += `
+<div class="cache-item ${activeClass}" 
+data-search-idx="${idx}"
+onclick="event.stopPropagation();playSelectedNetease(${idx});closeCachePopup(true)"
+style="display:flex;align-items:center;gap:10px;padding:10px 12px;">
+    <img 
+        src="${coverUrl}" 
+        loading="lazy"
+        referrerpolicy="no‑referrer"
+        style="width:48px;height:48px;border-radius:6px;object‑fit:cover;flex‑shrink:0;"
+        onerror="this.src='${DEFAULT_COVER}';this.onerror=null;">
+    <div class="cache-item-text" style="flex:1;min‑width:0;">
+        <span class="num">${idx+1}.</span>
+        <div class="url-text">${name}</div>
+        <div class="time-text">${artist}</div>
+    </div>
+</div>
+`;
+    });
+    
+}
+
+
+
+async function playSelectedNetease(idx){  
+    log("点击下标：" + idx);
+    if (!tempNeteaseResultList || idx < 0 || idx >= tempNeteaseResultList.length) {
+        showTip("条目不在当前列表内");
+        return;
     }
+    const song = tempNeteaseResultList[idx];
+    useNeteaseListPlay = false;
+    neteaseListIndex = idx;
 
-    if(targetPreviewUrl){
-        if (isOverHalf) {
-            videoPlayerDom.pause();
-            nextVideoDom.play().catch(()=>{});
-            isPreviewPlaying = true;
-        } else {
-            nextVideoDom.pause();
-            videoPlayerDom.play();
-            isPreviewPlaying = false;
-        }
-    }else if(isPreviewPlaying){
-        nextVideoDom.pause();
-        videoPlayerDom.play();
-        isPreviewPlaying = false;
-        lastPreviewUrl = "";
+    if(!song || !song.url){
+        showTip("该歌曲无播放链接");
+        return;
     }
-}, { passive: true });
-
-
-
-scrollWrap.addEventListener('touchend', async () => {
-    lastPreviewUrl = "";
-    if (longPressTimer) clearTimeout(longPressTimer);
-    longPressTimer = null;
-    videoPlayerDom.playbackRate = 1;
-
-    if (isPreviewPlaying) {
-        nextVideoDom.pause();
-        videoPlayerDom.play();
-        isPreviewPlaying = false;
+    // 映射时携带封面
+    const sendList = tempNeteaseResultList.map(item => ({
+        videoUrl: item.url,
+        realPoster: item.pic || ""
+    }));
+ let lrcTxt = song.lrcText || "";
+// 硬性限制：只有本地完全没歌词，才联网拉取
+if (!lrcTxt && song.lrc) {
+    lrcTxt = await fetchLrc(song.lrc);
+}
+// 仅新拿到有效歌词才渲染；本地已有歌词就不二次判断清空
+if(lrcTxt && !song.lrcText){
+    renderLyric(lrcTxt, neteaseListIndex);
+}
+   if(JSON.stringify(sendList) === JSON.stringify(lastRenderList)){
+    log("队列一致，跳过initVideoList，刷新swiper后滑动");
+    swiper.update();
+    swiper.slideTo(neteaseListIndex, 0);
+    // 滑动完成再渲染，下标已是最新
+    if(lrcTxt){
+        renderLyric(lrcTxt, neteaseListIndex);
+    }else{
+        clearLyric();
     }
-    if (sourceMenuOpen || !isDragging) return;
+    const activeSlide = swiper.slides[neteaseListIndex];
+    const slideVideo = activeSlide.querySelector("video");
+    const curr = videoPlayList[neteaseListIndex];
+    if(slideVideo && curr){
+        slideVideo.poster = curr.realPoster || "";
+        slideVideo.src = curr.videoUrl;
+    }
+    return;
+    }
+  document.querySelectorAll('video').forEach(videoEl => {
+            videoEl.src = '';
+            videoEl.remove();
+        });
+    // 队列变化：正常渲染、渲染结束再滑动
+    initVideoList(sendList, false);
+lastRenderList = sendList;
+swiper.update();
+swiper.slideTo(neteaseListIndex, 0);
+if(lrcTxt){
+    renderLyric(lrcTxt, neteaseListIndex);
+}else{
+    clearLyric();
+}
+}
 
-    isDragging = false;
-    stopPreload = false;
-    slidePreviewLoading = false;
-    const threshold = window.innerHeight * 0.2;
+
+
+
+function closeCachePopup(skipBack = false) {
+    // 上锁判断：正在关闭直接退出
     
 
-      // ========== 上滑下一条 ==========
-    if (touchMoveY < -threshold) {
-        let playUrl = preloadNextUrl;
-        // 预加载为空，直接读取列表下一条兜底
-        if (!playUrl) {
-            if (listIndex + 1 < videoPlayList.length) {
-                playUrl = videoPlayList[listIndex + 1];
-            } else {
-                resetPagePos();
-                showTip("暂无下一条视频");
-                nextVideoDom.src = "";
-                touchMoveY = 0;
-                return;
+    // 仅完成jQuery→原生替换，其余逻辑完全沿用原版
+    document.getElementById("cacheTopBar").style.display = "flex";
+
+    const popup = document.getElementById("cachePopup");
+    // 只保留原版的display控制，删除visibility、opacity、pointerEvents兜底写法
+    popup.style.display = "none";
+    popupOpen = false;
+
+    autoCloseCachePopup = true;
+    selectedCacheUrlSet.clear();
+    document.querySelectorAll(".cache-checkbox").forEach(item => {
+        item.checked = false;
+    })
+    const allCheck = document.getElementById("selectAllCache");
+    if(allCheck) allCheck.checked = false;
+
+    if (!isLocalCachePlay&&!appExitGuardPushed) {
+      //  history.pushState({appExitGuard:true}, "", window.location.href);
+        appExitGuardPushed = true;
+    }
+    setTimeout(()=>{
+        autoCloseCachePopup = false;
+        
+    },150);
+}
+
+
+// LRC歌词解析
+function parseLrc(raw) {
+    const lines = raw.split("\n");
+    const list = [];
+    // 兼容2位/3位毫秒 .xx 或 .xxx
+    const reg = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;
+
+    lines.forEach(line => {
+        const match = line.match(reg);
+        if (!match) return;
+
+        const minute = Number(match[1]);
+        const second = Number(match[2]);
+        const ms = Number(match[3]);
+        const text = match[4].trim();
+
+        // 跳过时间后完全空白的行，其余全部保留（作词、作曲、歌词都留下）
+        if (text === "") return;
+
+        const totalTime = minute * 60 + second + ms / Math.pow(10, match[3].length);
+        list.push({ time: totalTime, text: text });
+    })
+    return list;
+}
+
+
+// 渲染歌词，自动滚动居中
+function clearLyric(){
+  const box = document.getElementById('lrcContent');
+  log('[clearLyric] 执行清空'+ box);
+  if(box) box.innerHTML = "";
+}
+
+// 函数新增下标参数 slideIndex
+function renderLyric(lrcRaw, slideIndex = 0){
+  clearLyric();
+  if(!lrcRaw || lrcRaw.trim() === ""){
+    log('【renderLyric】歌词为空，直接结束');
+    return;
+  }
+  const lrcContent = document.getElementById("lrcContent");
+  log('【renderLyric】lrcContent DOM是否找到：' + !!lrcContent);
+  if(!lrcContent) {
+    log('【renderLyric】找不到#lrcContent容器，终止渲染！');
+    return;
+  }
+
+  const reg = /\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/g;
+  const lyricArr = [];
+  let match;
+  while((match = reg.exec(lrcRaw)) !== null){
+    const min = Number(match[1]);
+    const sec = Number(match[2]);
+    const ms = Number(match[3]);
+    const text = match[4].trim();
+    if(!text) continue;
+    const totalSec = min * 60 + sec + ms / (match[3].length===3 ? 1000 : 100);
+    lyricArr.push({time:totalSec, text});
+  }
+  log('【renderLyric】解析出有效歌词行数：' + lyricArr.length);
+  if(lyricArr.length === 0){
+    log('【renderLyric】正则没匹配到标准时间戳歌词');
+    return;
+  }
+
+  lyricArr.forEach(item=>{
+    const lineDom = document.createElement("div");
+    lineDom.className = "lrc-line";
+    lineDom.dataset.time = item.time;
+    lineDom.innerText = item.text;
+    lrcContent.appendChild(lineDom);
+  });
+
+  // 删掉 if(slideIndex !== undefined) 分支，直接按下标取值
+  const targetVideo = document.querySelector(`.swiper-slide video[data-index="${slideIndex}"]`);
+  log('【renderLyric】传入下标：'+slideIndex+'，播放器是否找到：' + !!targetVideo);
+  if(!targetVideo) return;
+
+  // 全局清空所有视频旧监听，防止多视频同时触发歌词滚动
+  document.querySelectorAll(".swiper-slide video").forEach(v => v.ontimeupdate = null);
+  // 只为当前下标对应的视频绑定监听
+  targetVideo.ontimeupdate = function(){
+    const now = targetVideo.currentTime;
+    const lines = lrcContent.querySelectorAll(".lrc-line");
+    let activeIndex = 0;
+    for(let i=0;i<lyricArr.length;i++){
+      if(now >= lyricArr[i].time) activeIndex = i;
+    }
+    lines.forEach((dom,i)=>{
+      dom.classList.toggle("active", i===activeIndex);
+    });
+    const lineHeight = 32;
+    lrcContent.style.transform = `translateY(${80 - activeIndex * lineHeight}px)`;
+  };
+  log('【renderLyric】下标'+ slideIndex +'播放器监听绑定完成');
+}
+
+
+// 监听播放进度，自动切换歌词（全局只写一次）
+
+async function loadAllSource(isInitLoad = true) {         
+    if (isInitLoad) {
+        // 1.先隐藏图标（放在最前面不受删除影响）
+        pauseIconDom.style.opacity = 0;     
+        dragProgressWrapDom.style.opacity = 0;
+       btnFitMode.style.display = "none";
+        btnPlayMode.style.display = "none"; document.getElementById("yuan").style.display = "none";
+
+        // 2.先清理旧视频：只删旧DOM，不绑定（此时新视频尚未加载）
+       document.querySelectorAll('video').forEach(videoEl => {
+            videoEl.src = '';
+            videoEl.remove();
+        });
+
+        // 3.【把延时绑定移到列表加载完成之后！不要写在if最开头】
+        // 所以此处先删掉原先的setTimeout绑定代码，挪到整个列表加载结束的末尾
+    }    
+    let isMusicSource = /(528sq|randmusic|randomkuwo|dj_music|wyy_random)/.test(reqApiUrl);   
+    //reqApiUrl = "https://p.txqq.pro/api/girls?limit=20"
+   const lrcBox = document.querySelector('.lrc-box');
+     const lrcContent = document.querySelector('.lrc-content');
+     lyricData = [];
+     forceContain528 = false;
+     if(lrcBox) lrcBox.style.display = "none";
+     if(lrcContent) lrcContent.innerHTML = "";
+      document.getElementById("kuwoSearchBox").style.display = "none";
+    if (/wulishe/.test(reqApiUrl)) {
+
+    } else if (/txqq|doumei|coop/.test(reqApiUrl)) {
+        await loadJsonListSource(isInitLoad);
+    } else if (/591/.test(reqApiUrl)) {
+        await load591Source(isInitLoad);
+    } else if (/kuaiyuhudong/.test(reqApiUrl)) {
+        await loadDjSource(isInitLoad);
+    } else if (isMusicSource) {
+         if (/randomkuwo|dj_music/.test(reqApiUrl)) {
+        document.getElementById("kuwoInput").placeholder = "输入歌名搜索；可粘贴QQ音乐歌单链接/ID";
+    } else {
+        document.getElementById("kuwoInput").placeholder = "输入歌名搜索；可粘贴网易云歌单链接/ID";
+    }
+         document.getElementById("kuwoSearchBox").style.display = "flex";               
+         await handleMusicSource(isInitLoad);
+     } else {
+        await loadSingleSourceBatch(5, isInitLoad);
+    }
+
+    // ✅列表渲染完毕、新video已经生成，再执行延时批量绑定（关键改动）
+    if(isInitLoad){
+        setTimeout(()=>{
+         const videoArr = document.querySelectorAll(".swiper-slide video");
+         log("【绑定校验】视频数量：" + videoArr.length);
+         videoArr.forEach(vid=>{
+             // 解绑三类事件再全量重绑，补齐pause、timeupdate
+             vid.removeEventListener("play", handlerPlay);
+             vid.removeEventListener("pause", handlerPause);
+             vid.removeEventListener("timeupdate", timeUpdateHandler);
+             vid.addEventListener("play", handlerPlay);
+             vid.addEventListener("pause", handlerPause);
+             vid.addEventListener("timeupdate", timeUpdateHandler);
+             log("已为单个视频绑定监听");
+         })
+         // 换源结束强制把激活对象切回首条视频，首页点击生效
+         const firstVideo = document.querySelector(".swiper-slide:first-child video");
+         if(firstVideo) activeVideoEl = firstVideo;
+     }, 1200);
+    }
+
+    if (activeVideoEl) {
+        activeVideoEl.muted = false;
+        activeVideoEl.play().catch(err => {
+            if (err.name !== "AbortError") {
+                console.log('渲染后恢复播放失败', err);
             }
-        }
-        currentPage.style.transform = 'translateY(-100%)';
-        nextPage.style.transform = 'translateY(0)';
-        setTimeout(async () => {
-            listIndex++
-            saveVideoToHistory(playUrl)
-            nextVideoDom.pause();
-            videoPlayerDom.src = playUrl;
-            videoPlayerDom.play().catch(()=>{});
-            resetPagePos();
-            preloadNextUrl = null;
-            setTimeout(()=> preloadNextVideo(), 500);
-        }, 200);
+        });
     }
-
-
-    // ========== 下滑历史视频（修复重点） ==========
-    else if (touchMoveY > threshold) {
-        // 用按下瞬间的快照判断，实时currentHistoryIndex不准
-        if (touchSnapIndex <= 0) {
-            resetPagePos();
-            showTip("已经是第一条，无历史");
-            nextVideoDom.src = "";
-            nextVideoDom.load();
-            touchMoveY = 0;
-            return;
-        }
-        // 固定目标下标，和滑动预览完全一致
-        const targetIdx = touchSnapIndex - 1;
-        const targetUrl = videoHistoryList[targetIdx];
-
-        currentPage.style.transform = 'translateY(100%)';
-        nextPage.style.transform = 'translateY(0)';
-        setTimeout(async () => {
-            nextVideoDom.pause();
-            // 强制更新全局下标，只修改一次，无二次递减
-            currentHistoryIndex = targetIdx;
-            videoPlayerDom.src = targetUrl;
-            videoPlayerDom.play().catch(()=>{});
-            showTip("回看历史视频");
-            resetPagePos();
-            preloadNextUrl = null;
-            // 延迟预加载，等历史视频完全加载完再拉新，不会覆盖画面
-            setTimeout(()=> preloadNextVideo(), 800);
-        }, 200);
-    }
-    // 滑动不足一半，回弹
-    else {
-        resetPagePos();
-        nextVideoDom.pause();
-        nextVideoDom.src = "";
-            nextVideoDom.load();
-    }
-    touchMoveY = 0;
-});
-
-
-scrollWrap.addEventListener('touchcancel', () => {
-    if (longPressTimer) clearTimeout(longPressTimer);
-    longPressTimer = null;
-    videoPlayerDom.playbackRate = 1;
-    if (isPreviewPlaying) {
-        nextVideoDom.pause();
-        videoPlayerDom.play();
-        isPreviewPlaying = false;
-    }
-    isDragging = false;
-    touchMoveY = 0;
-    slidePreviewLoading = false;
-    // 意外中断直接无动画归位，杜绝弹跳
-    currentPage.style.transition = "none";
-    nextPage.style.transition = "none";
-    resetPagePos();
-});
-
-function resetPagePos() {
-    currentPage.style.transform = 'translateY(0)';
-    nextPage.style.transform = 'translateY(100%)';
 }
 
 
+ 
+ 
+document.querySelector("#yuan").onclick = function(e){
+     e.stopPropagation();
+     renderSourceOptions();
+     document.getElementById("options").style.display = "block";
+ };
+ document.body.onclick = function(){
+     const optDom = document.getElementById("options");
+     if(optDom) optDom.style.display = "none";
+ }
+ 
+// 连播/单曲切换
+ btnPlayMode.addEventListener("click", function () {
+     const video = getCurrentVideo();
+     if (!video) return;
+     playAutoMode = !playAutoMode;
+     this.innerText = playAutoMode ? "连播" : "循环";
+     if (typeof showTip === "function") {
+         showTip(playAutoMode ? "已开启连续播放" : "已开启单曲循环");
+     }
+     // 删除暂停判断：无论暂停还是播放，点击按钮都开始播放
+     video.play().catch(err => console.log("模式切换后播放失败：", err));
+ });
 
-});
-</script>
+btnFitMode.addEventListener("click", function () {
+     const video = getCurrentVideo();
+     if (!video) return;
+     if (this.innerText === "原始") {
+         this.innerText = "满屏";
+         globalFitMode = "contain";
+         if (typeof showTip === "function") showTip("切换为原始比例");
+     } else {
+         this.innerText = "原始";
+         globalFitMode = "cover";
+         if (typeof showTip === "function") showTip("切换为满屏裁剪");
+     }
+     // 立刻对当前视频生效
+     video.style.objectFit = globalFitMode;
+     // 若你希望切比例也自动播放，取消下面注释即可
+     video.play().catch(err => console.log("比例切换后播放失败：", err));
+ });
 
-<!-- 海阔视界桥接 -->
-<script>
-if(!window.request){
-    eval(fy_bridge_app.getInternalJs());
-    window.request = window.request00 || window.request;
-}
-let time = new Date().getDate().toString();
-function formatLocalDate(date) {
-    return (
-        date.getFullYear() + '-' +
-        (date.getMonth() + 1).toString().padStart(2, '0') + '-' +
-        date.getDate().toString().padStart(2, '0')
-    );
-};
-let xjjtime = localStorage.getItem('xjjtime');
-if (xjjtime !== time || null === xjjtime) {
-    localStorage.setItem('xjjtime', time);
-    var 本地 = 'hiker://files/yuan/xjj.html';
-    var 远程 = 'https://raw.githubusercontent.com/liuzaoyue/haikuo/refs/heads/master/xjj.html';
-    var newtime = formatLocalDate(new Date());
-    var gx = '优化，欢迎使用。__缘分';		        
-    if (request(远程) != request(本地)) {
-        fba.writeFile(本地, request(远程));
-        $$$().x5LazyRule((yc, newtime) => {
-            confirm({
-                title: '更新完成',
-                content: yc.match(/gx = '(.*)'/)[1] + '_' +newtime
-            })
-        }, request(远程), newtime)
+// 搜索按钮点击事件
+document.getElementById("kuwoSearchBtn").addEventListener("click", function () {
+    const inputDom = document.getElementById("kuwoInput");
+    const val = inputDom.value.trim();
+    if (!val) {
+        showTip("输入为空，恢复随机播放");
+        inputDom.value = "";
+        handleMusicSource(true);
+        return;
     }
+    // 交给原有搜索分发函数，自动区分酷我/网易源
+    onSearchSubmit(val);
+});
+
+// 回车触发搜索（keyCode 13 兼容旧写法）
+document.getElementById("kuwoInput").addEventListener("keydown", function (e) {
+    if (e.keyCode === 13) {
+        document.getElementById("kuwoSearchBtn").click();
+    }
+});
+
+// 页面加载完毕拉取资源并渲染
+window.onload = ()=>{   
+//reqApiUrl = "https://p.txqq.pro/api/girls?limit=20"
+    loadAllSource(true);
 }
 </script>
 </body>
