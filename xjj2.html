@@ -348,7 +348,7 @@ const btnFitMode = document.querySelector("#ping");
  let currentPopupMode = "";
  let forceContain528 = false;
  // 默认封面兜底常量，按你项目原有值填写
- const DEFAULT_COVER = "https://api3.mhimg.cn/api/Image_partitioning";
+ const DEFAULT_COVER = "https://api.6045833.xyz/random";
  let lrcContent;
  let autoCloseCachePopup = false
  let lastRenderList = null; // 缓存上一次传给initVideoList的数组
@@ -515,6 +515,8 @@ if (currIndex >= total - 3) {
 
     // ==========新增：滑动同步neteaseListIndex + 更新歌词（放在末尾）==========
     // 1.同步全局播放下标
+    // ==========新增：滑动同步neteaseListIndex + 更新歌词（放在末尾）==========
+    // 1.同步全局播放下标
     neteaseListIndex = currIndex;
 if (useNeteaseListPlay) {
   const currentSong = tempNeteaseResultList?.[currIndex];
@@ -542,7 +544,6 @@ if (useNeteaseListPlay) {
     }else{
         clearLyric();
     }
-
 
       }
     }
@@ -692,7 +693,8 @@ function renderSourceOptions() {
         "https://api.qqsuu.cn/api/dm-randmusic?format=json",
         "https://v2.xxapi.cn/api/randomkuwo",
         "https://api3.mhimg.cn/api/dj_music",
-        "https://free.wqwlkj.cn/wqwlapi/wyy_random.php?type=json"
+        "https://free.wqwlkj.cn/wqwlapi/wyy_random.php?type=json",
+        "https://www.gggmusic.com/index-1.htm"
     ];
 
     listUrl.forEach((url, idx) => {
@@ -791,6 +793,7 @@ function initVideoList(list, isAppend = false){
         urlSet.add(item.videoUrl);
         return true;
     });
+    log("filter过滤完成后 uniqueList长度="+uniqueList.length + uniqueList);
     if(uniqueList.length === 0) return;
 
     // 【核心分支】全量模式清空容器；追加模式保留原有DOM
@@ -818,8 +821,8 @@ function initVideoList(list, isAppend = false){
         wrapperDom.appendChild(slide);
     })
     // 循环结束后刷新swiper
-    swiper.update();
-    
+    swiper.update();  
+ 
     if(forceContain528 && swiper){
     const totalSlide = swiper.slides.length;
     log("渲染完毕检测音乐源，slide数量="+totalSlide);
@@ -1373,10 +1376,10 @@ async function neteaseSearch(name) {
                 url:"https://meting.mikus.ink/api?server=netease&type=playlist&id="+encodeURIComponent(idVal)
             },
             {
-                url:"https://api.injahow.cn/meting/?type=playlist&id="+encodeURIComponent(idVal)
+                url:"https://api.injahow.cn/meting/?server=netease&type=playlist&id="+encodeURIComponent(idVal)
             }
         ];
-
+log("音乐数组"+playlistTryList[0])
         for(let i=0; i<playlistTryList.length; i++){
             const tryUrl = playlistTryList[i].url;
             try {
@@ -1395,6 +1398,8 @@ async function neteaseSearch(name) {
     }else{
         // 歌名关键词搜索，只使用主接口，备用不支持search
         const url = "https://meting.mikus.ink/api?server=netease&type=search&id=" + encodeURIComponent(name);
+        //https://jk.lllt.top/api/netease/music_v1.php?id=1463165983&type=json&level=standard
+        log("网易搜索"+url)
         try {
             const res = await fetch(url, { method: "GET", credentials: "omit" });
             const list = await res.json();
@@ -1462,7 +1467,7 @@ function onSearchSubmit(inputName) {
                     url: "https://meting.mikus.ink/api?server=tencent&type=playlist&id=" + encodeURIComponent(key)
                 },
                 {
-                    url: "https://api.injahow.cn/meting/?type=playlist&id=" + encodeURIComponent(key)
+                    url: "https://api.injahow.cn/meting/?server=tencent&type=playlist&id=" + encodeURIComponent(key)
                 }
             ];
             let res = null;
@@ -1620,6 +1625,7 @@ function onSearchSubmit(inputName) {
             const listBox = document.getElementById("cacheListBox");
             const titleDom = document.getElementById("cacheTitle");
             document.getElementById("cacheTopBar").style.display = "none";
+            history.pushState({appExitGuard:true}, "", window.location.href);
             titleDom.textContent = `酷我搜索结果（共${list.length}条）`;
             listBox.innerHTML = html;
             popup.style.display = "block";
@@ -1649,9 +1655,11 @@ function onSearchSubmit(inputName) {
     }
 }
 
-
 //自动音乐源处理
 async function handleMusicSource(isInitLoad) {
+    if (/gggmusic/.test(reqApiUrl)) {
+       await gggMusicSource(isInitLoad)
+    }
      const url = reqApiUrl;
      let resp = await fetch(url);
      let resData = await resp.json();
@@ -1695,20 +1703,39 @@ async function handleMusicSource(isInitLoad) {
      let mediaUrl = data.url || data.original_link || data.mp3url || "";
      let coverSrc = data.img || data.picurl || data.image || DEFAULT_COVER;
      let lrcText = data.lrc || data.lyric || "";
+     let id = "";
      if (/wyy_random/.test(url)) {
-         mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + data.id;
+         id =  data.id;
      }
      if (/randmusic/.test(url)) {
          const m = mediaUrl.match(/id=([^&]+)/);
          if (m) {
-             mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + m[1];
+         id =  m[1];
          }
      }
      if (is528) {
-         mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + data.id;
-         coverSrc = data.picurl || "";
+         id =  data.id;        
+         coverSrc = data.picurl || DEFAULT_COVER;
          lrcText = data.lyric || "";
      }
+   if (id) {  
+   try {
+     mediaUrl = "https://meting.mikus.ink/api?server=netease&type=url&id=" + id
+     mediaUrl = await getFinalRedirectUrl(mediaUrl);
+     if (!/\.mp3/.test(mediaUrl)) {
+      mediaUrl = "https://api.injahow.cn/meting/?type=url&id="+id;
+      mediaUrl = await getFinalRedirectUrl(mediaUrl);
+         }   
+         if (!/\.mp3/.test(mediaUrl)) {
+      mediaUrl = "https://kloping.top/api/music/get-url-by-id?id="+id;
+         mediaUrl = await getFinalRedirectUrl(mediaUrl);
+         }             
+       } catch (err) {
+         log("音乐链接解析跳转失败：" + err);
+         // 出错清空mediaUrl，避免无效地址播放
+         
+     }
+   }
      if (!lrcText) {
          let lyricid = "";
          const match = mediaUrl.match(/id=([^&]+)/);
@@ -1749,6 +1776,7 @@ if (isInitLoad) {
 }
  }
 
+
 //音乐搜索弹窗
 async function openNeteaseSearchPopup(songList) {
     const popup = document.getElementById("cachePopup");
@@ -1761,7 +1789,7 @@ async function openNeteaseSearchPopup(songList) {
     popup.style.display = "block";
     popupOpen = true;
     currentPopupMode = "neteaseSearch";
-    //history.pushState({type:"cachePopup"}, "", null);
+    history.pushState({type:"cachePopup"}, "", window.location.href);
 
     titleDom.textContent = `网易搜索结果（共${songList.length}条）`;
     listBox.innerHTML = "";
@@ -1793,16 +1821,18 @@ style="display:flex;align-items:center;gap:10px;padding:10px 12px;">
     
 }
 
-
-
-async function playSelectedNetease(idx){  
+async function playSelectedNetease(idx){
     log("点击下标：" + idx);
+
+    // 点击播放：把搜索临时数组复制到播放队列 tempNeteaseResultList
+    
     if (!tempNeteaseResultList || idx < 0 || idx >= tempNeteaseResultList.length) {
         showTip("条目不在当前列表内");
         return;
     }
     const song = tempNeteaseResultList[idx];
-    useNeteaseListPlay = false;
+    // ✅修复：播放网易音乐队列，useNeteaseListPlay 必须 = true
+    useNeteaseListPlay = true;
     neteaseListIndex = idx;
 
     if(!song || !song.url){
@@ -1814,59 +1844,57 @@ async function playSelectedNetease(idx){
         videoUrl: item.url,
         realPoster: item.pic || ""
     }));
- let lrcTxt = song.lrcText || "";
-// 硬性限制：只有本地完全没歌词，才联网拉取
-if (!lrcTxt && song.lrc) {
-    lrcTxt = await fetchLrc(song.lrc);
-}
-// 仅新拿到有效歌词才渲染；本地已有歌词就不二次判断清空
-if(lrcTxt && !song.lrcText){
-    renderLyric(lrcTxt, neteaseListIndex);
-}
-   if(JSON.stringify(sendList) === JSON.stringify(lastRenderList)){
-    log("队列一致，跳过initVideoList，刷新swiper后滑动");
+    let lrcTxt = song.lrcText || "";
+    // 硬性限制：只有本地完全没歌词，才联网拉取
+    if (!lrcTxt && song.lrc) {
+        lrcTxt = await fetchLrc(song.lrc);
+    }
+    // 仅新拿到有效歌词才渲染；本地已有歌词就不二次判断清空
+    if(lrcTxt && !song.lrcText){
+        renderLyric(lrcTxt, neteaseListIndex);
+    }
+    if(JSON.stringify(sendList) === JSON.stringify(lastRenderList)){
+        log("队列一致，跳过initVideoList，刷新swiper后滑动");
+        swiper.update();
+        swiper.slideTo(neteaseListIndex, 0);
+        // 滑动完成再渲染，下标已是最新
+        if(lrcTxt){
+            renderLyric(lrcTxt, neteaseListIndex);
+        }else{
+            clearLyric();
+        }
+        const activeSlide = swiper.slides[neteaseListIndex];
+        const slideVideo = activeSlide.querySelector("video");
+        const curr = tempNeteaseResultList[neteaseListIndex];
+        if(slideVideo && curr){
+            slideVideo.poster = curr.realPoster || "";
+            slideVideo.src = curr.videoUrl;
+        }
+        return;
+    }
+    document.querySelectorAll('video').forEach(videoEl => {
+        videoEl.src = '';
+        videoEl.remove();
+    });
+    // 队列变化：正常渲染、渲染结束再滑动
+    initVideoList(sendList, false);
+    lastRenderList = sendList;
     swiper.update();
     swiper.slideTo(neteaseListIndex, 0);
-    // 滑动完成再渲染，下标已是最新
     if(lrcTxt){
         renderLyric(lrcTxt, neteaseListIndex);
     }else{
         clearLyric();
     }
-    const activeSlide = swiper.slides[neteaseListIndex];
-    const slideVideo = activeSlide.querySelector("video");
-    const curr = videoPlayList[neteaseListIndex];
-    if(slideVideo && curr){
-        slideVideo.poster = curr.realPoster || "";
-        slideVideo.src = curr.videoUrl;
-    }
-    return;
-    }
-  document.querySelectorAll('video').forEach(videoEl => {
-            videoEl.src = '';
-            videoEl.remove();
-        });
-    // 队列变化：正常渲染、渲染结束再滑动
-    initVideoList(sendList, false);
-lastRenderList = sendList;
-swiper.update();
-swiper.slideTo(neteaseListIndex, 0);
-if(lrcTxt){
-    renderLyric(lrcTxt, neteaseListIndex);
-}else{
-    clearLyric();
 }
-}
+
 
 
 
 
 function closeCachePopup(skipBack = false) {
-    // 上锁判断：正在关闭直接退出
-    
-
-    // 仅完成jQuery→原生替换，其余逻辑完全沿用原版
-    document.getElementById("cacheTopBar").style.display = "flex";
+    //history.back();
+      document.getElementById("cacheTopBar").style.display = "flex";
 
     const popup = document.getElementById("cachePopup");
     // 只保留原版的display控制，删除visibility、opacity、pointerEvents兜底写法
@@ -1882,7 +1910,8 @@ function closeCachePopup(skipBack = false) {
     if(allCheck) allCheck.checked = false;
 
     if (!isLocalCachePlay&&!appExitGuardPushed) {
-      //  history.pushState({appExitGuard:true}, "", window.location.href);
+     //  history.pushState({appExitGuard:true}, "", window.location.href);
+      
         appExitGuardPushed = true;
     }
     setTimeout(()=>{
@@ -1890,6 +1919,7 @@ function closeCachePopup(skipBack = false) {
         
     },150);
 }
+
 
 // 渲染歌词，自动滚动居中
 function clearLyric(){
@@ -1899,6 +1929,7 @@ function clearLyric(){
 
 // 函数新增下标参数 slideIndex
 function renderLyric(lrcRaw, slideIndex = 0){
+    
   clearLyric();
   if(!lrcRaw || lrcRaw.trim() === ""){
     log('【renderLyric】歌词为空，直接结束');
@@ -1976,7 +2007,7 @@ async function loadAllSource(isInitLoad = true) {
         }
         isPreloading = true;
     }
-let isMusicSource = /(528sq|randmusic|randomkuwo|dj_music|wyy_random)/.test(reqApiUrl);   
+let isMusicSource = /(528sq|randmusic|randomkuwo|dj_music|wyy_random|gggmusic)/.test(reqApiUrl);   
     try {
         if (isInitLoad) {
             // 1.先隐藏图标（放在最前面不受删除影响）
@@ -2094,11 +2125,12 @@ document.getElementById("kuwoSearchBtn").addEventListener("click", function () {
     const val = inputDom.value.trim();
     if (!val) {
         showTip("输入为空，恢复随机播放");
-        inputDom.value = "";
+        inputDom.value = "";       
         loadAllSource(true);
         return;
     }
-    // 交给原有搜索分发函数，自动区分酷我/网易源
+    // 交给原有搜索分发函数，自动区分酷我/网易源    
+            
     onSearchSubmit(val);
 });
 
@@ -2109,7 +2141,7 @@ document.getElementById("kuwoInput").addEventListener("keydown", function (e) {
     }
 });
 
-document.querySelector(".swiper").addEventListener("click", function(e){
+document.querySelector(".swiper").addEventListener("click", function(e){    
    if(["INPUT","BUTTON"].includes(e.target.tagName)) return;
             setAllControlIcons(true);
 });
@@ -2185,12 +2217,180 @@ wrapperDom.addEventListener("touchcancel", () => {
     isLongPress = false;
     currentTouchVideo = null;
 }, { passive: true });
+// 全局标记，判断是否需要二次返回退出
 
+window.addEventListener('popstate', () => {
+  // 弹窗打开：只关闭弹窗，不拦截退出逻辑
+  if (popupOpen) {
+    closeCachePopup(true);
+    return;
+  }
 
+  // 弹窗已关闭，处理双击返回退出
+    needDoubleBack = true;   
+     $$$().x5LazyRule(() => {
+		                confirm({
+		                    title:'退出提示', 
+		                    content:'确认退出？', 
+		                    confirm:$.toString(()=>{backToHome()}), 	                     
+		                })	                
+		            })
+		            history.forward();		            
+});
 
 window.onload = ()=>{   
+
     loadAllSource(true);
+    history.pushState({type:"cachePopup"}, "", window.location.href);
+}
+
+//const parseApi = 'https://www.gggmusic.com/plugin/clih_music/api/parse_music.php';
+async function gggMusicSource(isInitLoad) {
+    const num = Math.floor(Math.random() * 2510) + 1;
+reqApiUrl = "https://www.gggmusic.com/index-" + num + ".htm";
+        const fetchRes = await fetch(reqApiUrl);
+        if (!fetchRes.ok) throw new Error("接口请求失败");
+        const htmlText = await fetchRes.text();
+
+        const parser = new DOMParser();
+        const listDoc = parser.parseFromString(htmlText, "text/html");
+        const liItems = listDoc.querySelectorAll('li.media.thread.tap');
+        
+        const taskList = [];
+        for (const li of liItems) {
+            const aDom = li.querySelector('.style3_subject a');
+    if (!aDom) continue;
+
+    const path = aDom.getAttribute('href'); // thread‑50828.htm
+    const detailUrl = new URL(path, reqApiUrl).href;            
+
+            const task = async () => {
+    try {
+        const detailResp = await fetch(detailUrl);
+        const detailHtml = await detailResp.text();
+        const parser = new DOMParser();
+ const doc = parser.parseFromString(detailHtml, "text/html");
+ const allScripts = doc.querySelectorAll("script");
+ let musicTags = null;
+ let parseApi = "";
+ for(const scr of allScripts){
+     const txt = scr.textContent;
+     const m = txt.match(/const musicTags\s*=\s*(\[[\s\S]*?\]);/);            
+     if(m){
+         musicTags = JSON.parse(m[1]);
+         // ✅就在这里，同一个txt直接匹配parseApi
+         const m1 = txt.match(/const parseApi = '(.*?)'/);
+         if(m1){
+             parseApi = "https://www.gggmusic.com/" + m1[1];          
+         }else{
+             log("parseApi正则匹配失败");
+         }
+         break; //拿到直接跳出循环
+     }
+ }
+ if (!musicTags) return null;
+ const parseResult = await parseMusicInfo(musicTags, parseApi);
+ if(!parseResult) return null;
+        
+        const realVideoUrl = parseResult.videoUrl;
+        const finalCover = parseResult.Cover;
+
+        //log("解析出来播放地址：" + realVideoUrl);
+
+        const exists = tempNeteaseResultList.some(item => item.videoUrl === realVideoUrl);
+        if(exists) return null;
+
+        let lrcRaw = "";
+        doc.querySelectorAll("p").forEach(p=>{
+            const t = p.textContent.trim();
+            if(/^\[\d{2}:\d{2}/.test(t)){
+                lrcRaw += t + "\n";
+            }
+        });
+        return {
+            videoUrl: realVideoUrl,
+            realPoster: finalCover,
+            lrcText: lrcRaw
+        };
+    } catch (err) {
+        log("DJ详情页解析失败 " + err.message);
+        return null;
+    }
+};
+
+            taskList.push(task());
+        }
+        let results = await Promise.all(taskList);
+         results = results.filter(x => !!x);
+ // 全局数组合并
+ if(isInitLoad){
+    tempNeteaseResultList = results;
+    initVideoList(tempNeteaseResultList, false);
+    useNeteaseListPlay = true;
+}else{
+    tempNeteaseResultList.push(...results);
+    initVideoList(results, true);
+    useNeteaseListPlay = true;
+}
+    
+}
+
+    
+    function str_rot13(str) {
+     return str.replace(/[a-zA-Z]/g, c=>String.fromCharCode(c.charCodeAt(0)+(c.toLowerCase()<'n'?13:-13)));
+ }
+ function super_decode(str){
+     return str_rot13(atob(str));
+ }
+  async function parseMusicInfo(musicTags, parseApi) {
+    try {
+        const res = await fetch(parseApi, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(musicTags)
+        });
+        if(!res.ok) throw new Error('请求失败，状态码：'+res.status);
+        
+        const result = await res.json();
+        if(result.code != 0) throw new Error(result.msg || '音乐解析失败');      
+        return {
+            videoUrl: super_decode(result.data[0].url),
+            Cover: super_decode(result.data[0].pic)
+        };    
+    } catch(e) {
+        log('音乐加载失败:'+ e.message);          
+        return null; // 出错返回null
+    }
 }
 </script>
+<!-- 海阔视界桥接、自动更新逻辑 -->
+<script>     
+		    let time = new Date().getDate().toString();
+		    ////log(time)
+		function formatLocalDate(date) {
+    return (
+        date.getFullYear() + '-' +
+        (date.getMonth() + 1).toString().padStart(2, '0') + '-' +
+        date.getDate().toString().padStart(2, '0')
+    );
+};
+		    let xjjtime = localStorage.getItem('xjjtime');
+		    if (xjjtime !== time || null === xjjtime) {
+		        localStorage.setItem('xjjtime', time);
+		        var 本地 = 'hiker://files/yuan/xjj.html';
+		        var 远程 = 'https://gh-proxy.org/https://raw.githubusercontent.com/liuzaoyue/haikuo/refs/heads/dev%E2%80%91test/xjj2.html';
+		        var newtime = formatLocalDate(new Date());
+		        var gx = '优化，欢迎使用。__缘分';		        
+		        if (request(远程) != request(本地)) {
+		            fba.writeFile(本地, request(远程));
+		            $$$().x5LazyRule((yc, newtime) => {
+		                confirm({
+		                    title: '更新完成',
+		                    content: yc.match(/gx = '(.*)'/)[1] + '_' +newtime
+		                })
+		            }, request(远程), newtime)
+		        }
+		    }
+		    </script>
 </body>
 </html>
